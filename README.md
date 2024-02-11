@@ -1,7 +1,8 @@
 
 
 
-2024-02-10 repo cloned
+2024-02-11 Unity MLAgent [Banana env set up](https://gist.github.com/Nov05/bf63ac7e0a2d0f94a635fb3858894cca)  
+2024-02-10 repo cloned  
 
 ---
 
