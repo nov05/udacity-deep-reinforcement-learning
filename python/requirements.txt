@@ -4,11 +4,13 @@ matplotlib
 numpy>=1.11.0
 jupyter
 pytest>=3.2.2
-docopt
+condata 
 pyyaml
-protobuf==3.5.2
+# protobuf==3.5.2
+protobuf==3.6.0
 grpcio==1.11.0
 torch==0.4.0
+numpy
 pandas
 scipy
 ipykernel
