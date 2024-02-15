@@ -1,5 +1,5 @@
 
-## **👉 Unity ML-Agents `Banana Collectors` game project submission**  
+## **👉 Unity ML-Agents `Banana Collectors` Project Submission**  
 
 1. For this toy game, two `Deep Q-network` methods are tried out. Since the observations (states) are simple (not in pixels), convolutional layers are not in use. And the evaluation results confirm that linear layers are sufficient for solving the problem.   
 	* **Double DQN**, with 3 linear layers (hidden dims: 256\*64, later tried with 64\*64)  
