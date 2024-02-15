@@ -8,7 +8,8 @@
 1. For this toy game, two `Deep Q-network` methods are used.  
 	* **Double DQN**, with 3 linear layers (hidden dims: 256*64, later tried with 64*64)  
 	* **Dueling DQN**, with 2 linear layers + 2 split linear layers (hidden dims: 64*64)  
-The Dueling DQN architecture is displayed as below. 
+
+▪️ The Dueling DQN architecture is displayed as below. 
 
 <table>
 <tr>
