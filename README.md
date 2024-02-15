@@ -5,7 +5,7 @@
 
 ## **👉 Unity ML-Agents Banana game project submission**  
 
-1. For this toy game, two `Deep Q-network` methods are used.  
+1. For this toy game, two `Deep Q-network` methods are tried out.  
 	* **Double DQN**, with 3 linear layers (hidden dims: 256*64, later tried with 64*64)  
 	* **Dueling DQN**, with 2 linear layers + 2 split linear layers (hidden dims: 64*64)  
 
@@ -55,8 +55,8 @@
 
 3. **Project artifacts:** 
 	* [All the notebooks](https://gist.github.com/Nov05/4e0ff3edba96928facaff063039c7bce) (trained in Google Colab, evaluated on local machine)  
-	* The project folder [`p1_navigation`](https://github.com/Nov05/udacity-deep-reinforcement-learning/tree/master/p1_navigation)  
-	* [Video recording](https://youtu.be/SwAwWLsa9f0?t=35)  
+	* The project folder [`p1_navigation`](https://github.com/Nov05/udacity-deep-reinforcement-learning/tree/master/p1_navigation) (which contains checkpoints `dqn_checkpoint_2000.pth` and `dueling_dqn_checkpoint_2000.pth`)  
+	* [Video recording](https://youtu.be/SwAwWLsa9f0?t=35) (which demonstrates how trained models are run on the local machine)  
 
 ---
 
