@@ -101,7 +101,6 @@ class VecEnv(ABC):
     def step(self, actions):
         """
         Step the environments synchronously.
-
         This is available for backwards compatibility.
         """
         self.step_async(actions)

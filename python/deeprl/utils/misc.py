@@ -5,17 +5,19 @@
 #######################################################################
 
 import numpy as np
-import pickle
-import os
+# import pickle
+# import os
 import datetime
-import torch
+# import torch
 import time
-from .torch_utils import *
 from pathlib import Path
 import itertools
-# from collections import OrderedDict, Sequence
+# from collections import OrderedDict, Sequence ## api changed
 from collections import OrderedDict 
 from collections.abc import Sequence
+
+## local imports
+from .torch_utils import *
 
 
 def run_steps(agent):

@@ -4,10 +4,10 @@
 # declaration at the top                                              #
 #######################################################################
 
-import os
+# import os
 import gym
 import numpy as np
-import torch
+# import torch
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
 
@@ -16,6 +16,7 @@ from baselines.common.atari_wrappers import FrameStack as FrameStack_
 from baselines.common.vec_env import VecEnv
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 
+## local imports
 from ..utils import *
 
 try:
@@ -144,7 +145,7 @@ class DummyVecEnv(VecEnv):
         obs, rew, done, info = zip(*data)
         return obs, np.asarray(rew), np.asarray(done), info
 
-    def reset(self):
+    def reset(self, train_mode=None):
         return [env.reset() for env in self.envs]
 
     def close(self):
@@ -160,6 +161,7 @@ class MLAgentsVecEnv(VecEnv):
         brain = env.brains[self.brain_name]
 
         num_envs = len(env_fns)
+        ## tranlate Unity ML-Agents spaces to gym spaces
         observation_space = Box(float('-inf'), float('inf'), (brain.vector_observation_space_size,), np.float64)
         action_space = Box(-1.0, 1.0, (brain.vector_action_space_size,), np.float32)
         VecEnv.__init__(self, num_envs, observation_space, action_space)
@@ -179,8 +181,8 @@ class MLAgentsVecEnv(VecEnv):
         obs, rew, done, info = zip(*data)
         return obs, np.asarray(rew), np.asarray(done), info
 
-    def reset(self):
-        return [env.reset(train_mode=True) for env in self.envs]
+    def reset(self, train_mode=True):
+        return [env.reset(train_mode=train_mode) for env in self.envs]
 
     def close(self):
         [env.close() for env in self.envs]
@@ -226,9 +228,8 @@ class Task:
         else:
             assert 'unknown action space'
         
-
-    def reset(self):
-        return self.env.reset()
+    def reset(self, train_mode=True):
+        return self.env.reset(train_mode=train_mode)
 
     def step(self, actions):
         if isinstance(self.action_space, Box):
