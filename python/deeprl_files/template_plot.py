@@ -2,7 +2,7 @@ import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # plt.rc('text', usetex=True)
-from deep_rl import *
+from ../deep_rl import *
 
 
 def plot_ppo():

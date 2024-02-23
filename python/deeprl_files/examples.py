@@ -4,7 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 
-from deep_rl import *
+from ../deep_rl import *
 
 
 # DQN

@@ -13,7 +13,9 @@ import time
 from .torch_utils import *
 from pathlib import Path
 import itertools
-from collections import OrderedDict, Sequence
+# from collections import OrderedDict, Sequence
+from collections import OrderedDict 
+from collections.abc import Sequence
 
 
 def run_steps(agent):
