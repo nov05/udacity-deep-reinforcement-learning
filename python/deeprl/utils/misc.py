@@ -84,7 +84,7 @@ def generate_tag(params):
 
 def translate(pattern):
     groups = pattern.split('.')
-    pattern = ('\.').join(groups)
+    pattern = (r'\.').join(groups)
     return pattern
 
 
