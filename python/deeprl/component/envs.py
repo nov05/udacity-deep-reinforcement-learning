@@ -154,7 +154,7 @@ class Task:
     def __init__(self,
                  name,
                  num_envs=1,
-                 env=None,
+                 env=None, ## if not None, env has been created
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
@@ -165,6 +165,14 @@ class Task:
             mkdir(log_dir)
         if env:
             self.env = env
+            ## Unity ML-Agents brains
+            brain_name = env.brain_names[0]
+            brain = env.brains[brain_name]
+            env_info = env[brain_name]
+            self.observation_space = env_info.vector_observations
+            self.state_dim = env_info.vector_observations.shape
+            self.action_space = Box(-1.0, 1.0, (brain.vector_action_space_size,), np.float32)
+            self.action_dim = env.brains[brain_name].vector_action_space_size
         else:
             envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
             if single_process:
@@ -172,17 +180,16 @@ class Task:
             else:
                 Wrapper = SubprocVecEnv
             self.env = Wrapper(envs)
+            self.observation_space = self.env.observation_space
+            self.state_dim = int(np.prod(self.env.observation_space.shape))
+            self.action_space = self.env.action_space
+            if isinstance(self.action_space, Discrete):
+                self.action_dim = self.action_space.n
+            elif isinstance(self.action_space, Box):
+                self.action_dim = self.action_space.shape[0]
+            else:
+                assert 'unknown action space'
         self.name = name
-        self.observation_space = self.env.observation_space
-        self.state_dim = int(np.prod(self.env.observation_space.shape))
-
-        self.action_space = self.env.action_space
-        if isinstance(self.action_space, Discrete):
-            self.action_dim = self.action_space.n
-        elif isinstance(self.action_space, Box):
-            self.action_dim = self.action_space.shape[0]
-        else:
-            assert 'unknown action space'
 
     def reset(self):
         return self.env.reset()
