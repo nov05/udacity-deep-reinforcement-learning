@@ -13,7 +13,8 @@ from gym.spaces.discrete import Discrete
 
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.atari_wrappers import FrameStack as FrameStack_
-from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv, VecEnv
+from baselines.common.vec_env import VecEnv
+from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 
 from ..utils import *
 
@@ -46,7 +47,7 @@ def make_env(env_id, seed, rank, episode_life=True):
                                 frame_stack=False,
                                 scale=False)
             obs_shape = env.observation_space.shape
-            if len(obs_shape) == 3:
+            if len(obs_shape)==3:
                 env = TransposeImage(env)
             env = FrameStack(env, 4)
 
@@ -150,46 +151,82 @@ class DummyVecEnv(VecEnv):
         return
 
 
+class MLAgentsVecEnv(VecEnv):
+    def __init__(self, env_fns):
+        self.envs = [fn() for fn in env_fns] ## create envs
+
+        env = self.envs[0]
+        self.brain_name = env.brain_names[0]
+        brain = env.brains[self.brain_name]
+        env_info = env[self.brain_name]
+
+        num_envs = len(env_fns)
+        observation_space = env_info.vector_observations
+        action_space = Box(-1.0, 1.0, (brain.vector_action_space_size,), np.float32)
+        VecEnv.__init__(self, num_envs, observation_space, action_space)
+        self.actions = None
+
+    def step_async(self, actions):
+        self.actions = actions
+
+    def step_wait(self):
+        data = []
+        for i in range(self.num_envs):
+            env_info = self.envs[i].step(self.actions[i])[self.brain_name] 
+            obs, rew, done, info = env_info.vector_observations, env_info.rewards, env_info.local_done, None
+            if done:
+                obs = self.envs[i].reset()
+            data.append([obs, rew, done, info])
+        obs, rew, done, info = zip(*data)
+        return obs, np.asarray(rew), np.asarray(done), info
+
+    def reset(self):
+        return [env.reset(train_mode=True) for env in self.envs]
+
+    def close(self):
+        [env.close() for env in self.envs]
+
+
 class Task:
     def __init__(self,
                  name,
                  num_envs=1,
-                 env=None, ## if not None, env has been created
+                 env_fn=None, 
+                 is_mlagents=False,
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
                  seed=None):
+        self.name = name
         if seed:
             seed = np.random.randint(int(1e9))
         if log_dir:
             mkdir(log_dir)
-        if env:
-            self.env = env
-            ## Unity ML-Agents brains
-            brain_name = env.brain_names[0]
-            brain = env.brains[brain_name]
-            env_info = env[brain_name]
-            self.observation_space = env_info.vector_observations
-            self.state_dim = env_info.vector_observations.shape
-            self.action_space = Box(-1.0, 1.0, (brain.vector_action_space_size,), np.float32)
-            self.action_dim = env.brains[brain_name].vector_action_space_size
+
+        if env_fn:
+            env_fns = [env_fn for i in range(num_envs)]
         else:
-            envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
+            env_fns = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
+
+        if is_mlagents: ## Unity ML-Agents
+            Wrapper = MLAgentsVecEnv
+        else:
             if single_process:
                 Wrapper = DummyVecEnv
             else:
                 Wrapper = SubprocVecEnv
-            self.env = Wrapper(envs)
-            self.observation_space = self.env.observation_space
-            self.state_dim = int(np.prod(self.env.observation_space.shape))
-            self.action_space = self.env.action_space
-            if isinstance(self.action_space, Discrete):
-                self.action_dim = self.action_space.n
-            elif isinstance(self.action_space, Box):
-                self.action_dim = self.action_space.shape[0]
-            else:
-                assert 'unknown action space'
-        self.name = name
+
+        self.env = Wrapper(env_fns)
+        self.observation_space = self.env.observation_space
+        self.state_dim = int(np.prod(self.env.observation_space.shape))
+        self.action_space = self.env.action_space
+        if isinstance(self.action_space, Discrete):
+            self.action_dim = self.action_space.n
+        elif isinstance(self.action_space, Box):
+            self.action_dim = self.action_space.shape[0]
+        else:
+            assert 'unknown action space'
+        
 
     def reset(self):
         return self.env.reset()
