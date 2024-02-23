@@ -159,19 +159,19 @@ class Task:
                  log_dir=None,
                  episode_life=True,
                  seed=None):
-        if seed is None:
+        if seed:
             seed = np.random.randint(int(1e9))
-        if log_dir is not None:
+        if log_dir:
             mkdir(log_dir)
         if env:
-            envs =[env]
+            self.env = env
         else:
             envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
-        if single_process:
-            Wrapper = DummyVecEnv
-        else:
-            Wrapper = SubprocVecEnv
-        self.env = Wrapper(envs)
+            if single_process:
+                Wrapper = DummyVecEnv
+            else:
+                Wrapper = SubprocVecEnv
+            self.env = Wrapper(envs)
         self.name = name
         self.observation_space = self.env.observation_space
         self.state_dim = int(np.prod(self.env.observation_space.shape))

@@ -74,16 +74,12 @@ def is_plain_type(x):
 def generate_tag(params):
     if 'tag' in params.keys():
         return
-    game = params['game']
     params.setdefault('run', 0)
-    run = params['run']
-    del params['game']
-    del params['run']
-    str = ['%s_%s' % (k, v if is_plain_type(v) else v.__name__) for k, v in sorted(params.items())]
-    tag = '%s-%s-run-%d' % (game, '-'.join(str), run)
-    params['tag'] = tag
-    params['game'] = game
-    params['run'] = run
+    exclude = ['game', 'run', 'env']
+    str = ['%s_%s' % (k, v if is_plain_type(v) else v.__name__) 
+           for k, v in sorted(params.items()) if k not in exclude]
+    tag = '%s-%s-run-%d' % (params['game'], '-'.join(str), params['run'])
+    ## e.g. tag is "Reacher-v2-remark_ddpg_continuous-run-0"
 
 
 def translate(pattern):
