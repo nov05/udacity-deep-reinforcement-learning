@@ -203,12 +203,12 @@ class ReplayWrapper(mp.Process):
     UPDATE_PRIORITIES = 3
 
     # def __init__(self, replay_cls, replay_kwargs, async=True): ## async became a reserved keyword in Python>=3.7
-    def __init__(self, replay_cls, replay_kwargs, non_blocking=True):
+    def __init__(self, replay_cls, replay_kwargs, is_async=True):
         mp.Process.__init__(self)
         self.replay_kwargs = replay_kwargs
         self.replay_cls = replay_cls
         self.cache_len = 2
-        if non_blocking:
+        if is_async:
             self.pipe, self.worker_pipe = mp.Pipe()
             self.start()
         else:
