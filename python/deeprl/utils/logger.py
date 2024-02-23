@@ -9,27 +9,30 @@ import os
 import numpy as np
 import torch
 import logging
+from .misc import *
+
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s: %(message)s')
-from .misc import *
 
 
 def get_logger(tag='default', log_level=0):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    if tag is not None:
-        fh = logging.FileHandler('./log/%s-%s.txt' % (tag, get_time_str()))
+    if tag:
+        # fh = logging.FileHandler('./log/%s-%s.txt' % (tag, get_time_str()))
+        fh = logging.FileHandler(f"./log/{tag}-{get_time_str()}.log")
         fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s'))
         fh.setLevel(logging.INFO)
         logger.addHandler(fh)
-    return Logger(logger, './tf_log/logger-%s-%s' % (tag, get_time_str()), log_level)
+    # return Logger(logger, './tf_log/logger-%s-%s' % (tag, get_time_str()), log_level)
+    return Logger(logger, f"./tf_log/logger-{tag}-{get_time_str()}", log_level)
 
 
 class Logger(object):
-    def __init__(self, vanilla_logger, log_dir, log_level=0):
+    def __init__(self, vanilla_logger=None, log_dir=None, log_level=0):
         self.log_level = log_level
         self.writer = None
-        if vanilla_logger is not None:
+        if vanilla_logger:
             self.info = vanilla_logger.info
             self.debug = vanilla_logger.debug
             self.warning = vanilla_logger.warning
