@@ -14,7 +14,8 @@ _NP_TO_CT = {np.float32: ctypes.c_float,
              np.int32: ctypes.c_int32,
              np.int8: ctypes.c_int8,
              np.uint8: ctypes.c_char,
-             np.bool: ctypes.c_bool}
+            #  np.bool: ctypes.c_bool} ## `np.bool` was a deprecated alias for the builtin `bool`
+             bool: ctypes.c_bool}
 
 
 class ShmemVecEnv(VecEnv):
