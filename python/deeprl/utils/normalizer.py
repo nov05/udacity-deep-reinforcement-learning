@@ -90,6 +90,8 @@ class RescaleNormalizer(BaseNormalizer):
     def __call__(self, x):
         if not isinstance(x, torch.Tensor):
             x = np.asarray(x)
+        print(type(x))
+        print(x)
         return self.coef * x
 
 

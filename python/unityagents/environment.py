@@ -104,7 +104,7 @@ class UnityEnvironment(object):
         self._curriculum = Curriculum(curriculum, self._resetParameters)
         logger.info("\n'{0}' started successfully!\n{1}".format(self._academy_name, str(self)))
         if self._num_external_brains == 0:
-            logger.warning(" No External Brains found in the Unity Environment. "
+            logger.warning("No External Brains found in the Unity Environment. "
                            "You will not be able to pass actions to your agent(s).")
 
     @property
