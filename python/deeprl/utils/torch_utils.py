@@ -207,4 +207,4 @@ class Grads:
 
 
 def escape_float(x):
-    return ('%s' % x).replace('.', '\.')
+    return ('%s' % x).replace('.', r'\.')

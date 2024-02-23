@@ -75,7 +75,7 @@ def generate_tag(params):
     if 'tag' in params.keys():
         return
     params.setdefault('run', 0)
-    exclude = ['game', 'run', 'env']
+    exclude = ['game', 'run', 'env_fn', 'is_mlagents']
     str = ['%s_%s' % (k, v if is_plain_type(v) else v.__name__) 
            for k, v in sorted(params.items()) if k not in exclude]
     tag = '%s-%s-run-%d' % (params['game'], '-'.join(str), params['run'])
