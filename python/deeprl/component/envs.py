@@ -154,6 +154,7 @@ class Task:
     def __init__(self,
                  name,
                  num_envs=1,
+                 env=None,
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
@@ -162,7 +163,10 @@ class Task:
             seed = np.random.randint(int(1e9))
         if log_dir is not None:
             mkdir(log_dir)
-        envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
+        if env:
+            envs =[env]
+        else:
+            envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
         if single_process:
             Wrapper = DummyVecEnv
         else:
