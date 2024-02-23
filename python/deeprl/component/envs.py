@@ -158,10 +158,9 @@ class MLAgentsVecEnv(VecEnv):
         env = self.envs[0]
         self.brain_name = env.brain_names[0]
         brain = env.brains[self.brain_name]
-        env_info = env[self.brain_name]
 
         num_envs = len(env_fns)
-        observation_space = env_info.vector_observations
+        observation_space = Box(float('-inf'), float('inf'), (brain.vector_observation_space_size,), np.float64)
         action_space = Box(-1.0, 1.0, (brain.vector_action_space_size,), np.float32)
         VecEnv.__init__(self, num_envs, observation_space, action_space)
         self.actions = None
@@ -204,7 +203,7 @@ class Task:
             mkdir(log_dir)
 
         if env_fn:
-            env_fns = [env_fn for i in range(num_envs)]
+            env_fns = [env_fn for _ in range(num_envs)]
         else:
             env_fns = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
 

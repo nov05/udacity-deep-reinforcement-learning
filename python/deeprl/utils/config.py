@@ -17,6 +17,7 @@ class Config:
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         self.task_fn = None
+        self.is_mlagents = False
         self.optimizer_fn = None
         self.actor_optimizer_fn = None
         self.critic_optimizer_fn = None
