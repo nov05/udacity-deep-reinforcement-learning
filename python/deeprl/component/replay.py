@@ -202,7 +202,7 @@ class ReplayWrapper(mp.Process):
     EXIT = 2
     UPDATE_PRIORITIES = 3
 
-    # def __init__(self, replay_cls, replay_kwargs, async=True):
+    # def __init__(self, replay_cls, replay_kwargs, async=True): ## async became a reserved keyword in Python>=3.7
     def __init__(self, replay_cls, replay_kwargs, non_blocking=True):
         mp.Process.__init__(self)
         self.replay_kwargs = replay_kwargs
