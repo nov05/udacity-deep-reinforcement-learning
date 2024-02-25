@@ -1,9 +1,13 @@
+# import os
+# os.add_dll_directory(r"C:/Users/guido/.mujoco/mjpro150/bin")
+# os.add_dll_directory(r"C:/Users/guido/.mujoco/mujoco-py-1.50.1.68/mujoco_py")
+# os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
 #######################################################################
 # Copyright (C) 2017 Shangtong Zhang(zhangshangtong.cpp@gmail.com)    #
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
-
 # import os
 import gym
 import numpy as np
@@ -24,8 +28,6 @@ from ..utils import *
 #     print(e)
 #     print("You are probably using Windows. Roboschool doesn't work on Windows.")
 #     pass
-
-
 
 import sys
 import warnings
@@ -254,23 +256,21 @@ class Task:
 
 
 if __name__ == '__main__':
-    import time
-    ## num_envs=5 will only create 3 envs and cause error
+
+    ## bug: num_envs=5 will only create 3 envs and cause error
     ## "results = _flatten_list(results)"
     ## in "baselines\baselines\common\vec_env\subproc_vec_env.py"
-    task = Task('Hopper-v2', num_envs=3, single_process=False)
+    task = Task('Hopper-v2', num_envs=3, single_process=True)
     state = task.reset()
+
+    start_time = time.time()
+    for _ in range(20):
+        action = np.random.rand(task.action_space.shape[0])
+        next_state, reward, done, _ = task.step(action)
+        print(done)
+    task.close()
 
     ## This might be helpful for custom env debugging
     # env_dict = gym.envs.registration.registry.env_specs.copy()
     # for item in env_dict.items():
     #     print(item)
-
-    start_time = time.time()
-    while True:
-        action = np.random.rand(task.action_space.shape[0])
-        next_state, reward, done, _ = task.step(action)
-        print(done)
-        if time.time()-start_time > 10: ## run about 10s
-            break  
-    task.close()

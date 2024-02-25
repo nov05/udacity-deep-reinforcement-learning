@@ -4,6 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 
+## local imports
 from deeprl import *
 
 
@@ -559,7 +560,8 @@ def ddpg_continuous(**kwargs):
 
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
-    config.max_steps = int(1e6)  ## 1,000,000
+    # config.max_steps = int(1e6)  ## 1,000,000
+    config.max_steps = int(10000) ## debug
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
 
@@ -618,6 +620,7 @@ def td3_continuous(**kwargs):
 
 
 if __name__ == '__main__':
+
     mkdir('log')
     mkdir('tf_log')
     set_one_thread()

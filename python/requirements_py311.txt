@@ -1,0 +1,12 @@
+tensorflow
+bleach
+matplotlib
+pytest
+pyyaml
+protobuf==3.20.3 
+grpcio
+numpy==1.23.5
+pandas
+scipy
+ipykernel
+jupyter

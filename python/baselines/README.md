@@ -1,4 +1,4 @@
-**Status:** Maintenance (expect bug fixes and minor updates)
+**Status:** Active (under active development, breaking changes may occur)
 
 <img src="data/logo.jpg" width=25% align="right" /> [![Build status](https://travis-ci.org/openai/baselines.svg?branch=master)](https://travis-ci.org/openai/baselines)
 
@@ -39,24 +39,21 @@ To activate a virtualenv:
 More thorough tutorial on virtualenvs and options can be found [here](https://virtualenv.pypa.io/en/stable/) 
 
 
-## Tensorflow versions
-The master branch supports Tensorflow from version 1.4 to 1.14. For Tensorflow 2.0 support, please use tf2 branch.
-
 ## Installation
 - Clone the repo and cd into it:
     ```bash
     git clone https://github.com/openai/baselines.git
     cd baselines
     ```
-- If you don't have TensorFlow installed already, install your favourite flavor of TensorFlow. In most cases, you may use
+- If you don't have TensorFlow installed already, install your favourite flavor of TensorFlow. In most cases, 
     ```bash 
-    pip install tensorflow-gpu==1.14 # if you have a CUDA-compatible gpu and proper drivers
+    pip install tensorflow-gpu # if you have a CUDA-compatible gpu and proper drivers
     ```
     or 
     ```bash
-    pip install tensorflow==1.14
+    pip install tensorflow
     ```
-    to install Tensorflow 1.14, which is the latest version of Tensorflow supported by the master branch. Refer to [TensorFlow installation guide](https://www.tensorflow.org/install/)
+    should be sufficient. Refer to [TensorFlow installation guide](https://www.tensorflow.org/install/)
     for more details. 
 
 - Install baselines package
@@ -153,7 +150,7 @@ respectively. Note that these results may be not on the latest version of the co
 To cite this repository in publications:
 
     @misc{baselines,
-      author = {Dhariwal, Prafulla and Hesse, Christopher and Klimov, Oleg and Nichol, Alex and Plappert, Matthias and Radford, Alec and Schulman, John and Sidor, Szymon and Wu, Yuhuai and Zhokhov, Peter},
+      author = {Dhariwal, Prafulla and Hesse, Christopher and Klimov, Oleg and Nichol, Alex and Plappert, Matthias and Radford, Alec and Schulman, John and Sidor, Szymon and Tan, Zhenyu and Wu, Yuhuai and Zhokhov, Peter},
       title = {OpenAI Baselines},
       year = {2017},
       publisher = {GitHub},

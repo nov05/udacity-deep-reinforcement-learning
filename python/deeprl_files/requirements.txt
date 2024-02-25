@@ -4,12 +4,13 @@
 # gym==0.15.7
 # tensorflow==1.15.0
 # opencv-python==4.0.0.21
+# roboschool==1.0.34
 atari-py
-scikit-image==0.14.2
+# scikit-image==0.14.2  ## for python 3.6
+scikit-image ## for python 3.11
 tqdm
 pandas
 pathlib
 seaborn
-# roboschool==1.0.34
 dm-control2gym
 tensorflow-io
