@@ -1,7 +1,7 @@
 
 👉 setup Python environment  
 
-* [notes for p1 setup]()  
+* [notes for p1 setup](https://gist.github.com/Nov05/bf63ac7e0a2d0f94a635fb3858894cca)  
 * [notes for p2 setup](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be)  
 
 ## **👉 OpenAI Gym's Atari `Pong` pixel game**  

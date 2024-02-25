@@ -26,6 +26,15 @@ from ..utils import *
 #     pass
 
 
+
+import sys
+import warnings
+if not sys.warnoptions:  # allow overriding with `-W` option
+    warnings.filterwarnings('ignore', category=RuntimeWarning, module='runpy')
+gym.logger.set_level(40)   
+
+
+
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
 def make_env(env_id, seed, rank, episode_life=True):
     def _thunk():
@@ -150,7 +159,7 @@ class DummyVecEnv(VecEnv):
         return [env.reset() for env in self.envs]
 
     def close(self):
-        return
+        return [env.close() for env in self.envs]
 
 
 class MLAgentsVecEnv(VecEnv):
@@ -235,20 +244,33 @@ class Task:
         else: 
             self.env.reset()
         
-
     def step(self, actions):
         if isinstance(self.action_space, Box):
             actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return self.env.step(actions)
+    
+    def close(self):
+        return self.env.close()
 
 
 if __name__ == '__main__':
-    task = Task('Hopper-v2', 5, single_process=False)
+    import time
+    ## num_envs=5 will only create 3 envs and cause error
+    ## "results = _flatten_list(results)"
+    ## in "baselines\baselines\common\vec_env\subproc_vec_env.py"
+    task = Task('Hopper-v2', num_envs=3, single_process=False)
     state = task.reset()
+
+    ## This might be helpful for custom env debugging
     # env_dict = gym.envs.registration.registry.env_specs.copy()
     # for item in env_dict.items():
     #     print(item)
+
+    start_time = time.time()
     while True:
-        action = np.random.rand(task.observation_space.shape[0])
+        action = np.random.rand(task.action_space.shape[0])
         next_state, reward, done, _ = task.step(action)
         print(done)
+        if time.time()-start_time > 10: ## run about 10s
+            break  
+    task.close()
