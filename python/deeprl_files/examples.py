@@ -551,7 +551,7 @@ def ppo_pixel(**kwargs):
 
 
 # DDPG
-def ddpg_continuous(**kwargs):
+def ddpg_continuous(**kwargs): 
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     config = Config()
