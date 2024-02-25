@@ -10,7 +10,6 @@ import numpy as np
 # import torch
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
-
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.atari_wrappers import FrameStack as FrameStack_
 from baselines.common.vec_env import VecEnv
@@ -19,10 +18,12 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 ## local imports
 from ..utils import *
 
-try:
-    import roboschool
-except ImportError:
-    pass
+# try:
+#     import roboschool
+# except ImportError as e:
+#     print(e)
+#     print("You are probably using Windows. Roboschool doesn't work on Windows.")
+#     pass
 
 
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
@@ -145,7 +146,7 @@ class DummyVecEnv(VecEnv):
         obs, rew, done, info = zip(*data)
         return obs, np.asarray(rew), np.asarray(done), info
 
-    def reset(self, train_mode=None):
+    def reset(self):
         return [env.reset() for env in self.envs]
 
     def close(self):
@@ -153,14 +154,14 @@ class DummyVecEnv(VecEnv):
 
 
 class MLAgentsVecEnv(VecEnv):
-    def __init__(self, env_fns):
-        self.envs = [fn() for fn in env_fns] ## create envs
+    def __init__(self, env):
+        self.envs = [env] ## env is imported
 
         env = self.envs[0]
         self.brain_name = env.brain_names[0]
         brain = env.brains[self.brain_name]
 
-        num_envs = len(env_fns)
+        num_envs = len(self.envs)
         ## tranlate Unity ML-Agents spaces to gym spaces
         observation_space = Box(float('-inf'), float('inf'), (brain.vector_observation_space_size,), np.float64)
         action_space = Box(-1.0, 1.0, (brain.vector_action_space_size,), np.float32)
@@ -192,32 +193,32 @@ class Task:
     def __init__(self,
                  name,
                  num_envs=1,
-                 env_fn=None, 
+                 env=None, 
                  is_mlagents=False,
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
                  seed=None):
         self.name = name
-        if seed:
+        if not seed:
             seed = np.random.randint(int(1e9))
         if log_dir:
             mkdir(log_dir)
-
-        if env_fn:
-            env_fns = [env_fn for _ in range(num_envs)]
-        else:
+        if not env:
             env_fns = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
 
         if is_mlagents: ## Unity ML-Agents
+            self.is_mlagents = True
             Wrapper = MLAgentsVecEnv
+            self.env = Wrapper(env)
         else:
+            self.is_mlagents = False
             if single_process:
                 Wrapper = DummyVecEnv
             else:
                 Wrapper = SubprocVecEnv
+            self.env = Wrapper(env_fns)
 
-        self.env = Wrapper(env_fns)
         self.observation_space = self.env.observation_space
         self.state_dim = int(np.prod(self.env.observation_space.shape))
         self.action_space = self.env.action_space
@@ -229,7 +230,11 @@ class Task:
             assert 'unknown action space'
         
     def reset(self, train_mode=True):
-        return self.env.reset(train_mode=train_mode)
+        if self.is_mlagents:
+            return self.env.reset(train_mode=train_mode)
+        else: 
+            self.env.reset()
+        
 
     def step(self, actions):
         if isinstance(self.action_space, Box):
@@ -240,6 +245,9 @@ class Task:
 if __name__ == '__main__':
     task = Task('Hopper-v2', 5, single_process=False)
     state = task.reset()
+    # env_dict = gym.envs.registration.registry.env_specs.copy()
+    # for item in env_dict.items():
+    #     print(item)
     while True:
         action = np.random.rand(task.observation_space.shape[0])
         next_state, reward, done, _ = task.step(action)

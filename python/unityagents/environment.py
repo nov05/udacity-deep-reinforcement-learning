@@ -266,9 +266,6 @@ class UnityEnvironment(object):
             s = self._get_state(rl_output)
             self._global_done = s[1]
             for _b in self._external_brain_names:
-                print(_b)
-                print(_b in self._n_agents)
-                print(_b in s[0])
                 self._n_agents[_b] = len(s[0][_b].agents)
             return s[0]
         else:

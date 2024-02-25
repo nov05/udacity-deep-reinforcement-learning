@@ -1,16 +1,16 @@
-tensorflow==1.7.1
+# tensorflow==1.7.1
+bleach==1.5.0
+# torch==0.4.0
 Pillow>=4.2.1
 matplotlib
 numpy>=1.11.0
-jupyter
 pytest>=3.2.2
-condata 
 pyyaml
 # protobuf==3.5.2
 protobuf==3.6.0
 grpcio==1.11.0
-torch==0.4.0
 numpy
 pandas
 scipy
-ipykernel
+# ipykernel
+# jupyter

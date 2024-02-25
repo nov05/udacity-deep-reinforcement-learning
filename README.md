@@ -1,14 +1,16 @@
 
+👉 setup Python environment  
+
+* [notes for p1 setup]()  
+* [notes for p2 setup](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be)  
+
 ## **👉 OpenAI Gym's Atari `Pong` pixel game**  
 
 <img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/20240219_RL-PPO_pong.gif?raw=true" width=500>
 
-* PPO without clipping  
-  https://drive.google.com/file/d/17-HyqTB121RjHvJ03GzY81eGxmmpjY3t  
-  https://github.com/Nov05/Google-Colaboratory/blob/master/20240217_pong_REINFORCE.ipynb   
-* PPO with clipping  
-  https://drive.google.com/file/d/1lAvn0_pPyFBnWJ4HPyXfVBhh7qjPo2gP  
-  https://github.com/Nov05/Google-Colaboratory/blob/master/20240218_pong_PPO.ipynb  
+* notebooks 
+  * PPO without clipping: [Colab](https://drive.google.com/file/d/17-HyqTB121RjHvJ03GzY81eGxmmpjY3t), [GitHub](https://github.com/Nov05/Google-Colaboratory/blob/master/20240217_pong_REINFORCE.ipynb)   
+  * PPO with clipping, [Colab](https://drive.google.com/file/d/1lAvn0_pPyFBnWJ4HPyXfVBhh7qjPo2gP), [GitHub](https://github.com/Nov05/Google-Colaboratory/blob/master/20240218_pong_PPO.ipynb)    
 
 ## **👉 Unity ML-Agents `Banana Collectors` Project Submission**  
 
