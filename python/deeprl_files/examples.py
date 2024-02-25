@@ -4,7 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 
-from deep_rl import *
+from deeprl import *
 
 
 # DQN
@@ -559,7 +559,7 @@ def ddpg_continuous(**kwargs):
 
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
-    config.max_steps = int(1e6)
+    config.max_steps = int(1e6)  ## 1,000,000
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
 
@@ -622,11 +622,11 @@ if __name__ == '__main__':
     mkdir('tf_log')
     set_one_thread()
     random_seed()
-    # -1 is CPU, a positive integer is the index of GPU
-    select_device(-1)
-    # select_device(0)
+    # -1 is CPU, an non-negative integer is the index of GPU
+    # select_device(-1)
+    select_device(0) ## GPU
 
-    game = 'CartPole-v0'
+    # game = 'CartPole-v0'
     # dqn_feature(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True, noisy_linear=True)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
@@ -635,15 +635,16 @@ if __name__ == '__main__':
     # n_step_dqn_feature(game=game)
     # option_critic_feature(game=game)
 
-    game = 'HalfCheetah-v2'
+    # game = 'HalfCheetah-v2'
     # game = 'Hopper-v2'
+    game = 'Reacher-v2'
     # a2c_continuous(game=game)
     # ppo_continuous(game=game)
-    # ddpg_continuous(game=game)
+    ddpg_continuous(game=game)
     # td3_continuous(game=game)
 
-    game = 'BreakoutNoFrameskip-v4'
-    dqn_pixel(game=game, n_step=1, replay_cls=UniformReplay, async_replay=False)
+    # game = 'BreakoutNoFrameskip-v4'
+    # dqn_pixel(game=game, n_step=1, replay_cls=UniformReplay, async_replay=False)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game, async_replay=False)

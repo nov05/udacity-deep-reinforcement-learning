@@ -217,4 +217,3 @@ class Plotter:
             best_ids.append(best)
             new_patterns.append(ps[best])
         return dict(patterns=new_patterns, ids=best_ids)
-

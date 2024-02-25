@@ -242,7 +242,7 @@ class Task:
         if self.is_mlagents:
             return self.env.reset(train_mode=train_mode)
         else: 
-            self.env.reset()
+            return self.env.reset()
         
     def step(self, actions):
         if isinstance(self.action_space, Box):

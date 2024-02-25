@@ -49,9 +49,9 @@ def huber(x, k=1.0):
 
 
 def epsilon_greedy(epsilon, x):
-    if len(x.shape) == 1:
+    if len(x.shape)==1:
         return np.random.randint(len(x)) if np.random.rand() < epsilon else np.argmax(x)
-    elif len(x.shape) == 2:
+    elif len(x.shape)==2:
         random_actions = np.random.randint(x.shape[1], size=x.shape[0])
         greedy_actions = np.argmax(x, axis=-1)
         dice = np.random.rand(x.shape[0])

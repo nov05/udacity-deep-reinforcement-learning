@@ -38,18 +38,20 @@ class BaseAgent:
 
     def eval_episode(self):
         env = self.config.eval_env
-        state = env.reset(train_mode=False)
+        state = env.reset()
+        if not state:
+            raise Exception("\"state\" is None")
         while True:
             action = self.eval_step(state)
-            state, reward, done, info = env.step(action)
+            _, _, _, info = env.step(action) ## next_state, reward, done, info
             ret = info[0]['episodic_return']
-            if ret is not None:
+            if ret:
                 break
         return ret
 
     def eval_episodes(self):
         episodic_returns = []
-        for ep in range(self.config.eval_episodes):
+        for _ in range(self.config.eval_episodes):
             total_rewards = self.eval_episode()
             episodic_returns.append(np.sum(total_rewards))
         self.logger.info('steps %d, episodic_return_test %.2f(%.2f)' % (

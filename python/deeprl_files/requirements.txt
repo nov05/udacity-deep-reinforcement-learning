@@ -11,3 +11,5 @@ pandas
 pathlib
 seaborn
 # roboschool==1.0.34
+dm-control2gym
+tensorflow-io

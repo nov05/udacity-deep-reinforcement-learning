@@ -7,7 +7,7 @@
 from ..network import *
 from ..component import *
 from .BaseAgent import *
-import torchvision
+# import torchvision
 
 
 class DDPGAgent(BaseAgent):
@@ -30,6 +30,8 @@ class DDPGAgent(BaseAgent):
                                param * self.config.target_network_mix)
 
     def eval_step(self, state):
+        if not state:
+            raise Exception("\"state\" is None")
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(state)
         action = self.network(state)
