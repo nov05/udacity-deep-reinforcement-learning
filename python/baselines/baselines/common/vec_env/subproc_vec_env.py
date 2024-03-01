@@ -1,5 +1,4 @@
 import multiprocessing as mp
-
 import numpy as np
 from .vec_env import VecEnv, CloudpickleWrapper, clear_mpi_env_vars
 
@@ -50,15 +49,17 @@ class SubprocVecEnv(VecEnv):
         ctx = mp.get_context(context)
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(nenvs)])
         self.ps = [ctx.Process(target=worker, args=(work_remote, remote, CloudpickleWrapper(env_fn)))
-                   for (work_remote, remote, env_fn) in zip(self.work_remotes, self.remotes, env_fns)]
+                for (work_remote, remote, env_fn) in zip(self.work_remotes, self.remotes, env_fns)]
         for p in self.ps:
             p.daemon = True  # if the main process crashes, we should not cause things to hang
             with clear_mpi_env_vars():
                 p.start()
         for remote in self.work_remotes:
             remote.close()
-
         self.remotes[0].send(('get_spaces_spec', None))
+        import sys, time
+        sys.stdout.flush()
+        time.sleep(1)
         observation_space, action_space, self.spec = self.remotes[0].recv()
         self.viewer = None
         VecEnv.__init__(self, len(env_fns), observation_space, action_space)

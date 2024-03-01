@@ -136,7 +136,8 @@ class FrameStack(FrameStack_):
         return LazyFrames(list(self.frames))
 
 
-# The original one in baselines is really bad
+## The original one in baselines is really bad
+## baselines\baselines\common\vec_env\dummy_vec_env.py    
 class DummyVecEnv(VecEnv):
     def __init__(self, env_fns):
         self.envs = [fn() for fn in env_fns]
@@ -150,23 +151,26 @@ class DummyVecEnv(VecEnv):
     def step_wait(self):
         data = []
         for i in range(self.num_envs):
-            obs, rew, done, info = self.envs[i].step(self.actions[i])
+            ## info e.g. {'episodic_return': None}
+            obsv, revw, done, info = self.envs[i].step(self.actions[i])
             if done:
-                obs = self.envs[i].reset()
-            data.append([obs, rew, done, info])
-        obs, rew, done, info = zip(*data)
-        return obs, np.asarray(rew), np.asarray(done), info
+                obsv = self.envs[i].reset()
+            data.append([obsv, revw, done, info])
+        obsvs, revws, dones, infos = zip(*data)
+        return obsvs, np.asarray(revws), np.asarray(dones), infos
 
     def reset(self):
+        ## reset all envs, and return next_states
         return [env.reset() for env in self.envs]
 
     def close(self):
-        return [env.close() for env in self.envs]
+        ## close all envs
+        [env.close() for env in self.envs] 
 
 
 class MLAgentsVecEnv(VecEnv):
     def __init__(self, env):
-        self.envs = [env] ## env is imported
+        self.envs = [env] ## one env is imported in this case
 
         env = self.envs[0]
         self.brain_name = env.brain_names[0]
@@ -186,12 +190,12 @@ class MLAgentsVecEnv(VecEnv):
         data = []
         for i in range(self.num_envs):
             env_info = self.envs[i].step(self.actions[i])[self.brain_name] 
-            obs, rew, done, info = env_info.vector_observations, env_info.rewards, env_info.local_done, None
+            obsv, revw, done, info = env_info.vector_observations, env_info.rewards, env_info.local_done, None
             if done:
-                obs = self.envs[i].reset()
-            data.append([obs, rew, done, info])
-        obs, rew, done, info = zip(*data)
-        return obs, np.asarray(rew), np.asarray(done), info
+                obsv = self.envs[i].reset()
+            data.append([obsv, revw, done, info])
+        obsvs, revws, dones, infos = zip(*data)
+        return obsvs, np.asarray(revws), np.asarray(dones), infos
 
     def reset(self, train_mode=True):
         return [env.reset(train_mode=train_mode) for env in self.envs]
@@ -221,18 +225,19 @@ class Task:
         if is_mlagents: ## Unity ML-Agents
             self.is_mlagents = True
             Wrapper = MLAgentsVecEnv
-            self.env = Wrapper(env)
+            self.envs_wrapper = Wrapper([env])
         else:
             self.is_mlagents = False
             if single_process:
                 Wrapper = DummyVecEnv
             else:
                 Wrapper = SubprocVecEnv
-            self.env = Wrapper(env_fns)
-
-        self.observation_space = self.env.observation_space
-        self.state_dim = int(np.prod(self.env.observation_space.shape))
-        self.action_space = self.env.action_space
+            self.envs_wrapper = Wrapper(env_fns)
+            
+        env0 = self.envs_wrapper.envs[0]
+        self.observation_space = env0.observation_space
+        self.state_dim = int(np.prod(env0.observation_space.shape))
+        self.action_space = env0.action_space
         if isinstance(self.action_space, Discrete):
             self.action_dim = self.action_space.n
         elif isinstance(self.action_space, Box):
@@ -242,32 +247,28 @@ class Task:
         
     def reset(self, train_mode=True):
         if self.is_mlagents:
-            return self.env.reset(train_mode=train_mode)
+            return self.envs_wrapper.reset(train_mode=train_mode)
         else: 
-            return self.env.reset()
+            return self.envs_wrapper.reset()
         
     def step(self, actions):
         if isinstance(self.action_space, Box):
             actions = np.clip(actions, self.action_space.low, self.action_space.high)
-        return self.env.step(actions)
+        return self.envs_wrapper.step(actions)
     
     def close(self):
-        return self.env.close()
+        return self.envs_wrapper.close()
 
 
+## nov05
 if __name__ == '__main__':
 
-    ## bug: num_envs=5 will only create 3 envs and cause error
-    ## "results = _flatten_list(results)"
-    ## in "baselines\baselines\common\vec_env\subproc_vec_env.py"
-    task = Task('Hopper-v2', num_envs=3, single_process=True)
+    task = Task('Hopper-v2', num_envs=10, single_process=True)
     state = task.reset()
-
-    start_time = time.time()
-    for _ in range(20):
-        action = np.random.rand(task.action_space.shape[0])
-        next_state, reward, done, _ = task.step(action)
-        print(done)
+    for _ in range(4):
+        actions = [np.random.rand(task.action_space.shape[0])] * len(task.envs_wrapper.envs)
+        _, _, dones, _ = task.step(actions)
+        print(dones)
     task.close()
 
     ## This might be helpful for custom env debugging

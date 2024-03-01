@@ -137,6 +137,7 @@ class VecEnv(ABC):
             self.viewer = rendering.SimpleImageViewer()
         return self.viewer
 
+
 class VecEnvWrapper(VecEnv):
     """
     An environment wrapper that applies to an entire batch

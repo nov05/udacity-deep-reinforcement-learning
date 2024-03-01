@@ -92,10 +92,10 @@ class BaseAgent:
         while True:
             self.record_obs(env, dir, steps)
             action = self.record_step(state)
-            state, reward, done, info = env.step(action)
+            state, _, _, info = env.step(action) ## state, reward, done, info
             ret = info[0]['episodic_return']
             steps += 1
-            if ret is not None:
+            if ret:
                 break
 
     def record_step(self, state):

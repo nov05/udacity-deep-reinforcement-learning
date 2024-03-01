@@ -561,7 +561,7 @@ def ddpg_continuous(**kwargs):
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
     # config.max_steps = int(1e6)  ## 1,000,000
-    config.max_steps = int(10000) ## debug
+    config.max_steps = int(10) ## debug
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
 
