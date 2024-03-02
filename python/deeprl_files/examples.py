@@ -621,6 +621,8 @@ def td3_continuous(**kwargs):
 
 if __name__ == '__main__':
 
+    ## in the dir "./python", run "python -m deeprl_files.examples"
+    
     mkdir('log')
     mkdir('tf_log')
     set_one_thread()
@@ -655,3 +657,5 @@ if __name__ == '__main__':
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)
     # ppo_pixel(game=game)
+
+    
