@@ -234,10 +234,9 @@ class Task:
                 Wrapper = SubprocVecEnv
             self.envs_wrapper = Wrapper(env_fns)
             
-        env0 = self.envs_wrapper.envs[0]
-        self.observation_space = env0.observation_space
-        self.state_dim = int(np.prod(env0.observation_space.shape))
-        self.action_space = env0.action_space
+        self.observation_space = self.envs_wrapper.observation_space
+        self.state_dim = int(np.prod(self.observation_space.shape))
+        self.action_space = self.envs_wrapper.action_space
         if isinstance(self.action_space, Discrete):
             self.action_dim = self.action_space.n
         elif isinstance(self.action_space, Box):
@@ -263,12 +262,14 @@ class Task:
 ## nov05
 if __name__ == '__main__':
 
-    task = Task('Hopper-v2', num_envs=10, single_process=True)
+    ## in the dir "./python", run "python -m deeprl.component.envs" in terminal
+    task = Task('Hopper-v2', num_envs=10, single_process=True) ## multiprocessing doesn't work in Windows
     state = task.reset()
-    for _ in range(4):
-        actions = [np.random.rand(task.action_space.shape[0])] * len(task.envs_wrapper.envs)
+    for _ in range(100):
+        actions = [np.random.rand(task.action_space.shape[0])] * task.envs_wrapper.num_envs
         _, _, dones, _ = task.step(actions)
-        print(dones)
+        if np.sum(dones):
+            print(dones)
     task.close()
 
     ## This might be helpful for custom env debugging
