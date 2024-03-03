@@ -169,8 +169,8 @@ class DummyVecEnv(VecEnv):
 
 
 class MLAgentsVecEnv(VecEnv):
-    def __init__(self, env, train_mode=False):
-        self.envs = [env] ## one env is imported in this case
+    def __init__(self, envs, train_mode=False):
+        self.envs = envs ## one env is imported in this case
         self.train_mode = train_mode
 
         self.brain_name = env.brain_names[0]
@@ -214,25 +214,27 @@ class Task:
     def __init__(self,
                  name,
                  num_envs=1,
-                 env=None, ## pass a pre-created env
+                 envs=None, ## pass pre-created envs
                  is_mlagents=False,
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
                  seed=None):
         self.name = name
-        self.num_envs = num_envs
         self.is_mlagents = is_mlagents
 
         if not seed:
             seed = np.random.randint(int(1e9))
         if log_dir:
             mkdir(log_dir)
-        if not env:
+        if env:
+            self.num_envs = len(envs)
+        else:
+            self.num_envs = num_envs
             env_fns = [make_env(name, seed, i, episode_life) for i in range(self.num_envs)]
 
         if is_mlagents: ## Unity ML-Agents
-            self.envs_wrapper = MLAgentsVecEnv(env)
+            self.envs_wrapper = MLAgentsVecEnv(envs)
         else:
             if single_process:
                 Wrapper = DummyVecEnv
@@ -273,9 +275,11 @@ class Task:
 
 ## nov05, in the dir "./python", run "python -m deeprl.component.envs" in terminal
 import pandas as pd
+from unityagents import UnityEnvironment
 if __name__ == '__main__':
 
     option = '11' ## 0, 10, 11
+
     if option[0]=='0':
         task = Task('Hopper-v2', num_envs=10, single_process=True) ## multiprocessing doesn't work in Windows
         state = task.reset()
@@ -286,8 +290,7 @@ if __name__ == '__main__':
                 print(dones)
         task.close()
 
-    elif option[0]=='1':
-        from unityagents import UnityEnvironment
+    elif option[0]=='1': ## one unity env, with graphics
         # file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
         file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
         env = UnityEnvironment(file_name=file_name, no_graphics=False)
@@ -313,10 +316,10 @@ if __name__ == '__main__':
             print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
             env.close()
 
-        elif option[1]=='1':
+        elif option[1]=='1': ## one unity env
             num_envs, env_id = 1, 0
             task = Task('Reacher-v2', num_envs=num_envs, 
-                        env=env, is_mlagents=True, single_process=True)
+                        envs=[env], is_mlagents=True, single_process=True)
             scores = np.zeros(task.envs_wrapper.num_agents) 
             for i in range(10000):
                 actions = [np.random.randn(task.envs_wrapper.num_agents, task.action_space.shape[0])] * task.num_envs
@@ -330,3 +333,33 @@ if __name__ == '__main__':
                     break
             print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
             task.close()
+
+    elif option[0]=='2':  ## unsuccessful
+        num_envs = 2
+        # file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
+        file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
+        envs = []
+        for i in range(num_envs):
+            env = UnityEnvironment(file_name=file_name,
+                                   worker_id=i, no_graphics=True)
+            envs.append(env)
+        print("finished creation of envs")
+        task = Task('Reacher-v2', envs=envs, is_mlagents=True, single_process=True) ;print("finished creation of task")
+        scores = np.zeros(task.num_envs, task.envs_wrapper.num_agents) 
+        for i in range(10000):
+            print(i)
+            break_ = False
+            actions = [np.random.randn(task.envs_wrapper.num_agents, task.action_space.shape[0])] * task.num_envs
+            _, rewards, dones, infos = task.step(actions)
+            scores += rewards
+            for env_id in range(task.num_envs):
+                if np.any(rewards[env_id]):
+                    print("env id:", env_id)
+                    print(pd.DataFrame([rewards[env_id], scores[env_id]], index=['rewards','scores']))
+                if np.any(dones[env_id]): ## if any agent finishes an episode
+                    print("env id:", env_id)
+                    print("An agent finished an episode!")
+                    print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores[env_id])))
+                    break_ = True
+            if break_: break
+        task.close()
