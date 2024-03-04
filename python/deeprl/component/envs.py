@@ -19,7 +19,7 @@ from ..utils import *
 
 import platform
 if platform.system()!='Windows':
-    ## windows will cause error:
+    ## windows will cause error when importing roboschool  
     ## gym.error.Error: Cannot re-register id: RoboschoolInvertedPendulum-v1
     try:
         import roboschool
