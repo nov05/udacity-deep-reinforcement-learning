@@ -17,10 +17,10 @@ class Config:
     PRIORITIZED_REPLAY = 'prioritized_replay'
 
     def __init__(self):
+        self.game = None
         self.parser = argparse.ArgumentParser()
         self.task_fn = None
         self.tasks = None
-        self.is_mlagents = False
         self.optimizer_fn = None
         self.actor_optimizer_fn = None
         self.critic_optimizer_fn = None

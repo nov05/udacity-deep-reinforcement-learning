@@ -3,6 +3,8 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
+## changed by nov05, 20240304
+
 # import os
 import gym
 import numpy as np
@@ -35,37 +37,56 @@ if not sys.warnoptions:  # allow overriding with `-W` option
 gym.logger.set_level(40)   
 
 
+## added by nov05
+import dm_control2gym
+from unityagents import UnityEnvironment
+env_types = {'dm', 'atari', 'gym', 'unity'}
+env_fn_mappings = {'dm': dm_control2gym.make,
+                   'atari': make_atari,
+                   'gym': gym.make,
+                   'unity': UnityEnvironment,}
 
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
-def make_env(env_id, seed, rank, episode_life=True):
-    def _thunk():
-        random_seed(seed)
-        if env_id.startswith("dm"):
-            import dm_control2gym
-            _, domain, task = env_id.split('-')
-            env = dm_control2gym.make(domain_name=domain, task_name=task)
-        else:
-            env = gym.make(env_id)
-        is_atari = hasattr(gym.envs, 'atari') and isinstance(
-            env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
-        if is_atari:
-            env = make_atari(env_id)
-        env.seed(seed + rank)
-        env = OriginalReturnWrapper(env)
-        if is_atari:
-            env = wrap_deepmind(env,
-                                episode_life=episode_life,
-                                clip_rewards=False,
-                                frame_stack=False,
-                                scale=False)
-            obs_shape = env.observation_space.shape
+## refactored by nov05
+def get_env_fn(game, ## could be called "id", "env_id" in other functions
+               env_fn_kwargs = None,
+               seed=None, 
+               rank=None, 
+               episode_life=True):
+    random_seed(seed)
+
+    ## get env type
+    env_type, kwargs = None, {}
+    if game.startswith("unity"):
+        env_type = 'unity'
+        kwargs = env_fn_kwargs
+    elif game.startswith("dm"):
+        env_type = 'dm'
+        _, domain, task = game.split('-')
+        kwargs = {'domain_name': domain, 'task_name': task}
+    elif hasattr(gym.envs, 'atari') and \
+        isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv):
+        env_type = 'atari'
+        kwargs = {'env_id':game}
+    else:
+        env_type = 'gym'
+        kwargs = {'id':game}
+    env_fn = env_fn_mappings[env_type](**kwargs)
+
+    if env_type!='unity':
+        env_fn.seed(seed + rank)
+        env_fn = OriginalReturnWrapper(env_fn)
+        if env_type=='atari':
+            env_fn = wrap_deepmind(env_fn,
+                                   episode_life=episode_life,
+                                   clip_rewards=False,
+                                   frame_stack=False,
+                                   scale=False)
+            obs_shape = env_fn.observation_space.shape
             if len(obs_shape)==3:
-                env = TransposeImage(env)
-            env = FrameStack(env, 4)
-
-        return env
-
-    return _thunk
+               env_fn = TransposeImage(env_fn)
+            env_fn = FrameStack(env_fn, 4)
+    return lambda: env_fn, env_type
 
 
 class OriginalReturnWrapper(gym.Wrapper):
@@ -167,12 +188,15 @@ class DummyVecEnv(VecEnv):
         [env.close() for env in self.envs] 
 
 
-class MLAgentsVecEnv(VecEnv):
-    def __init__(self, envs, train_mode=False):
-        self.envs = envs ## envs are the same type
+class UnityVecEnv(VecEnv):
+    def __init__(self, envs=None, env_fns=None, train_mode=False):
+        if envs:
+            self.envs = envs ## envs are the same type
+        else:
+            self.envs = [fn() for fn in env_fns]
         self.train_mode = train_mode
         
-        env = envs[0]
+        env = self.envs[0]
         self.brain_name = env.brain_names[0]
         brain = env.brains[self.brain_name]
         self.action_size = brain.vector_action_space_size
@@ -184,7 +208,7 @@ class MLAgentsVecEnv(VecEnv):
         VecEnv.__init__(self, self.num_envs, observation_space, action_space)
         
         ## reset envs
-        info = [env.reset(train_mode=train_mode)[self.brain_name] for env in envs][0] 
+        info = [env.reset(train_mode=train_mode)[self.brain_name] for env in self.envs][0] 
         self.num_agents = len(info.agents)
         self.actions = None
 
@@ -214,35 +238,56 @@ class MLAgentsVecEnv(VecEnv):
 
 class Task:
     def __init__(self,
-                 name,
+                 game, ## gym or unity game, called "id" or "env_id" in other funcs
                  num_envs=1,
-                 envs=None, ## pass pre-created envs
-                 is_mlagents=False,
+                 env_fn_kwargs=None,
+                 envs=None, ## pre-created envs
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
                  seed=None):
-        self.name = name
-        self.is_mlagents = is_mlagents
-
+        self.game = game
+        self.num_envs = num_envs
+        self.env_fn_kwargs = env_fn_kwargs
+        self.envs = envs
+        self.single_process = single_process
+        self.log_dir = log_dir
+        self.episode_life = episode_life
+        self.seed = seed
+        
         if not seed:
             seed = np.random.randint(int(1e9))
         if log_dir:
             mkdir(log_dir)
+
+        ## get env_fns
+        self.env_type = None
         if envs:
             self.num_envs = len(envs)
+            if isinstance(envs[0], UnityEnvironment):
+                self.env_type = 'unity'
         else:
             self.num_envs = num_envs
-            env_fns = [make_env(name, seed, i, episode_life) for i in range(self.num_envs)]
+            self.env_fns, env_types = zip(*[get_env_fn(game, env_fn_kwargs=env_fn_kwargs, 
+                                                       seed=seed, rank=i, 
+                                                       episode_life=episode_life) for i in range(self.num_envs)])
+            self.env_type = env_types[0]
 
-        if is_mlagents: ## Unity ML-Agents
-            self.envs_wrapper = MLAgentsVecEnv(envs)
+        ## create envs
+        Wrapper, wrapper_kwargs = None, None
+        if self.env_type=='unity':
+            Wrapper = UnityVecEnv
+            if self.envs:
+                wrapper_kwargs = {'envs': self.envs}
+            else:
+                wrapper_kwargs = {'env_fns': self.env_fns}
         else:
             if single_process:
                 Wrapper = DummyVecEnv
             else:
                 Wrapper = SubprocVecEnv
-            self.envs_wrapper = Wrapper(env_fns)
+            wrapper_kwargs = {'env_fns': self.env_fns}
+        self.envs_wrapper = Wrapper(**wrapper_kwargs)
             
         self.observation_space = self.envs_wrapper.observation_space
         self.state_dim = int(np.prod(self.observation_space.shape))
@@ -255,7 +300,7 @@ class Task:
             assert 'unknown action space'
         
     def reset(self, train_mode=False):
-        if self.is_mlagents:
+        if self.env_type=='unity':
             return self.envs_wrapper.reset(train_mode=train_mode)
         else: 
             return self.envs_wrapper.reset()
@@ -275,29 +320,43 @@ class Task:
     #     print(item)
 
 
-## nov05, in the dir "./python", run "python -m deeprl.component.envs" in terminal
+#######################################################################
+##    
+##  test the above functions here
+##    
+#######################################################################
+## nov05, in the dir "./python"
+## run "python -m deeprl.component.envs" in terminal
+    
 import pandas as pd
-from unityagents import UnityEnvironment
+import getopt
+
 if __name__ == '__main__':
 
-    option = '11' ## 0, 10, 11
+    ## 0:gym fn+deeprl, 1:unity, 2:unity env+deeprl, 3:unity fn+deeprl
+    # option, max_steps = 0, 100
+    # option, max_steps = 1, 10
+    # option, max_steps = 2, 10000
+    option, max_steps = 3, 10000
 
-    if option[0]=='0':
+    if option==0:
         task = Task('Hopper-v2', num_envs=10, single_process=True) ## multiprocessing doesn't work in Windows
         state = task.reset()
-        for _ in range(100):
+        for _ in range(max_steps):
             actions = [np.random.rand(task.action_space.shape[0])] * task.num_envs
             _, _, dones, _ = task.step(actions)
             if np.any(dones):
                 print(dones)
         task.close()
 
-    elif option[0]=='1': ## one unity env, with graphics
-        # file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
-        file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
-        env = UnityEnvironment(file_name=file_name, no_graphics=False)
+    elif option in [1,2,3]: ## one unity env, with graphics
+        # env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
+        env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
 
-        if option[1]=='0':
+        if option in [1,2]:
+            env = UnityEnvironment(file_name=env_file_name, no_graphics=False)
+
+        if option==1:
             brain_name = env.brain_names[0]
             brain = env.brains[brain_name]
             env_info = env.reset(train_mode=False)[brain_name]     # reset the environment 
@@ -305,7 +364,7 @@ if __name__ == '__main__':
             action_size = brain.vector_action_space_size
             states = env_info.vector_observations                  # get the current state (for each agent)
             scores = np.zeros(num_agents)                          # initialize the score (for each agent)
-            while True:
+            for _ in range(max_steps):
                 actions = np.random.randn(num_agents, action_size) # select an action (for each agent)
                 actions = np.clip(actions, -1, 1)                  # all actions between -1 and 1
                 env_info = env.step(actions)[brain_name]           # send all actions to tne environment
@@ -318,12 +377,16 @@ if __name__ == '__main__':
             print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
             env.close()
 
-        elif option[1]=='1': ## one unity env
-            num_envs, env_id = 1, 0
-            task = Task('Reacher-v2', num_envs=num_envs, 
-                        envs=[env], is_mlagents=True, single_process=True)
+        elif option in [2,3]:
+            if option==2: ## one unity env + deeprl
+                task = Task('unity-Reacher-v2', envs=[env], single_process=True)
+            elif option==3:
+                env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': False}
+                task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=True)
+
             scores = np.zeros(task.envs_wrapper.num_agents) 
-            for i in range(10000):
+            env_id = 0
+            for i in range(max_steps):
                 actions = [np.random.randn(task.envs_wrapper.num_agents, task.action_space.shape[0])] * task.num_envs
                 _, rewards, dones, infos = task.step(actions)
                 scores += rewards[env_id]
@@ -335,6 +398,3 @@ if __name__ == '__main__':
                     break
             print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
             task.close()
-
-    elif option[0]=='2': 
-        pass

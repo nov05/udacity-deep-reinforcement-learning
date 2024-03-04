@@ -560,8 +560,7 @@ def ddpg_continuous(**kwargs):
 
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
-    # config.max_steps = int(1e6)  ## 1,000,000
-    config.max_steps = int(10) ## debug
+    config.max_steps = 10 #int(1e6)  ## 1,000,000
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
 
@@ -619,9 +618,9 @@ def td3_continuous(**kwargs):
     run_steps(TD3Agent(config))
 
 
-if __name__ == '__main__':
 
-    ## in the dir "./python", run "python -m deeprl_files.examples" in terminal
+## in the dir "./python", run "python -m deeprl_files.examples" in terminal
+if __name__ == '__main__':
     
     mkdir('log')
     mkdir('tf_log')

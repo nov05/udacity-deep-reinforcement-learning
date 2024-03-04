@@ -6,7 +6,7 @@ from baselines.common import plot_util as pu
 
 ## run "python -m experiments.baselines_log" in terminal
 if __name__ == '__main__':
-    results = pu.load_results('log\openai-2024-03-04-07-02-07-154853') 
+    results = pu.load_results(r'log\bak_openai-2024-03-04-07-02-07-154853') 
 
     r = results[0]
     plt.plot(np.cumsum(r.monitor.l), r.monitor.r)
