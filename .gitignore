@@ -105,6 +105,6 @@ ENV/
 
 ## unity mlagents builds
 data/
-log/*log  
+log/*.log  
 log/openai*
-tf_log/logger*  
+tf_log/logger*

@@ -378,8 +378,9 @@ if __name__ == '__main__':
             env.close()
 
         elif option in [2,3]:
+            ## add "unity-" in front of the game name, or it will be considered as the gym version 
             if option==2: ## one unity env + deeprl
-                task = Task('unity-Reacher-v2', envs=[env], single_process=True)
+                task = Task('unity-Reacher-v2', envs=[env], single_process=True) 
             elif option==3:
                 env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': False}
                 task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=True)

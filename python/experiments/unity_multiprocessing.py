@@ -8,14 +8,13 @@ from deeprl import *
 if __name__ == '__main__':
 
     # file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
-    file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
-    env = UnityEnvironment(file_name=file_name, no_graphics=False)
-    print("Is env an instance of UnityEnvironment?", isinstance(env, UnityEnvironment))
+    env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
+    env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': True}
+    task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=True)
 
-    task = Task('Reacher-v2', envs=[env], single_process=True)
     scores = np.zeros(task.envs_wrapper.num_agents) 
     env_id = 0
-    for i in range(10):
+    for i in range(10000):
         actions = [np.random.randn(task.envs_wrapper.num_agents, task.action_space.shape[0])] * task.num_envs
         _, rewards, dones, infos = task.step(actions)
         scores += rewards[env_id]
