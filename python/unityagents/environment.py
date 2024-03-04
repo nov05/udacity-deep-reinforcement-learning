@@ -17,7 +17,6 @@ from communicator_objects import UnityRLInput, UnityRLOutput, AgentActionProto,\
 from .rpc_communicator import RpcCommunicator
 from .socket_communicator import SocketCommunicator
 
-
 from sys import platform
 from PIL import Image
 
@@ -171,12 +170,14 @@ class UnityEnvironment(object):
                 candidates = glob.glob(os.path.join(file_name + '.app', 'Contents', 'MacOS', '*'))
             if len(candidates) > 0:
                 launch_string = candidates[0]
+
         elif platform == 'win32':
             candidates = glob.glob(os.path.join(cwd, file_name + '.exe'))
             if len(candidates) == 0:
                 candidates = glob.glob(file_name + '.exe')
             if len(candidates) > 0:
                 launch_string = candidates[0]
+
         if launch_string is None:
             self._close()
             raise UnityEnvironmentException("Couldn't launch the {0} environment. "

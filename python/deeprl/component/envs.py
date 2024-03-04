@@ -1,8 +1,3 @@
-# import os
-# os.add_dll_directory(r"C:/Users/guido/.mujoco/mjpro150/bin")
-# os.add_dll_directory(r"C:/Users/guido/.mujoco/mujoco-py-1.50.1.68/mujoco_py")
-# os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-
 #######################################################################
 # Copyright (C) 2017 Shangtong Zhang(zhangshangtong.cpp@gmail.com)    #
 # Permission given to modify the code as long as you keep this        #
@@ -22,12 +17,16 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 ## local imports
 from ..utils import *
 
-# try:
-#     import roboschool
-# except ImportError as e:
-#     print(e)
-#     print("You are probably using Windows. Roboschool doesn't work on Windows.")
-#     pass
+import platform
+if platform.system()!='Windows':
+    ## windows will cause error:
+    ## gym.error.Error: Cannot re-register id: RoboschoolInvertedPendulum-v1
+    try:
+        import roboschool
+        print("roboschool", roboschool.__version__)
+    except ImportError as e:
+        print(e)
+        pass
 
 import sys
 import warnings
@@ -140,7 +139,7 @@ class FrameStack(FrameStack_):
 ## baselines\baselines\common\vec_env\dummy_vec_env.py    
 class DummyVecEnv(VecEnv):
     def __init__(self, env_fns):
-        self.envs = [fn() for fn in env_fns]
+        self.envs = [fn() for fn in env_fns] ## create envs
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
         self.actions = None
@@ -170,21 +169,24 @@ class DummyVecEnv(VecEnv):
 
 class MLAgentsVecEnv(VecEnv):
     def __init__(self, envs, train_mode=False):
-        self.envs = envs ## one env is imported in this case
+        self.envs = envs ## envs are the same type
         self.train_mode = train_mode
-
+        
+        env = envs[0]
         self.brain_name = env.brain_names[0]
         brain = env.brains[self.brain_name]
         self.action_size = brain.vector_action_space_size
-        info = env.reset(train_mode=train_mode)[self.brain_name] ## reset env
-        self.num_agents = len(info.agents)
-        self.actions = None
 
         self.num_envs = len(self.envs)
         ## tranlate Unity ML-Agents spaces to gym spaces for VecEnv compatibility 
         observation_space = Box(float('-inf'), float('inf'), (brain.vector_observation_space_size,), np.float64)
         action_space = Box(-1.0, 1.0, (brain.vector_action_space_size,), np.float32)
         VecEnv.__init__(self, self.num_envs, observation_space, action_space)
+        
+        ## reset envs
+        info = [env.reset(train_mode=train_mode)[self.brain_name] for env in envs][0] 
+        self.num_agents = len(info.agents)
+        self.actions = None
 
     def step_async(self, actions): ## VecEnv downward func
         self.actions = actions
@@ -227,7 +229,7 @@ class Task:
             seed = np.random.randint(int(1e9))
         if log_dir:
             mkdir(log_dir)
-        if env:
+        if envs:
             self.num_envs = len(envs)
         else:
             self.num_envs = num_envs
@@ -334,32 +336,5 @@ if __name__ == '__main__':
             print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
             task.close()
 
-    elif option[0]=='2':  ## unsuccessful
-        num_envs = 2
-        # file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
-        file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
-        envs = []
-        for i in range(num_envs):
-            env = UnityEnvironment(file_name=file_name,
-                                   worker_id=i, no_graphics=True)
-            envs.append(env)
-        print("finished creation of envs")
-        task = Task('Reacher-v2', envs=envs, is_mlagents=True, single_process=True) ;print("finished creation of task")
-        scores = np.zeros(task.num_envs, task.envs_wrapper.num_agents) 
-        for i in range(10000):
-            print(i)
-            break_ = False
-            actions = [np.random.randn(task.envs_wrapper.num_agents, task.action_space.shape[0])] * task.num_envs
-            _, rewards, dones, infos = task.step(actions)
-            scores += rewards
-            for env_id in range(task.num_envs):
-                if np.any(rewards[env_id]):
-                    print("env id:", env_id)
-                    print(pd.DataFrame([rewards[env_id], scores[env_id]], index=['rewards','scores']))
-                if np.any(dones[env_id]): ## if any agent finishes an episode
-                    print("env id:", env_id)
-                    print("An agent finished an episode!")
-                    print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores[env_id])))
-                    break_ = True
-            if break_: break
-        task.close()
+    elif option[0]=='2': 
+        pass
