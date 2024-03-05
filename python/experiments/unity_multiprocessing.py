@@ -10,7 +10,7 @@ if __name__ == '__main__':
     # file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
     env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
     env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': True}
-    task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=True)
+    task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=False)
 
     scores = np.zeros(task.envs_wrapper.num_agents) 
     env_id = 0

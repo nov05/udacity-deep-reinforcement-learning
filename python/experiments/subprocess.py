@@ -1,6 +1,4 @@
 import subprocess
-## local imports
-from deeprl import *
 
 ## check this post. https://www.datacamp.com/tutorial/python-subprocess  
 

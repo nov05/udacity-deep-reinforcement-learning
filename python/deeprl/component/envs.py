@@ -56,37 +56,37 @@ def get_env_fn(game, ## could be called "id", "env_id" in other functions
     random_seed(seed)
 
     ## get env type
-    env_type, kwargs = None, {}
+    env_type, kwargs = None, dict()
     if game.startswith("unity"):
         env_type = 'unity'
-        kwargs = env_fn_kwargs
+        kwargs.update(env_fn_kwargs)
     elif game.startswith("dm"):
         env_type = 'dm'
         _, domain, task = game.split('-')
-        kwargs = {'domain_name': domain, 'task_name': task}
+        kwargs.update({'domain_name': domain, 'task_name': task})
     elif hasattr(gym.envs, 'atari') and \
         isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv):
         env_type = 'atari'
-        kwargs = {'env_id':game}
+        kwargs.update({'env_id':game})
     else:
         env_type = 'gym'
-        kwargs = {'id':game}
-    env_fn = env_fn_mappings[env_type](**kwargs)
+        kwargs.update({'id':game})
+    env = env_fn_mappings[env_type](**kwargs)
 
     if env_type!='unity':
-        env_fn.seed(seed + rank)
-        env_fn = OriginalReturnWrapper(env_fn)
+        env.seed(seed + rank)
+        env = OriginalReturnWrapper(env)
         if env_type=='atari':
-            env_fn = wrap_deepmind(env_fn,
-                                   episode_life=episode_life,
-                                   clip_rewards=False,
-                                   frame_stack=False,
-                                   scale=False)
-            obs_shape = env_fn.observation_space.shape
+            env = wrap_deepmind(env,
+                                episode_life=episode_life,
+                                clip_rewards=False,
+                                frame_stack=False,
+                                scale=False)
+            obs_shape = env.observation_space.shape
             if len(obs_shape)==3:
-               env_fn = TransposeImage(env_fn)
-            env_fn = FrameStack(env_fn, 4)
-    return lambda: env_fn, env_type
+               env = TransposeImage(env)
+            env = FrameStack(env, 4)
+    return lambda: env, env_type
 
 
 class OriginalReturnWrapper(gym.Wrapper):
@@ -268,11 +268,15 @@ class Task:
                 self.env_type = 'unity'
         else:
             self.num_envs = num_envs
-            self.env_fns, env_types = zip(*[get_env_fn(game, num_envs=num_envs,
-                                                       env_fn_kwargs=env_fn_kwargs, 
-                                                       seed=seed, rank=i, 
-                                                       episode_life=episode_life) for i in range(self.num_envs)])
-            self.env_type = env_types[0]
+            if game.startswith('unity'):
+                self.env_type = 'unity'
+            self.env_fns = []
+            for i in range(self.num_envs):
+                if self.env_type=='unity':
+                    self.env_fn_kwargs.update({'worker_id':i})
+                env_fn, self.env_type = get_env_fn(game, env_fn_kwargs=self.env_fn_kwargs, 
+                    seed=seed, rank=i, episode_life=episode_life)
+                self.env_fns.append(env_fn)
 
         ## create envs
         Wrapper, wrapper_kwargs = None, None
@@ -281,6 +285,7 @@ class Task:
                 Wrapper = UnityVecEnv
             else:
                 Wrapper = SubprocVecEnv
+                # raise NotImplementedError("Multiprocessing is not implemented for Unity envs.")
         else:
             if single_process:
                 Wrapper = DummyVecEnv
@@ -317,11 +322,6 @@ class Task:
         return self.envs_wrapper.close()
 
 
-    ## This might be helpful for custom env debugging
-    # env_dict = gym.envs.registration.registry.env_specs.copy()
-    # for item in env_dict.items():
-    #     print(item)
-
 
 #######################################################################
 ##    
@@ -332,15 +332,14 @@ class Task:
 ## run "python -m deeprl.component.envs" in terminal
     
 import pandas as pd
-import getopt
 
 if __name__ == '__main__':
 
     ## 0:gym fn+deeprl, 1:unity, 2:unity env+deeprl, 3:unity fn+deeprl
     # option, max_steps = 0, 100
     # option, max_steps = 1, 10
-    # option, max_steps = 2, 10000
-    option, max_steps = 3, 10000
+    # option, max_steps = 2, 100
+    option, max_steps = 3, 100
 
     if option==0:
         task = Task('Hopper-v2', num_envs=10, single_process=True) ## multiprocessing doesn't work in Windows
@@ -386,7 +385,7 @@ if __name__ == '__main__':
                 task = Task('unity-Reacher-v2', envs=[env], single_process=True) 
             elif option==3:
                 env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': False}
-                task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=True)
+                task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=False)
 
             scores = np.zeros(task.envs_wrapper.num_agents) 
             env_id = 0
