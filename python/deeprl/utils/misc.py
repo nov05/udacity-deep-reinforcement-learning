@@ -82,10 +82,11 @@ def generate_tag(params):
     if 'tag' in params.keys():
         return
     params.setdefault('run', 0)
-    exclude = ['game', 'run', 'env_fn', 'is_mlagents']
+    exclude = ['game', 'run', 'env_fn', 'env_fn_kwargs']
     str = ['%s_%s' % (k, v if is_plain_type(v) else v.__name__) 
            for k, v in sorted(params.items()) if k not in exclude]
     tag = '%s-%s-run-%d' % (params['game'], '-'.join(str), params['run'])
+    params['tag'] = tag
     ## e.g. tag is "Reacher-v2-remark_ddpg_continuous-run-0"
 
 

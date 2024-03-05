@@ -240,7 +240,7 @@ class Task:
     def __init__(self,
                  game, ## gym or unity game, called "id" or "env_id" in other funcs
                  num_envs=1,
-                 env_fn_kwargs=None,
+                 env_fn_kwargs=dict(),
                  envs=None, ## pre-created envs
                  single_process=True,
                  log_dir=None,

@@ -20,6 +20,7 @@ class Config:
         self.game = None ## or "env_id"
         self.parser = argparse.ArgumentParser()
         self.task_fn = None
+        self.env_fn_kwargs = dict()
         self.tasks = None
         self.optimizer_fn = None
         self.actor_optimizer_fn = None
@@ -80,7 +81,7 @@ class Config:
         self.__eval_env = env
         self.state_dim = env.state_dim
         self.action_dim = env.action_dim
-        self.task_name = env.name
+        self.task_name = env.game
 
     def add_argument(self, *args, **kwargs):
         self.parser.add_argument(*args, **kwargs)

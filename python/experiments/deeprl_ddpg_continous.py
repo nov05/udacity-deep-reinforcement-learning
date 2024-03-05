@@ -13,7 +13,7 @@ def ddpg_continuous(**kwargs):
     config = Config()
     config.merge(kwargs)
 
-    config.task_fn = lambda: Task(config.game)
+    config.task_fn = lambda: Task(config.game, env_fn_kwargs=config.env_fn_kwargs, single_process=True)
     config.eval_env = config.task_fn()
     config.max_steps = 10 #int(1e6)  ## 1,000,000
     config.eval_interval = int(1e4)
@@ -35,7 +35,7 @@ def ddpg_continuous(**kwargs):
     run_steps(DDPGAgent(config))
 
 
-## in the dir "./python", run "python -m deeprl_files.examples" in terminal
+## in the dir "./python", run "python -m experiments.deeprl_ddpg_continous" in terminal
 if __name__ == '__main__':
     
     mkdir('log')
@@ -45,5 +45,11 @@ if __name__ == '__main__':
     ## -1 is CPU, an non-negative integer is the index of GPU
     # select_device(-1)
     select_device(0) ## GPU
-    game = 'Reacher-v2'
-    ddpg_continuous(game=game)
+
+    # env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
+    env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
+    env_fn_kwargs = {'file_name': env_file_name, 'worker_id':1, 'no_graphics': True}
+    # task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=True)
+    ddpg_continuous(game='unity-Reacher-v2', run=0,
+                    env_fn_kwargs=env_fn_kwargs,
+                    remark=ddpg_continuous.__name__)
