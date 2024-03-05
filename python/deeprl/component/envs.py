@@ -268,7 +268,8 @@ class Task:
                 self.env_type = 'unity'
         else:
             self.num_envs = num_envs
-            self.env_fns, env_types = zip(*[get_env_fn(game, env_fn_kwargs=env_fn_kwargs, 
+            self.env_fns, env_types = zip(*[get_env_fn(game, num_envs=num_envs,
+                                                       env_fn_kwargs=env_fn_kwargs, 
                                                        seed=seed, rank=i, 
                                                        episode_life=episode_life) for i in range(self.num_envs)])
             self.env_type = env_types[0]
@@ -276,16 +277,18 @@ class Task:
         ## create envs
         Wrapper, wrapper_kwargs = None, None
         if self.env_type=='unity':
-            Wrapper = UnityVecEnv
-            if self.envs:
-                wrapper_kwargs = {'envs': self.envs}
+            if single_process:
+                Wrapper = UnityVecEnv
             else:
-                wrapper_kwargs = {'env_fns': self.env_fns}
+                Wrapper = SubprocVecEnv
         else:
             if single_process:
                 Wrapper = DummyVecEnv
             else:
                 Wrapper = SubprocVecEnv
+        if self.envs:
+            wrapper_kwargs = {'envs': self.envs}
+        else:
             wrapper_kwargs = {'env_fns': self.env_fns}
         self.envs_wrapper = Wrapper(**wrapper_kwargs)
             
