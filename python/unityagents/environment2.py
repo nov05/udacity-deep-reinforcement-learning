@@ -42,7 +42,7 @@ class MultiUnityEnvironment(object):
         :int worker_id: Number to add to communication port (5005) [0]. Used for asynchronous agent scenarios.
         :param docker_training: Informs this class whether the process is being run within a container.
         :param no_graphics: Whether to run the Unity simulator in no-graphics mode
-        :num_envs: the number of processes have been created
+        :num_envs: Number of processes that will be created; each contains an env
         """
 
         atexit.register(self._close)
