@@ -8,7 +8,7 @@
 
 * **launch multiple Unity environments parallelly** from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)  
   check the major code file [`python\unityagents\environment2.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/unityagents/environment2.py)  
-  check the video of [how to run the code](https://www.youtube.com/watch?v=AYbpY-Wk7N0)  
+  check the video of [how to run the code](https://www.youtube.com/watch?v=AYbpY-Wk7N0) ($`python -m tests2.test_unity_multiprocessing`)  
 
 [<img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-03-07_08-05-28_reacher_V1-ezgif.com-optimize.gif?raw=true" width=500>](https://www.youtube.com/shorts/z9_dMrkPsz0)  
 
