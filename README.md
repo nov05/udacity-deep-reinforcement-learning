@@ -4,7 +4,7 @@
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
 * [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)  
 
-## **👉 Unity "Reacher-v2" vector game**  
+## **👉 Unity enviroment `Reacher-v2` vector game**  
 
 * **launch multiple Unity environments parallelly** from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)  
   check the major code file [`python\unityagents\environment2.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/unityagents/environment2.py)  
