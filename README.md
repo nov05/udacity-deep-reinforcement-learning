@@ -4,10 +4,12 @@
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
 * [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)  
 
-## ** Unity "Reacher-v2" vector game**  
+## **👉 Unity "Reacher-v2" vector game**  
 
 * launch multiple Unity environments parallelly from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)
-<img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-03-07_08-05-28_reacher_V1-ezgif.com-optimize.gif?raw=true" width=800>
+* check [the major code file `python\unityagents\environment2.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/unityagents/environment2.py)
+* [how to run the code](https://www.youtube.com/watch?v=AYbpY-Wk7N0)  
+[<img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-03-07_08-05-28_reacher_V1-ezgif.com-optimize.gif?raw=true" width=800>](https://www.youtube.com/shorts/z9_dMrkPsz0)  
 
 
 ## **👉 OpenAI Gym's Atari `Pong` pixel game**  
