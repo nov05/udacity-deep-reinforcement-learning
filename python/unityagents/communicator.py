@@ -16,14 +16,14 @@ class Communicator(object):
         :int worker_id: Number to add to communication port (5005) [0]. Used for asynchronous agent scenarios.
         """
 
-    def initialize(self, inputs: UnityInput) -> UnityOutput:
+    def initialize(self, inputs: UnityInput) -> UnityOutput: # type: ignore
         """
         Used to exchange initialization parameters between Python and the Environment
         :param inputs: The initialization input that will be sent to the environment.
         :return: UnityOutput: The initialization output sent by Unity
         """
 
-    def exchange(self, inputs: UnityInput) -> UnityOutput:
+    def exchange(self, inputs: UnityInput) -> UnityOutput: # type: ignore
         """
         Used to send an input and receive an output from the Environment
         :param inputs: The UnityInput that needs to be sent the Environment

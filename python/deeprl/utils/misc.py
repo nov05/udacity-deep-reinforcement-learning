@@ -12,7 +12,7 @@ import datetime
 import time
 from pathlib import Path
 import itertools
-# from collections import OrderedDict, Sequence ## api changed
+# from collections import OrderedDict, Sequence ## api changed, by nov05
 from collections import OrderedDict 
 from collections.abc import Sequence
 

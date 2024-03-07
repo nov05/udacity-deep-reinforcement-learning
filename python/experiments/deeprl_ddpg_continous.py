@@ -3,10 +3,9 @@ from deeprl import *
 
 
 ## refer to D:\github\udacity-deep-reinforcement-learning\python\deeprl_files\examples.py 
-##          (run "python -m deeprl_files.examples" in terminal)
-
-
+##          (run "python -m deeprl_files.examples")
 ## run "python -m experiments.deeprl_ddpg_continous" in terminal
+
 def ddpg_continuous(**kwargs): 
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -18,6 +17,7 @@ def ddpg_continuous(**kwargs):
     config.max_steps = 10 #int(1e6)  ## 1,000,000
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
+    config.save_interval = int(1e4)
 
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim, config.action_dim,
@@ -32,6 +32,7 @@ def ddpg_continuous(**kwargs):
         size=(config.action_dim,), std=LinearSchedule(0.2))
     config.warm_up = int(1e4)
     config.target_network_mix = 5e-3
+
     run_steps(DDPGAgent(config))
 
 
@@ -53,3 +54,5 @@ if __name__ == '__main__':
     ddpg_continuous(game='unity-Reacher-v2', run=0,
                     env_fn_kwargs=env_fn_kwargs,
                     remark=ddpg_continuous.__name__)
+    
+## unsuccessful

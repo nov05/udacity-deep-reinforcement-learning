@@ -27,7 +27,7 @@ class SocketCommunicator(Communicator):
         self._socket = None
         self._conn = None
 
-    def initialize(self, inputs: UnityInput) -> UnityOutput:
+    def initialize(self, inputs: UnityInput) -> UnityOutput: # type: ignore
         try:
             # Establish communication socket
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,7 +70,7 @@ class SocketCommunicator(Communicator):
     def _communicator_send(self, message):
         self._conn.send(struct.pack("I", len(message)) + message)
 
-    def exchange(self, inputs: UnityInput) -> UnityOutput:
+    def exchange(self, inputs: UnityInput) -> UnityOutput: # type: ignore
         message = UnityMessage()
         message.header.status = 200
         message.unity_input.CopyFrom(inputs)

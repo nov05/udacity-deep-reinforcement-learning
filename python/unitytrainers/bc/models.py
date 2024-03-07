@@ -1,5 +1,6 @@
 import tensorflow as tf
-import tensorflow.contrib.layers as c_layers
+# import tensorflow.contrib.layers as c_layers ## nov05
+import keras.layers as c_layers ## nov05
 from unitytrainers.models import LearningModel
 
 

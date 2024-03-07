@@ -560,7 +560,7 @@ def ddpg_continuous(**kwargs):
 
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
-    config.max_steps = 10 #int(1e6)  ## 1,000,000
+    config.max_steps = 1000 #int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
 
@@ -656,3 +656,5 @@ if __name__ == '__main__':
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)
     # ppo_pixel(game=game)
+
+## run "python -m deeprl_files.examples" in terminal

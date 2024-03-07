@@ -2,7 +2,7 @@ import unittest.mock as mock
 import pytest
 
 import numpy as np
-import tensorflow as tf
+import tensorflow as tf 
 
 from unitytrainers.bc.models import BehavioralCloningModel
 from unityagents import UnityEnvironment

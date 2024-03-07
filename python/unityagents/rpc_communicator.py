@@ -15,7 +15,7 @@ logger = logging.getLogger("unityagents")
 
 
 class UnityToExternalServicerImplementation(UnityToExternalServicer):
-    parent_conn, child_conn = Pipe()
+    # parent_conn, child_conn = Pipe() ## removed by nov05
 
     def Initialize(self, request, context):
         self.child_conn.send(request)
@@ -32,7 +32,6 @@ class RpcCommunicator(Communicator):
         """
         Python side of the grpc communication. Python is the server and Unity the client
 
-
         :int base_port: Baseline port number to connect to Unity environment over. worker_id increments over this.
         :int worker_id: Number to add to communication port (5005) [0]. Used for asynchronous agent scenarios.
         """
@@ -42,11 +41,13 @@ class RpcCommunicator(Communicator):
         self.unity_to_external = None
         self.is_open = False
 
-    def initialize(self, inputs: UnityInput) -> UnityOutput:
+    def initialize(self, inputs: UnityInput) -> UnityOutput: # type: ignore
+        print(f"🟢 RpcCommunicator at port {self.port} is initializing...")
         try:
+            self.unity_to_external = UnityToExternalServicerImplementation()
+            self.unity_to_external.parent_conn, self.unity_to_external.child_conn = Pipe() ## added by nov05
             # Establish communication grpc
             self.server = grpc.server(ThreadPoolExecutor(max_workers=10))
-            self.unity_to_external = UnityToExternalServicerImplementation()
             add_UnityToExternalServicer_to_server(self.unity_to_external, self.server)
             self.server.add_insecure_port('[::]:'+str(self.port))
             self.server.start()
@@ -57,6 +58,7 @@ class RpcCommunicator(Communicator):
                 "or use a different worker number.".format(str(self.worker_id)))
         if not self.unity_to_external.parent_conn.poll(30):
             raise UnityTimeOutException(
+                f"\n⚠️\ RpcCommunicator at port {self.port}:"
                 "The Unity environment took too long to respond. Make sure that :\n"
                 "\t The environment does not need user interaction to launch\n"
                 "\t The Academy and the External Brain(s) are attached to objects in the Scene\n"
@@ -70,7 +72,7 @@ class RpcCommunicator(Communicator):
         self.unity_to_external.parent_conn.recv()
         return aca_param
 
-    def exchange(self, inputs: UnityInput) -> UnityOutput:
+    def exchange(self, inputs: UnityInput) -> UnityOutput: # type: ignore
         message = UnityMessage()
         message.header.status = 200
         message.unity_input.CopyFrom(inputs)
@@ -91,7 +93,3 @@ class RpcCommunicator(Communicator):
             self.unity_to_external.parent_conn.close()
             self.server.stop(False)
             self.is_open = False
-
-
-
-
