@@ -82,6 +82,8 @@
 ---
 
 ## **👉 Logs**  
+2024-03-07 Python code to launch multiple Unity environments parallelly from an executable file  
+...  
 2024-02-14 Banana game project submission  
 2024-02-11 Unity MLAgent [Banana env set up](https://gist.github.com/Nov05/bf63ac7e0a2d0f94a635fb3858894cca)  
 2024-02-10 repo cloned  
