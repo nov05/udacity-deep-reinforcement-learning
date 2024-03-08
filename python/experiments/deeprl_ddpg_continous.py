@@ -49,10 +49,11 @@ if __name__ == '__main__':
 
     # env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
     env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
-    env_fn_kwargs = {'file_name': env_file_name, 'worker_id':1, 'no_graphics': True}
+    env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': True, }
     # task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=True)
     ddpg_continuous(game='unity-Reacher-v2', run=0,
                     env_fn_kwargs=env_fn_kwargs,
                     remark=ddpg_continuous.__name__)
     
 ## unsuccessful
+## $ python -m experiments.deeprl_ddpg_continous

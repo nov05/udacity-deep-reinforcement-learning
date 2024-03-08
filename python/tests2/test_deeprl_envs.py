@@ -67,7 +67,7 @@ def test3():
     task.close()
 
 def test4():
-    env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': False}
+    env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': False, 'num_envs': 2}
     task = Task('unity-Reacher-v2', env_fn_kwargs=env_fn_kwargs, single_process=True)
     scores = np.zeros(task.envs_wrapper.num_agents) 
     env_id = 0
@@ -84,6 +84,23 @@ def test4():
     print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
     task.close()
 
+def test5():
+    env = UnityMultiEnvironment(file_name=env_file_name, no_graphics=False, num_envs=2)
+    task = Task('unity-Reacher-v2', envs=[env], single_process=True)
+    scores = np.zeros(task.envs_wrapper.num_agents) 
+    env_id = 0 ## aka. proc_id for UnityMultiEnvironment
+    for _ in range(max_steps):
+        actions = [np.random.randn(task.envs_wrapper.num_agents, task.action_space.shape[0])] * task.num_envs
+        _, rewards, dones, _ = task.step(actions) ## next_states, rewards, dones, infos
+        scores += rewards[env_id]
+        if np.any(rewards[env_id]):
+            print(pd.DataFrame([rewards[env_id], scores], index=['rewards','scores']))
+        if np.any(dones[env_id]): ## if any agent finishes an episode
+            print("An agent finished an episode!")
+            break
+    print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
+    task.close()
+
 
 
 if __name__ == '__main__':
@@ -93,7 +110,8 @@ if __name__ == '__main__':
     max_steps = 100 
     # test1() ## gym fn, deeprl
     # test2() ## unity env
-    test3() ## unity env, deeprl
-    # test4() ## unity env_fn, deeprl
+    # test3() ## unity env, deeprl
+    test4() ## unity env_fn, deeprl
+    # test5() ## unity multi envs, deeprl
 
 ## $ python -m tests2.test_deeprl_envs 

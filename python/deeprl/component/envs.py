@@ -39,12 +39,12 @@ gym.logger.set_level(40)
 
 ## added by nov05
 import dm_control2gym
-from unityagents import UnityEnvironment
+from unityagents import UnityMultiEnvironment
 env_types = {'dm', 'atari', 'gym', 'unity'}
 env_fn_mappings = {'dm': dm_control2gym.make,
                    'atari': make_atari,
                    'gym': gym.make,
-                   'unity': UnityEnvironment,}
+                   'unity': UnityMultiEnvironment,}
 
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
 ## refactored by nov05
@@ -208,7 +208,7 @@ class UnityVecEnv(VecEnv):
         VecEnv.__init__(self, self.num_envs, observation_space, action_space)
         
         ## reset envs
-        info = [env.reset(train_mode=train_mode)[self.brain_name] for env in self.envs][0] 
+        info = [env.reset(train_mode=train_mode)[0][self.brain_name] for env in self.envs][0] 
         self.num_agents = len(info.agents)
         self.actions = None
 
@@ -218,7 +218,7 @@ class UnityVecEnv(VecEnv):
     def step_wait(self): ## VecEnv downward func
         data = []
         for i in range(self.num_envs):
-            env_info = self.envs[i].step(self.actions[i])[self.brain_name]
+            env_info = self.envs[i].step(self.actions)[i][self.brain_name]
             obsvs, revws, local_dones, env_infos = env_info.vector_observations, env_info.rewards, env_info.local_done, env_info
             ## remove this logic. one unity env has multiple agents. 
             ## we don't want to reset the env for one agent is done.  
@@ -264,7 +264,7 @@ class Task:
         self.env_type = None
         if envs:
             self.num_envs = len(envs)
-            if isinstance(envs[0], UnityEnvironment):
+            if isinstance(envs[0], UnityMultiEnvironment):
                 self.env_type = 'unity'
         else:
             self.num_envs = num_envs

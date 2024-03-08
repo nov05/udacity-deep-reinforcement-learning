@@ -27,7 +27,7 @@ logger = logging.getLogger("unityagents")
 
 
 
-class MultiUnityEnvironment(object):
+class UnityMultiEnvironment(object):
     def __init__(self, file_name=None, worker_id=0,
                  base_port=5005, curriculum=None,
                  seed=0, docker_training=False, no_graphics=False, 
@@ -129,8 +129,8 @@ class MultiUnityEnvironment(object):
         return self._brains
 
     @property
-    def global_done(self):
-        return self._global_done
+    def global_dones(self):
+        return self._global_dones
 
     @property
     def academy_name(self):
@@ -444,7 +444,7 @@ class MultiUnityEnvironment(object):
         if self._loaded:
             self._close()
         else:
-            raise UnityEnvironmentException("No Unity environment is loaded.")
+            raise UnityEnvironmentException("\n⚠️\ No Unity environment is loaded.")
 
 
     def _close(self):
@@ -452,8 +452,8 @@ class MultiUnityEnvironment(object):
         # self.communicator.close()
         # if self.proc1 is not None:
         #     self.proc1.kill()
-        for c,proc in zip(self.communicators, self.processes):
-            c.close()
+        for comm,proc in zip(self.communicators, self.processes):
+            comm.close()
             if proc: proc.kill()
 
 
@@ -561,8 +561,8 @@ class MultiUnityEnvironment(object):
         inputs = UnityInput()
         inputs.rl_initialization_input.CopyFrom(init_parameters)
         # output = self.communicator.initialize(inputs).rl_initialization_output
-        for c in self.communicators:
-            output = c.initialize(inputs).rl_initialization_output
+        for comm in self.communicators:
+            output = comm.initialize(inputs).rl_initialization_output
         return output
 
     def wrap_unity_input(self, rl_input: UnityRLInput) -> UnityOutput: # type: ignore
