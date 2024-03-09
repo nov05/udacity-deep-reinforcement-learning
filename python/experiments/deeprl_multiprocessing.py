@@ -1,7 +1,7 @@
 from deeprl import *
 
 
-## run "python -m experiments.deeprl_multiprocessing"
+## in the "./python" dir, run "python -m experiments.deeprl_multiprocessing"
 if __name__ == '__main__':
     
     task = Task('Hopper-v2', num_envs=10, single_process=False) ## multiprocessing doesn't work in Windows
@@ -12,3 +12,5 @@ if __name__ == '__main__':
         if np.any(dones):
             print(dones)
     task.close()
+
+# $ python -m experiments.deeprl_multiprocessing

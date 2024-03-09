@@ -30,7 +30,7 @@ logger = logging.getLogger("unityagents")
 class UnityMultiEnvironment(object):
     def __init__(self, file_name=None, worker_id=0,
                  base_port=5005, curriculum=None,
-                 seeds=[0], docker_training=False, no_graphics=False, 
+                 seeds=None, docker_training=False, no_graphics=False, 
                  num_envs=1): ## added by nov05
         """
         Starts a new unity environment and establishes a connection with the environment.
@@ -65,6 +65,7 @@ class UnityMultiEnvironment(object):
             logger.info("Start training by pressing the Play button in the Unity Editor.")
         self._loaded = True
 
+        if seeds is None: seeds = [0] * num_envs
         for env_id in range(self.num_envs):
             rl_init_parameters_in = UnityRLInitializationInput(seed=seeds[env_id])
             try:
@@ -344,11 +345,16 @@ class UnityMultiEnvironment(object):
                     raise UnityActionException(
                         "\n⚠️\ There was a mismatch between the provided text_action and environment's expectation: "
                         f"The brain {b} expected {n_agent} text_action but was given {len(text_action[b])}")
-                if len(vector_action[b])!=n_agent or len(vector_action[b][0])!=self._brains[b].vector_action_space_size:
+                if (self._brains[b].vector_action_space_type=="discrete" and len(vector_action[b])!=n_agent) \
+                    or (self._brains[b].vector_action_space_type=="continuous" \
+                        and (len(vector_action[b])!=n_agent \
+                         or len(vector_action[b][0])!=self._brains[b].vector_action_space_size)):
                     raise UnityActionException(
                         "\n⚠️\ There was a mismatch between the provided action and environment's expectation: "
-                        "The brain '{0}' expected {1} action(s) for {2} agents, but was provided: {3}"
-                        .format(b, self._brains[b].vector_action_space_size, n_agent,
+                        "The brain '{0}' expected {1} action(s) for {2} agents, but was provided: \n{3}"
+                        .format(b, 
+                                self._brains[b].vector_action_space_size*n_agent, 
+                                n_agent,
                                 str(vector_action[b])))
         return True
 

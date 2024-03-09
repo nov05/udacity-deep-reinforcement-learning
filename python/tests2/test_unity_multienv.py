@@ -1,19 +1,12 @@
 import numpy as np
 import pandas as pd
 import random
-from multiprocess import Process, current_process, cpu_count
 
 ## local imports
 from unityagents import UnityEnvironment, UnityMultiEnvironment
 
 
-def test(file_name=None, worker_id=0, seeds=None, train_mode=False,
-         no_graphics=False, num_envs=1, env_ids=None, max_steps=0):
-    # env = UnityEnvironment(file_name=file_name, worker_id=worker_id,
-    #                        no_graphics=no_graphics) ## single env
-    env = UnityMultiEnvironment(file_name=file_name, worker_id=worker_id, seeds=seeds,
-                                no_graphics=no_graphics, 
-                                num_envs=num_envs)
+def test():
     brain_name = env.brain_names[0] ## there is only one brain for the executables that I have
     brain = env.brains[brain_name]
 
@@ -51,40 +44,39 @@ def test(file_name=None, worker_id=0, seeds=None, train_mode=False,
                                 input_check=False)[env_id][brain_name] # send all actions to the environment
         rewards = env_info.rewards                               # get reward (for each agent)
         dones = env_info.local_done                        # see if episode finished
-        scores += env_info.rewards                         # update the score (for each agent)
+        scores += rewards                         # update the score (for each agent)
+        if no_graphics:
+            if np.any(rewards):
+                print(pd.DataFrame([rewards, scores], index=['rewards','scores']))
         if np.any(dones):                                  # exit loop if episode finished
             print(f"An agent in env {env_id} finished an episode!")
             break
-    print(f"🟢 Current process {current_process()} "
-          f"\nenv {env_id}, total score (averaged over agents) this episode: {np.mean(scores)}")
+    print(f'🟢 Env {env_id}, total score (averaged over agents) this episode: {np.mean(scores)}')
     env.close()
 
 
 if __name__ == '__main__':
 
-    max_steps = 10000 ## banana:1000, reacher:10000
+    game = 'reacher'
+    max_steps = 10000 ## reacher:10000, banana:1000
     num_envs = 2
     env_ids = None ## None or a list
     train_mode = False 
     no_graphics = False
     seeds = [random.randint(-2147483648, 2147483647) for _ in range(num_envs)] 
-    # file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
-    file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
-    # file_name = '..\data\Banana_Windows_x86_64\Banana.exe'
+    if game in ['reacher']:
+        # file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
+        file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
+    elif game in ['banana']:
+        file_name = '..\data\Banana_Windows_x86_64\Banana.exe'
+    # env = UnityEnvironment(file_name=file_name, no_graphics=no_graphics) ## single env
+    env = UnityMultiEnvironment(file_name=file_name, seeds=seeds,
+                                no_graphics=no_graphics, num_envs=num_envs)
     
-    print("🟢", current_process())
-    print("Number of cpu:", cpu_count()) ## 12
-    kwargs = {'file_name':file_name, 'seeds':seeds, 'train_mode':train_mode, 'no_graphics':no_graphics, 
-              'num_envs':num_envs, 'max_steps':max_steps}
-    p1 = Process(target=test, kwargs=kwargs)
-    kwargs['worker_id'] = num_envs * 1
-    seeds = [random.randint(-2147483648, 2147483647) for _ in range(num_envs)] ## generate new seeds
-    kwargs['seeds'] = seeds
-    p2 = Process(target=test, kwargs=kwargs)
-    p1.start()
-    p2.start()
-    p1.join()
-    p2.join()
+    # brain_name = env.brain_names[0] ## there is only brain for the executables
+    # brain = env.brains[brain_name]
+    # env_info = env.reset(train_mode=train_mode)[0][brain_name]  # reset the environments
+    # print(env._external_brain_names); env.close(); exit()## use this line to figure out internal variables
+    test()
 
-## $ python -m tests2.test_unity_multiprocessing
-## kill the terminal each time after execution, or the ports might be stil busy.
+## $ python -m tests2.test_unity_multienv
