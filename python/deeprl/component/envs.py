@@ -39,12 +39,12 @@ gym.logger.set_level(40)
 
 ## added by nov05
 import dm_control2gym
-from unityagents import UnityMultiEnvironment
+from unityagents import UnityEnvironment
 env_types = {'dm', 'atari', 'gym', 'unity'}
 env_fn_mappings = {'dm': dm_control2gym.make,
                    'atari': make_atari,
                    'gym': gym.make,
-                   'unity': UnityMultiEnvironment,}
+                   'unity': UnityEnvironment,}
 
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
 ## refactored by nov05
@@ -84,10 +84,9 @@ def get_env_fn(game, ## could be called "id", "env_id" in other functions
                                 scale=False)
             obs_shape = env.observation_space.shape
             if len(obs_shape)==3:
-               env = TransposeImage(env)
-            env = FrameStack(env, 4)
-    return lambda: env, env_type
-
+                env = TransposeImage(env)
+                env = FrameStack(env, 4)
+    return lambda:env, env_type ## return the env_fn
 
 class OriginalReturnWrapper(gym.Wrapper):
     def __init__(self, env):
@@ -201,16 +200,16 @@ class UnityVecEnv(VecEnv):
         brain = env.brains[self.brain_name]
         self.action_size = brain.vector_action_space_size
 
+        ## reset envs
+        info = [env.reset(train_mode=train_mode)[self.brain_name] for env in self.envs][0] 
+        self.num_agents = len(info.agents)
+        self.actions = None
+
         self.num_envs = len(self.envs)
         ## tranlate Unity ML-Agents spaces to gym spaces for VecEnv compatibility 
         observation_space = Box(float('-inf'), float('inf'), (brain.vector_observation_space_size,), np.float64)
         action_space = Box(-1.0, 1.0, (brain.vector_action_space_size,), np.float32)
         VecEnv.__init__(self, self.num_envs, observation_space, action_space)
-        
-        ## reset envs
-        info = [env.reset(train_mode=train_mode)[0][self.brain_name] for env in self.envs][0] 
-        self.num_agents = len(info.agents)
-        self.actions = None
 
     def step_async(self, actions): ## VecEnv downward func
         self.actions = actions
@@ -218,9 +217,9 @@ class UnityVecEnv(VecEnv):
     def step_wait(self): ## VecEnv downward func
         data = []
         for i in range(self.num_envs):
-            env_info = self.envs[i].step(self.actions)[i][self.brain_name]
+            env_info = self.envs[i].step(self.actions[i])[self.brain_name]
             obsvs, revws, local_dones, env_infos = env_info.vector_observations, env_info.rewards, env_info.local_done, env_info
-            ## remove this logic. one unity env has multiple agents. 
+            ## remove this logic. one unity env can have multiple agents. 
             ## we don't want to reset the env for one agent is done.  
             # if np.any(dones): ## there are multiple agents
             #     obsvs = self.envs[i].reset(train_mode=self.train_mode)
@@ -246,6 +245,9 @@ class Task:
                  log_dir=None,
                  episode_life=True,
                  seed=None):
+        '''
+        20240310 added logic for unity
+        '''
         self.game = game
         self.num_envs = num_envs
         self.env_fn_kwargs = env_fn_kwargs
@@ -256,7 +258,8 @@ class Task:
         self.seed = seed
         
         if not seed:
-            seed = np.random.randint(int(1e9))
+            # seed = np.random.randint(int(1e9)) ## nov05
+            seed = np.random.randint(0, 2**31) ## nov05
         if log_dir:
             mkdir(log_dir)
 
@@ -264,7 +267,7 @@ class Task:
         self.env_type = None
         if envs:
             self.num_envs = len(envs)
-            if isinstance(envs[0], UnityMultiEnvironment):
+            if isinstance(envs[0], UnityEnvironment):
                 self.env_type = 'unity'
         else:
             self.num_envs = num_envs
@@ -284,8 +287,8 @@ class Task:
             if single_process:
                 Wrapper = UnityVecEnv
             else:
-                # Wrapper = SubprocVecEnv
-                raise NotImplementedError("Multiprocessing is not implemented for Unity envs.")
+                Wrapper = SubprocVecEnv
+                # raise NotImplementedError("Multiprocessing is not implemented for Unity envs.")
         else:
             if single_process:
                 Wrapper = DummyVecEnv

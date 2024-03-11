@@ -44,7 +44,7 @@ def test(file_name=None, worker_id=0, seeds=None, train_mode=False,
             actions = np.random.randint(0, action_size, 
                                         size=input_dimension) 
         if isinstance(env, UnityEnvironment):
-            env_info = env.step(actions)[brain_name]           # send all actions to the environment
+            env_info = env.step(actions)[brain_name]       # send all actions to the environment
         else:
             if i==0: env.step_input_check(vector_actions=actions, env_ids=env_ids) ## check only once
             env_info = env.step(actions, env_ids=env_ids, 

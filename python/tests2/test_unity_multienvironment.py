@@ -79,4 +79,4 @@ if __name__ == '__main__':
     # print(env._external_brain_names); env.close(); exit()## use this line to figure out internal variables
     test()
 
-## $ python -m tests2.test_unity_multienv
+## $ python -m tests2.test_unity_multienvironment
