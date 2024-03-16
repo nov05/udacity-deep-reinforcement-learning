@@ -22,7 +22,7 @@ from PIL import Image
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("unityagents")
-
+ 
 
 class UnityEnvironment(object):
     def __init__(self, file_name=None, worker_id=0,
@@ -55,10 +55,11 @@ class UnityEnvironment(object):
         else:
             logger.info("Start training by pressing the Play button in the Unity Editor.")
         self._loaded = True
-
+    
         rl_init_parameters_in = UnityRLInitializationInput(
             seed=seed
         )
+        print('👉 UnityEnvironment seed:', seed)
         try:
             aca_params = self.send_academy_parameters(rl_init_parameters_in)
         except UnityTimeOutException:

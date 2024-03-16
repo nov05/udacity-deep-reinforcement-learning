@@ -66,6 +66,7 @@ class UnityMultiEnvironment(object):
         self._loaded = True
 
         if seeds is None: seeds = [0] * num_envs
+        print('👉 UnityMultiEnvironment seeds:', seeds)
         for env_id in range(self.num_envs):
             rl_init_parameters_in = UnityRLInitializationInput(seed=seeds[env_id])
             try:
@@ -113,7 +114,7 @@ class UnityMultiEnvironment(object):
         self._curriculum = Curriculum(curriculum, self._resetParameters)
         logger.info("\n'{0}' started successfully!\n{1}".format(self._academy_name, str(self)))
         if self._num_external_brains==0:
-            logger.warning("\n⚠️\ No External Brains found in the Unity Environment. "
+            logger.warning("\n⚠️ No External Brains found in the Unity Environment. "
                            "You will not be able to pass actions to your agent(s).")
 
     @property
@@ -272,19 +273,19 @@ class UnityMultiEnvironment(object):
         if config is None:
             config = self._curriculum.get_config(lesson)
         elif config != {}:
-            logger.info("\n✅ Academy Reset with parameters : \t{0}"
+            logger.info("\n✅ Academy Reset with parameters: \t{0}"
                         .format(', '.join([str(x) + ' -> ' + str(config[x]) for x in config])))
         for k in config:
             if (k in self._resetParameters) and (isinstance(config[k], (int, float))):
                 self._resetParameters[k] = config[k]
             elif not isinstance(config[k], (int, float)):
                 raise UnityEnvironmentException(
-                    "\n⚠️\ The value for parameter \"{0}\" must be an Integer or a Float.".format(k))
+                    "\n⚠️ The value for parameter \"{0}\" must be an Integer or a Float.".format(k))
             else:
-                raise UnityEnvironmentException("\n⚠️\ The parameter \"{0}\" is not a valid parameter.".format(k))
+                raise UnityEnvironmentException("\n⚠️ The parameter \"{0}\" is not a valid parameter.".format(k))
             
         if not self._loaded:
-            raise UnityEnvironmentException(f"\n⚠️\ No Unity environment executable is loaded.")
+            raise UnityEnvironmentException(f"\n⚠️ No Unity environment executable is loaded.")
         else:
             ## changed by nov05
             # outputs = self.communicator.exchange(
@@ -313,14 +314,14 @@ class UnityMultiEnvironment(object):
         ## envs are the same type, hence the following checks are for all envs.
         if not self._loaded:
             raise UnityEnvironmentException(
-                f"\n⚠️\ No Unity environment executable is loaded.")
+                f"\n⚠️ No Unity environment executable is loaded.")
         if not self._num_external_brains:
             raise UnityActionException(
-                f"\n⚠️\ There are no external brains in the environment, "
+                f"\n⚠️ There are no external brains in the environment, "
                 "step cannot take a vector_action input")
         if self._num_external_brains>1: 
             raise UnityActionException(
-                f"\n⚠️\ : You have {self._num_brains} brains, "
+                f"\n⚠️ You have {self._num_brains} brains, "
                 "you need to feed a dictionary of brain names a keys, "
                 "and vector_actions as values")
 
@@ -329,10 +330,10 @@ class UnityMultiEnvironment(object):
         for i in env_ids:
             if self._global_dones[i]:
                 raise UnityActionException(
-                    f"\n⚠️\ Proc {i}: The episode is completed. Reset it with \"reset()\"")
+                    f"\n⚠️ Proc {i}: The episode is completed. Reset it with \"reset()\"")
             if self._global_dones[i] is None:
                 raise UnityActionException(
-                    f"\n⚠️\ Proc {i}: You cannot step without resetting first. Reset it with \"reset()\"")
+                    f"\n⚠️ Proc {i}: You cannot step without resetting first. Reset it with \"reset()\"")
 
             if len(self._external_brain_names)==1:
                 brain_name = self._external_brain_names[0]
@@ -343,14 +344,14 @@ class UnityMultiEnvironment(object):
                 n_agent = self._n_agents[b]
                 if len(text_action[b])!=n_agent and len(text_action[b])!=0:
                     raise UnityActionException(
-                        "\n⚠️\ There was a mismatch between the provided text_action and environment's expectation: "
+                        "\n⚠️ There was a mismatch between the provided text_action and environment's expectation: "
                         f"The brain {b} expected {n_agent} text_action but was given {len(text_action[b])}")
                 if (self._brains[b].vector_action_space_type=="discrete" and len(vector_action[b])!=n_agent) \
                     or (self._brains[b].vector_action_space_type=="continuous" \
                         and (len(vector_action[b])!=n_agent \
                          or len(vector_action[b][0])!=self._brains[b].vector_action_space_size)):
                     raise UnityActionException(
-                        "\n⚠️\ There was a mismatch between the provided action and environment's expectation: "
+                        "\n⚠️ There was a mismatch between the provided action and environment's expectation: "
                         "The brain '{0}' expected {1} action(s) for {2} agents, but was provided: \n{3}"
                         .format(b, 
                                 self._brains[b].vector_action_space_size*n_agent, 
@@ -441,7 +442,7 @@ class UnityMultiEnvironment(object):
         if self._loaded:
             self._close()
         else:
-            raise UnityEnvironmentException("\n⚠️\ No Unity environment is loaded.")
+            raise UnityEnvironmentException("\n⚠️ No Unity environment is loaded.")
 
 
     def _close(self):

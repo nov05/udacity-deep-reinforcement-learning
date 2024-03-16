@@ -46,6 +46,7 @@ class RpcCommunicator(Communicator):
         try:
             self.unity_to_external = UnityToExternalServicerImplementation()
             self.unity_to_external.parent_conn, self.unity_to_external.child_conn = Pipe() ## added by nov05
+            
             # Establish communication grpc
             self.server = grpc.server(ThreadPoolExecutor(max_workers=10))
             add_UnityToExternalServicer_to_server(self.unity_to_external, self.server)
@@ -58,8 +59,8 @@ class RpcCommunicator(Communicator):
                 "or use a different worker number.".format(str(self.worker_id)))
         if not self.unity_to_external.parent_conn.poll(30):
             raise UnityTimeOutException(
-                f"\n⚠️\ RpcCommunicator at port {self.port}:"
-                "The Unity environment took too long to respond. Make sure that :\n"
+                f"\n⚠️ RpcCommunicator at port {self.port}:"
+                "The Unity environment took too long to respond. Make sure that:\n"
                 "\t The environment does not need user interaction to launch\n"
                 "\t The Academy and the External Brain(s) are attached to objects in the Scene\n"
                 "\t The environment and the Python interface have compatible versions.")

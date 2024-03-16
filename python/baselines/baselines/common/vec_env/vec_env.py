@@ -101,7 +101,6 @@ class VecEnv(ABC):
     def step(self, actions):
         """
         Step the environments synchronously.
-
         This is available for backwards compatibility.
         """
         self.step_async(actions)
@@ -203,8 +202,12 @@ class CloudpickleWrapper(object):
 @contextlib.contextmanager
 def clear_mpi_env_vars():
     """
-    from mpi4py import MPI will call MPI_Init by default.  If the child process has MPI environment variables, MPI will think that the child process is an MPI process just like the parent and do bad things such as hang.
-    This context manager is a hacky way to clear those environment variables temporarily such as when we are starting multiprocessing
+    from mpi4py import MPI will call MPI_Init by default.  
+    If the child process has MPI environment variables,   
+    MPI will think that the child process is an MPI process 
+    just like the parent and do bad things such as hang.
+    This context manager is a hacky way to clear those environment 
+    variables temporarily such as when we are starting multiprocessing
     Processes.
     """
     removed_environment = {}
