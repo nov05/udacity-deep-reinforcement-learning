@@ -202,7 +202,7 @@ class DummyVecEnv(VecEnv):
 
 def get_unity_spaces(brain_params): 
     """
-    tranlate Unity ML-Agents spaces to gym spaces for compatibility with Baselines 
+    tranlate Unity ML-Agents spaces to gym spaces for compatibility with deeprl and Baselines 
     """
     if brain_params.vector_observation_space_type=='continuous':
         observation_space = Box(float('-inf'), float('inf'), (brain_params.vector_observation_space_size,), np.float64)
@@ -322,7 +322,7 @@ class UnitySubprocVecEnv(VecEnv):
         ctx = mp.get_context(context)
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(self.num_envs)])
         self.ps = [ctx.Process(target=unity_worker, args=(work_remote, remote, CloudpickleWrapper(env_fn))) 
-                for (work_remote, remote, env_fn) in zip(self.work_remotes, self.remotes, env_fns)]
+                   for (work_remote, remote, env_fn) in zip(self.work_remotes, self.remotes, env_fns)]
         for p in self.ps:
             p.daemon = True  # if the main process crashes, we should not cause things to hang
             with clear_mpi_env_vars():
@@ -331,7 +331,7 @@ class UnitySubprocVecEnv(VecEnv):
         for remote in self.work_remotes:
             remote.close()
 
-        ## get brain info
+        ## get brain parameters
         self.remotes[0].send(('get_brain_params', None))
         brain_params = self.remotes[0].recv()
         self.brain_name = brain_params.brain_name

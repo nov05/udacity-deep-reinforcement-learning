@@ -258,9 +258,9 @@ class UnityEnvironment(object):
             else:
                 raise UnityEnvironmentException("The parameter '{0}' is not a valid parameter.".format(k))
 
-        if self._loaded:
+        if self._loaded: 
             outputs = self.communicator.exchange(
-                self._generate_reset_input(train_mode, config)
+                self._generate_reset_input(train_mode, config) ## config is empty
             )
             if outputs is None:
                 raise KeyboardInterrupt
@@ -503,6 +503,7 @@ class UnityEnvironment(object):
 
     def send_academy_parameters(self, init_parameters: UnityRLInitializationInput) -> UnityRLInitializationOutput: # type: ignore
         inputs = UnityInput()
+        ## seed will be stored in "inputs.rl_initialization_input.seed"
         inputs.rl_initialization_input.CopyFrom(init_parameters)
         return self.communicator.initialize(inputs).rl_initialization_output
 

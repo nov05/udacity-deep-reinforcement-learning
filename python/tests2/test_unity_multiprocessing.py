@@ -67,8 +67,8 @@ def test(multi_envs=True, file_name=None, worker_id=0, seeds=None, train_mode=Fa
 
 if __name__ == '__main__':
 
-    multi_envs = True ## using UnityEnvironment or UnityMultiEnvironment
-    base_port = 5005 + np.random.randint(1, 1000)
+    multi_envs = False ## using UnityEnvironment or UnityMultiEnvironment
+    base_port = 5005 + np.random.randint(1, 100)
     max_steps = 200 ## banana:1000, reacher:10000
     num_envs = 2 ## number of envs of each unity instance
     env_ids = None ## None or a list

@@ -60,7 +60,7 @@ def test3():
     scores = np.zeros(task.envs_wrapper.num_agents)
     env_id = num_envs - 1
     for _ in range(max_steps):
-        actions = [np.random.randn(task.envs_wrapper.num_agents, task.action_space.shape[0])] * task.num_envs
+        actions = [np.random.randn(task.envs_wrapper.num_agents, task.action_space.shape[0]) for _ in range(task.num_envs)]
         _, rewards, dones, _ = task.step(actions) ## next_states, rewards, dones, infos
         scores += rewards[env_id]
         # if np.any(rewards[env_id]):
@@ -77,11 +77,11 @@ if __name__ == '__main__':
     # env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
     env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
     max_steps = 100 ## banana:1000, reacher:10000
-    num_envs = 3
-    train_mode = False  ## for unity env
+    num_envs = 2
+    train_mode = False ## for unity env
     no_graphics = False ## for unity env
     seeds = [np.random.randint(-2147483648, 2147483647) for _ in range(num_envs)] ## unity env seeds
-    single_process = False
+    single_process = True
 
 
     # test1() ## unity env (no deeprl)
