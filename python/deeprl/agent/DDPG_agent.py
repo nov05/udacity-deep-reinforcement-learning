@@ -39,22 +39,31 @@ class DDPGAgent(BaseAgent):
         return to_np(action)
 
     def step(self):
-        config = self.config
         if self.state is None:
             self.random_process.reset_states()
-            self.state = self.task.reset()
-            self.state = config.state_normalizer(self.state)
+            if self.task.env_type=='unity':
+                self.state, _, _, _ = self.task.reset()
+            else:
+                self.state = self.task.reset()
+            self.state = self.config.state_normalizer(self.state)
 
-        if self.total_steps < config.warm_up:
-            action = [self.task.action_space.sample()]
+        if self.total_steps < self.config.warm_up:
+            if self.task.env_type in ['unity']: ## an env has multiple agents
+                action = [[self.task.action_space.sample() 
+                          for _ in range(self.task.envs_wrapper.num_agents)] 
+                          for _ in range(self.task.num_envs)]
+            else:
+                action = [self.task.action_space.sample()
+                          for _ in range(self.task.num_envs)]
         else:
             action = self.network(self.state)
+            print(self.network)
             action = to_np(action)
             action += self.random_process.sample()
         action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
         next_state, reward, done, info = self.task.step(action)
         next_state = self.config.state_normalizer(next_state)
-        self.record_online_return(info)
+        self.record_online_return(info)  ## log train returns
         reward = self.config.reward_normalizer(reward)
 
         self.replay.feed(dict(
@@ -65,12 +74,12 @@ class DDPGAgent(BaseAgent):
             mask=1-np.asarray(done, dtype=np.int32),
         ))
 
-        if done[0]:
+        if np.any(done[0]):
             self.random_process.reset_states()
         self.state = next_state
         self.total_steps += 1
 
-        if self.replay.size() >= config.warm_up:
+        if self.replay.size() >= self.config.warm_up:
             transitions = self.replay.sample()
             states = tensor(transitions.state)
             actions = tensor(transitions.action)
@@ -81,7 +90,7 @@ class DDPGAgent(BaseAgent):
             phi_next = self.target_network.feature(next_states)
             a_next = self.target_network.actor(phi_next)
             q_next = self.target_network.critic(phi_next, a_next)
-            q_next = config.discount * mask * q_next
+            q_next = self.config.discount * mask * q_next
             q_next.add_(rewards)
             q_next = q_next.detach()
             phi = self.network.feature(states)

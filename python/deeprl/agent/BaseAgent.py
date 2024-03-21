@@ -21,6 +21,8 @@ class BaseAgent:
 
     def close(self):
         close_obj(self.task)
+        print(f"🟢 Task {self.task} has been closed.")
+
 
     def save(self, filename):
         torch.save(self.network.state_dict(), '%s.model' % (filename))
@@ -37,17 +39,23 @@ class BaseAgent:
         raise NotImplementedError
 
     def eval_episode(self):
-        env = self.config.eval_env
-        state = env.reset()
+        env_type = get_env_type(game=self.config.game)
+        ## env here is a Task instance with a wrapper instance of a list of env instances
+        env = self.config.eval_env 
+        if env_type in ['unity']: ## added by nov05
+            state, _, _, _ = env.reset(train_mode=False) ## observations, rewards, dones, infos
+        else:
+            state = env.reset()
         if not state:
-            raise Exception("\"state\" is None")
+            raise Exception("⚠️ \"state\" is None")
+        print('Evaluating...')
         while True:
             action = self.eval_step(state)
-            _, _, _, info = env.step(action) ## next_state, reward, done, info
-            ret = info[0]['episodic_return']
-            if ret:
+            _, _, dones, infos = env.step(action) ## observations, rewards, dones, infos
+            if np.any(dones):
+                episodic_return = infos[0]['episodic_return']
                 break
-        return ret
+        return episodic_return
 
     def eval_episodes(self):
         episodic_returns = []

@@ -82,6 +82,7 @@ class MeanStdNormalizer(BaseNormalizer):
         self.rms.mean = saved['mean']
         self.rms.var = saved['var']
 
+
 class RescaleNormalizer(BaseNormalizer):
     def __init__(self, coef=1.0):
         BaseNormalizer.__init__(self)

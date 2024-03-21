@@ -12,36 +12,54 @@ import datetime
 import time
 from pathlib import Path
 import itertools
-# from collections import OrderedDict, Sequence ## api changed, by nov05
-from collections import OrderedDict 
-from collections.abc import Sequence
+# from collections import OrderedDict, Sequence   ## api changed, by nov05
+from collections import OrderedDict               ## api changed, by nov05
+from collections.abc import Sequence              ## api changed, by nov05
+from tqdm import tqdm
+from shutil import rmtree
+import json
 
 ## local imports
 from .torch_utils import *
+from ..component.envs import get_env_type
 
 
 def run_steps(agent):
+
     config = agent.config
+    ## log config 
+    log_info = f"\n{config.__repr__()}\n"
+    agent.logger.info(log_info)
+
     agent_name = agent.__class__.__name__
     t0 = time.time()
-    while True:
-        if config.save_interval and not agent.total_steps % config.save_interval:
+
+    for _ in tqdm(range(config.max_steps), desc='Max steps', position=0, leave=True): 
+        ## save trained model at intervals
+        if config.save_interval and (not (agent.total_steps+1) % config.save_interval):
             agent.save('data/%s-%s-%d' % (agent_name, config.tag, agent.total_steps))
-        if config.log_interval and not agent.total_steps % config.log_interval:
+            log_info = f"Model saved as {'data/%s-%s-%d' % (agent_name, config.tag, agent.total_steps)}"
+            agent.logger.info(log_info)
+        ## log steps/s at intervals
+        if config.log_interval and (not (agent.total_steps+1) % config.log_interval):
             time_interval = time.time() - t0
             if time_interval==0:
-                log_info = f"steps {agent.total_steps}, - steps/s"
+                log_info = f"steps {agent.total_steps}, - steps/s (time interval = 0)"
             else:
                 log_info = 'steps %d, %.2f steps/s' % (agent.total_steps, config.log_interval / time_interval)
             agent.logger.info(log_info)
             t0 = time.time()
-        if config.eval_interval and not agent.total_steps % config.eval_interval:
+        ## log eval result at intervals
+        if config.eval_interval and (not (agent.total_steps+1) % config.eval_interval):
             agent.eval_episodes()
-        if config.max_steps and agent.total_steps >= config.max_steps:
-            agent.close()
-            break
+
         agent.step()
         agent.switch_task()
+
+    agent.close()
+    if config.eval_env is not None:
+        config.eval_env.close()
+
 
 
 def get_time_str():
@@ -56,6 +74,10 @@ def mkdir(path):
     Path(path).mkdir(parents=True, exist_ok=True)
 
 
+def rmdir(path): ## added by nov05
+    rmtree(path)
+    
+    
 def close_obj(obj):
     if hasattr(obj, 'close'):
         obj.close()

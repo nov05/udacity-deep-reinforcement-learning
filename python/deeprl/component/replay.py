@@ -73,7 +73,7 @@ class UniformReplay(Storage):
         return np.asarray(indices)
 
     def feed(self, data):
-        for k, vs in data.items():
+        for k,vs in data.items():
             if k not in self.keys:
                 raise RuntimeError('Undefined key')
             storage = getattr(self, k)

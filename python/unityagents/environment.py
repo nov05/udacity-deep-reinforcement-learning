@@ -381,7 +381,7 @@ class UnityEnvironment(object):
         elif not self._loaded:
             raise UnityEnvironmentException("No Unity environment is loaded.")
         elif self._global_done:
-            raise UnityActionException("The episode is completed. Reset the environment with 'reset()'")
+            raise UnityActionException("⚠️ The episode is completed. Reset the environment with 'reset()'")
         elif self.global_done is None:
             raise UnityActionException(
                 "You cannot conduct step without first calling reset. Reset the environment with 'reset()'")

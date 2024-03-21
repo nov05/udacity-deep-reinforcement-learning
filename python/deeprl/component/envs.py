@@ -15,11 +15,12 @@ from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.atari_wrappers import FrameStack as FrameStack_
 from baselines.common.vec_env import VecEnv
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv, \
-    CloudpickleWrapper, clear_mpi_env_vars, _flatten_obs
+     CloudpickleWrapper, clear_mpi_env_vars
 from unityagents.brain import BrainParameters, BrainInfo
 
 ## local imports
 from ..utils import *
+from ..utils.torch_utils import random_seed
 
 import platform
 if platform.system()!='Windows':
@@ -54,6 +55,19 @@ env_fn_mappings = {'dm': dm_control2gym.make,
                    'atari': make_atari,
                    'gym': gym.make,
                    'unity': make_unity}
+def get_env_type(game=None, env=None):
+    env_type = None
+    if game is not None:
+        if game.startswith("unity"):
+            env_type = 'unity'
+        elif game.startswith("dm"):
+            env_type = 'dm'
+        else:
+            env_type = 'gym'
+    elif hasattr(gym.envs, 'atari') and \
+        isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv):
+        env_type = 'atari'
+    return env_type
     
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
 ## refactored, func for unity added, by nov05
@@ -64,57 +78,57 @@ def get_env_fn(game, ## could be called "id", "env_id" in other functions
                episode_life=True):
     
     ## get env type
-    env_type, kwargs = None, dict()
-    if game.startswith("unity"):
-        env_type = 'unity'
+    env_type =get_env_type(game=game)
+    kwargs = dict()
+    if env_type=='unity':
         kwargs.update(env_fn_kwargs)
         if seed: kwargs.update({'seed':seed})
-    elif game.startswith("dm"):
-        env_type = 'dm'
+    elif env_type=='dm':
         _, domain, task = game.split('-')
-        kwargs.update({'domain_name': domain, 'task_name': task})
-    elif hasattr(gym.envs, 'atari') and \
-        isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv):
-        env_type = 'atari'
-        kwargs.update({'env_id':game})
-    else:
-        env_type = 'gym'
+        kwargs.update({'domain_name':domain, 'task_name':task})
+    else: ## env_type=='gym'
         kwargs.update({'id':game})
 
-    ## create env    
-    env = env_fn_mappings[env_type](**kwargs)
-
-    if env_type!='unity':
+    if env_type=='unity':
+        ## can't wrap unity env here. define info['episodic_return'] in return later 
+        ## in the UnityVecEnv and UnitySubprocVecEnv implementations 
+        env_fn = env_fn_mappings[env_type](**kwargs)
+    else:
+        env = env_fn_mappings[env_type](**kwargs)
+        env_type_ = get_env_type(env=env)
+        if env_type_=='atari':
+            env_type = env_type_
+            kwargs.update({'env_id':game})
         random_seed(seed)
         env.seed(seed + rank)
-        env = OriginalReturnWrapper(env)
+        env = OriginalReturnWrapper(env) ## define info['episodic_return'] in return
         if env_type=='atari':
             env = wrap_deepmind(env,
                                 episode_life=episode_life,
                                 clip_rewards=False,
                                 frame_stack=False,
                                 scale=False)
-            obs_shape = env.observation_space.shape
-            if len(obs_shape)==3:
+            if len(env.observation_space.shape)==3:
                 env = TransposeImage(env)
                 env = FrameStack(env, 4)
+        env_fn = lambda:env
+    return env_fn, env_type
 
-    return lambda:env, env_type ## return the env as a func
 
 class OriginalReturnWrapper(gym.Wrapper):
     def __init__(self, env):
         gym.Wrapper.__init__(self, env)
-        self.total_rewards = 0
+        self.total_reward = 0
 
     def step(self, action):
-        obs, reward, done, info = self.env.step(action)
-        self.total_rewards += reward
+        observation, reward, done, info = self.env.step(action)
+        self.total_reward += reward
         if done:
-            info['episodic_return'] = self.total_rewards
-            self.total_rewards = 0
+            info['episodic_return'] = self.total_reward
+            self.total_reward = 0
         else:
             info['episodic_return'] = None
-        return obs, reward, done, info
+        return observation, reward, done, info
 
     def reset(self):
         return self.env.reset()
@@ -182,14 +196,14 @@ class DummyVecEnv(VecEnv):
 
     def step_wait(self):
         data = []
-        for i in range(self.num_envs):
+        for env,action in zip(self.envs, self.actions):
             ## info = e.g. {'episodic_return': None}
-            obsv, revw, done, info = self.envs[i].step(self.actions[i])
+            observation, reward, done, info = env.step(action)
             if done:
-                obsv = self.envs[i].reset()
-            data.append([obsv, revw, done, info])
-        obsvs, revws, dones, infos = zip(*data)
-        return obsvs, np.asarray(revws), np.asarray(dones), infos
+                observation = env.reset()
+            data.append([observation, reward, done, info])
+        observations, rewards, dones, infos = zip(*data)
+        return observations, np.asarray(rewards), np.asarray(dones), infos
 
     def reset(self):
         ## reset all envs, and return next_states
@@ -200,7 +214,7 @@ class DummyVecEnv(VecEnv):
         [env.close() for env in self.envs] 
 
 
-def get_unity_spaces(brain_params): 
+def get_unity_spaces(brain_params: BrainParameters): 
     """
     tranlate Unity ML-Agents spaces to gym spaces for compatibility with deeprl and Baselines 
     """
@@ -215,10 +229,26 @@ def get_unity_spaces(brain_params):
     return observation_space, action_space
 
 
+def get_return_from_brain_info(brain_info: BrainInfo, brain_name):
+    if brain_name in ['ReacherBrain']:
+        observation = brain_info.vector_observations 
+    else:
+        raise NotImplementedError
+    reward, done = brain_info.rewards, brain_info.local_done
+    return observation, reward, done
+
+
 class UnityVecEnv(VecEnv):
+    """
+    This is a wrapper class for a list of Unity environment instances,
+    operating in a single process
+    """
     def __init__(self, env_fns=None, train_mode=False):
-        self.envs = [fn()() for fn in env_fns]
+        self.envs = [fn() for fn in env_fns]
         self.train_mode = train_mode
+        ## add total_reward attribute, refer to class OriginalReturnWrapper(gym.Wrapper)
+        for env in self.envs:
+            env.total_reward = 0
         
         env = self.envs[0]
         self.brain_name = env.brain_names[0]
@@ -226,8 +256,8 @@ class UnityVecEnv(VecEnv):
         self.action_size = brain_params.vector_action_space_size
 
         ## reset envs
-        info = self.reset(train_mode=train_mode)[0]
-        self.num_agents = len(info.agents)
+        _, _, _, infos = self.reset(train_mode=train_mode)
+        self.num_agents = len(infos[0]['brain_info'].agents)
         self.actions = None
 
         self.num_envs = len(self.envs)
@@ -239,49 +269,69 @@ class UnityVecEnv(VecEnv):
 
     def step_wait(self): ## VecEnv downward func
         data = []
-        for i in range(self.num_envs):
-            env_info = self.envs[i].step(self.actions[i])[self.brain_name]
-            obsv, revw, done, info = env_info.vector_observations, env_info.rewards, env_info.local_done, env_info  
-            # if np.all(done): ## there are multiple agents in an env
-            #     obsv = self.envs[i].reset(train_mode=self.train_mode)
-            data.append([obsv, revw, done, info])
-        next_states, rewards, dones, infos = zip(*data)
-        return next_states, np.asarray(rewards), np.asarray(dones), infos
+        for env,action in zip(self.envs, self.actions):
+            brain_info = env.step(action)[self.brain_name]
+            observation, reward, done = get_return_from_brain_info(brain_info, self.brain_name)  
+            info = {'brain_info': brain_info}
+            env.total_reward += np.sum(reward)
+            if np.any(done):
+                info['episodic_return'] = env.total_reward / len(brain_info.agents)
+                env.total_reward = 0
+                brain_info = env.reset(train_mode=self.train_mode)[self.brain_name]
+                observation, _, _ = get_return_from_brain_info(brain_info, self.brain_name)
+            else:
+                info['episodic_return'] = None
+            data.append([observation, reward, done, info])
+        observations, rewards, dones, infos = zip(*data)
+        return observations, np.asarray(rewards), np.asarray(dones), infos
 
     def reset(self, train_mode=None):
         ## reset an env, returning AllBrainInfo
-        if train_mode: self.train_mode = train_mode
-        if not self.train_mode: self.train_mode = False
-        return [env.reset(train_mode=self.train_mode)[self.brain_name] for env in self.envs]
+        data = []
+        for env in self.envs:
+            brain_info = env.reset(train_mode=train_mode)[self.brain_name]
+            observation, reward, done = get_return_from_brain_info(brain_info, self.brain_name)
+            info = {'brain_info': brain_info}
+            info['episodic_return'] = None
+            data.append([observation, reward, done, info])
+        observations, rewards, dones, infos = zip(*data)
+        return observations, np.asarray(rewards), np.asarray(dones), infos
 
     def close(self):
         [env.close() for env in self.envs]
 
 
-def unity_worker(remote, parent_remote, env_fn_wrapper):
+def unity_worker(remote, parent_remote, env_fn_wrapper, train_mode):
     parent_remote.close()
-    env = env_fn_wrapper.x()()
+    env = env_fn_wrapper.x()
     brain_name = env.brain_names[0]
+    ## add total_reward attribute, refer to class OriginalReturnWrapper(gym.Wrapper)
+    env.total_reward = 0
     try:
         while True:
             cmd, data = remote.recv()
             if cmd=='step':
-                ## all_brain_info: type AllBrainInfo, a dict
+                ## type AllBrainInfo, a dict
                 ## e.g. {'ReacherBrain': <unityagents.brain.BrainInfo object at 0x0000022605F2D8A0>}
-                all_brain_info = env.step(data) 
-                info = all_brain_info[brain_name]
-                if brain_name in ['ReacherBrain']:
-                    ob = info.vector_observations
+                brain_info = env.step(data)[brain_name] ## info type ".unityagents.brain.BrainInfo"
+                observation, reward, done = get_return_from_brain_info(brain_info, brain_name)
+                env.total_reward += np.sum(reward)
+                info = {'brain_info': brain_info}
+                if np.any(done):
+                    ## in "deeprl.agent.BaseAgent", ret = info[0]['episodic_return']
+                    info['episodic_return'] = env.total_reward / len(brain_info.agents)
+                    env.total_reward = 0
+                    brain_info = env.reset(train_mode=train_mode)[brain_name] 
+                    observation, _, _ = get_return_from_brain_info(brain_info, brain_name)
                 else:
-                    raise NotImplementedError
-                rew, done = info.rewards, info.local_done
-                # if done: ## there are multiple agents in one unity env
-                #     ob = env.reset()
-                remote.send((ob, rew, done, info))
+                    info['episodic_return'] = None
+                remote.send((observation, reward, done, info))
             elif cmd=='reset':
-                all_brain_info = env.reset(data)
-                info = all_brain_info[brain_name]
-                remote.send(info)
+                brain_info = env.reset(data)[brain_name]
+                observation, reward, done = get_return_from_brain_info(brain_info, brain_name)
+                info = {'brain_info': brain_info}
+                info['episodic_return'] = None
+                remote.send((observation, reward, done, info))
                 print('🟢 Unity environment has been resetted.')
             elif cmd=='close':
                 remote.close()
@@ -289,21 +339,21 @@ def unity_worker(remote, parent_remote, env_fn_wrapper):
             elif cmd=='get_brain_params':
                 brain_params = env.brains[brain_name] ## brain_params: type class BrainParameters
                 ## the original value seems to be <class 'google.protobuf.pyext._message.RepeatedScalarContainer'>
-                ## and not serializable
+                ## and not serializable, which would cause error in Multiprocessing pickling
                 brain_params.vector_action_descriptions = ['','','','']
                 remote.send(brain_params)
             else:
                 raise NotImplementedError
     except KeyboardInterrupt:
-        print('UnitySubprocVecEnv worker: got KeyboardInterrupt')
+        print('⚠️ UnitySubprocVecEnv worker: got KeyboardInterrupt')
     finally:
         env.close()
 
 
 class UnitySubprocVecEnv(VecEnv):
     """
-    VecEnv that runs multiple environments in parallel in subproceses and communicates with them via pipes.
-    Recommended to use when num_envs > 1 and step() can be a bottleneck.
+    VecEnv that runs multiple Unity environments in parallel in subproceses and communicates with them via pipes.
+    Recommended to use when num_envs>1 and step() can be a bottleneck.
     """
     def __init__(self, env_fns, train_mode=False, context='spawn'):
         """
@@ -321,7 +371,7 @@ class UnitySubprocVecEnv(VecEnv):
         self.num_envs = len(env_fns)
         ctx = mp.get_context(context)
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(self.num_envs)])
-        self.ps = [ctx.Process(target=unity_worker, args=(work_remote, remote, CloudpickleWrapper(env_fn))) 
+        self.ps = [ctx.Process(target=unity_worker, args=(work_remote, remote, CloudpickleWrapper(env_fn), self.train_mode)) 
                    for (work_remote, remote, env_fn) in zip(self.work_remotes, self.remotes, env_fns)]
         for p in self.ps:
             p.daemon = True  # if the main process crashes, we should not cause things to hang
@@ -337,9 +387,10 @@ class UnitySubprocVecEnv(VecEnv):
         self.brain_name = brain_params.brain_name
         observation_space, action_space = get_unity_spaces(brain_params)
         
-        ## reset the envs
-        infos = self.reset(train_mode=self.train_mode) 
-        self.num_agents = len(infos[0].agents)
+        ## reset the envs to get num_agents
+        _, _, _, infos = self.reset(train_mode=self.train_mode) 
+        self.num_agents = len(infos[0]['brain_info'].agents)
+
         VecEnv.__init__(self, len(env_fns), observation_space, action_space)
 
     def step_async(self, actions):
@@ -350,21 +401,22 @@ class UnitySubprocVecEnv(VecEnv):
 
     def step_wait(self):
         self._assert_not_closed()
-        results = [remote.recv() for remote in self.remotes]
+        data = [remote.recv() for remote in self.remotes]
         self.waiting = False
-        obs, rews, dones, infos = zip(*results)
-        return _flatten_obs(obs), np.stack(rews), np.stack(dones), infos
+        observations, rewards, dones, infos = zip(*data)
+        return observations, np.stack(rewards), np.stack(dones), infos
 
     def reset(self, train_mode=None):
         """
         Reset all Unity environments serially
         """
         self._assert_not_closed()
-        infos = []
+        data = []
         for remote in self.remotes:
             remote.send(('reset', train_mode))
-            infos.append(remote.recv())
-        return infos
+            data.append(remote.recv())
+        observations, rewards, dones, infos = zip(*data)
+        return observations, np.stack(rewards), np.stack(dones), infos
 
     def close_extras(self):
         self.closed = True
@@ -464,7 +516,10 @@ class Task:
     def reset(self, train_mode=None):
         ## train_mode is for unity envs only
         if self.env_type=='unity':
-            return self.envs_wrapper.reset(train_mode=train_mode)
+            if train_mode is None:
+                return self.envs_wrapper.reset(train_mode=self.train_mode)
+            else:
+                return self.envs_wrapper.reset(train_mode=train_mode)
         else:
             return self.envs_wrapper.reset()
         

@@ -92,3 +92,8 @@ class Config:
             config_dict = args.__dict__
         for key in config_dict.keys():
             setattr(self, key, config_dict[key])
+
+    def __repr__(self):
+        from pprint import pformat
+        return pformat(vars(self), indent=4, width=1)
+
