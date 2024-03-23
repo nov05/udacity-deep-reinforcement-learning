@@ -17,10 +17,10 @@ class Config:
     PRIORITIZED_REPLAY = 'prioritized_replay'
 
     def __init__(self):
-        self.game = None ## or "env_id"
+        self.game = None  ## or "env_id", e.g. "unity-Reacher-v2"
         self.parser = argparse.ArgumentParser()
-        self.task_fn = None
-        self.env_fn_kwargs = dict()
+        self.task_fn = None  ## task env func
+        self.env_fn_kwargs = dict()  ## task env func kwargs
         self.tasks = None
         self.optimizer_fn = None
         self.actor_optimizer_fn = None
@@ -29,24 +29,24 @@ class Config:
         self.actor_network_fn = None
         self.critic_network_fn = None
         self.replay_fn = None
-        self.random_process_fn = None
-        self.discount = None
+        self.random_process_fn = None  ## noise function
+        self.discount = None  ## λ lambda, Q-value dicount rate
         self.target_network_update_freq = None
         self.exploration_steps = None
         self.log_level = 0
         self.history_length = None
         self.double_q = False
-        self.tag = 'vanilla'
+        self.tag = 'vanilla'  ## for logs
         self.num_workers = 1
         self.gradient_clip = None
         self.entropy_weight = 0
         self.use_gae = False
         self.gae_tau = 1.0
-        self.target_network_mix = 0.001
+        self.target_network_mix = 0.001  ## τ (tau), soft update rate
         self.state_normalizer = RescaleNormalizer()
         self.reward_normalizer = RescaleNormalizer()
         self.min_memory_size = None
-        self.max_steps = 0
+        self.max_steps = 0  ## task maximum step number 
         self.rollout_length = None
         self.value_loss_weight = 1.0
         self.iteration_log_interval = 30
@@ -65,7 +65,6 @@ class Config:
         self.eval_interval = 0
         self.eval_episodes = 10
         self.async_actor = True
-        self.tasks = False
         self.replay_type = Config.DEFAULT_REPLAY
         self.decaying_lr = False
         self.shared_repr = False

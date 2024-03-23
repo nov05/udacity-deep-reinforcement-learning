@@ -18,6 +18,7 @@ class BaseAgent:
         self.config = config
         self.logger = get_logger(tag=config.tag, log_level=config.log_level)
         self.task_ind = 0
+        self.env_type = get_env_type(game=self.config.game)  ## added by nov05
 
     def close(self):
         close_obj(self.task)
@@ -39,10 +40,9 @@ class BaseAgent:
         raise NotImplementedError
 
     def eval_episode(self):
-        env_type = get_env_type(game=self.config.game)
         ## env here is a Task instance with a wrapper instance of a list of env instances
         env = self.config.eval_env 
-        if env_type in ['unity']: ## added by nov05
+        if self.env_type in ['unity']: ## added by nov05
             state, _, _, _ = env.reset(train_mode=False) ## observations, rewards, dones, infos
         else:
             state = env.reset()
@@ -62,7 +62,7 @@ class BaseAgent:
         for _ in range(self.config.eval_episodes):
             total_rewards = self.eval_episode()
             episodic_returns.append(np.sum(total_rewards))
-        self.logger.info('steps %d, episodic_return_test %.2f(%.2f)' % (
+        self.logger.info('Step %d, episodic_return_test %.2f(%.2f)' % (
             self.total_steps, np.mean(episodic_returns), np.std(episodic_returns) / np.sqrt(len(episodic_returns))
         ))
         self.logger.add_scalar('episodic_return_test', np.mean(episodic_returns), self.total_steps)
@@ -75,7 +75,7 @@ class BaseAgent:
             ret = info['episodic_return']
             if ret is not None:
                 self.logger.add_scalar('episodic_return_train', ret, self.total_steps + offset)
-                self.logger.info('steps %d, episodic_return_train %s' % (self.total_steps + offset, ret))
+                self.logger.info('Step %d, episodic_return_train %s' % (self.total_steps + offset, ret))
         elif isinstance(info, tuple):
             for i, info_ in enumerate(info):
                 self.record_online_return(info_, i)

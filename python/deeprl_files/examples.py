@@ -558,9 +558,10 @@ def ddpg_continuous(**kwargs):
     config = Config()
     config.merge(kwargs)
 
-    config.task_fn = lambda: Task(config.game)
+    config.num_workers = 2  ## added by nov05
+    config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
     config.eval_env = config.task_fn()
-    config.max_steps = 1000 #int(1e6)
+    config.max_steps = 101 #int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
 
@@ -575,7 +576,7 @@ def ddpg_continuous(**kwargs):
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
-    config.warm_up = int(1e4)
+    config.warm_up = 100 #int(1e4)
     config.target_network_mix = 5e-3
     run_steps(DDPGAgent(config))
 

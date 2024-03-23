@@ -25,10 +25,10 @@ def ddpg_continuous(**kwargs):
                            env_fn_kwargs=env_fn_kwargs_eval, 
                            train_mode=False,
                            single_process=True)
-    config.max_steps = 10 #int(1e6)  ## 1,000,000
-    config.eval_interval = int(1e4)
+    config.max_steps = 20000 #int(1e6)  ## 1,000,000
+    config.eval_interval = int(1e3)
     config.eval_episodes = 1
-    config.save_interval = int(1e4)
+    config.save_interval = int(1e3)
 
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim, 
@@ -42,8 +42,8 @@ def ddpg_continuous(**kwargs):
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
-    config.warm_up = 0 #int(1e4)
-    config.target_network_mix = 5e-3
+    config.warm_up = int(1e3)
+    config.target_network_mix = 5e-3  ## soft update rate 0.5%, trg = trg*(1-τ) + src*τ
 
     run_steps(DDPGAgent(config))
     # try:
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     # select_device(-1)
     select_device(0) ## GPU
 
-    num_envs = 2
+    num_envs = 10
     # env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
     env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
     env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': True}
@@ -90,6 +90,7 @@ if __name__ == '__main__':
 ## $ python -m deeprl_files.examples
 ## $ python -m tests2.test_deeprl_envs
 
+## network architecture for "unity-Reacher-v2"
 '''
 DeterministicActorCriticNet(
   (phi_body): DummyBody()

@@ -55,7 +55,7 @@ class Storage:
 
 
 class UniformReplay(Storage):
-    TransitionCLS = Transition
+    TransitionCLS = Transition  ## a named tuple
 
     def __init__(self, memory_size, batch_size, n_step=1, discount=1, history_length=1, keys=None):
         super(UniformReplay, self).__init__(memory_size, keys)
@@ -68,8 +68,8 @@ class UniformReplay(Storage):
 
     def compute_valid_indices(self):
         indices = []
-        indices.extend(list(range(self.history_length - 1, self.pos - self.n_step)))
-        indices.extend(list(range(self.pos + self.history_length - 1, self.size() - self.n_step)))
+        indices.extend(list(range(self.history_length-1, self.pos-self.n_step)))
+        indices.extend(list(range(self.pos + self.history_length-1, self.size()-self.n_step)))
         return np.asarray(indices)
 
     def feed(self, data):
@@ -103,9 +103,9 @@ class UniformReplay(Storage):
         return Transition(*sampled_data)
 
     def valid_index(self, index):
-        if index - self.history_length + 1 >= 0 and index + self.n_step < self.pos:
+        if index-self.history_length+1 >= 0 and index+self.n_step < self.pos:
             return True
-        if index - self.history_length + 1 >= self.pos and index + self.n_step < self.size():
+        if index-self.history_length+1 >= self.pos and index+self.n_step < self.size():
             return True
         return False
 
@@ -121,12 +121,12 @@ class UniformReplay(Storage):
         if s_end < self.pos and next_s_end >= self.pos:
             raise RuntimeError('Invalid index')
 
-        state = [self.state[i] for i in range(s_start, s_end + 1)]
-        next_state = [self.state[i] for i in range(next_s_start, next_s_end + 1)]
+        state = [self.state[i] for i in range(s_start, s_end+1)]
+        next_state = [self.state[i] for i in range(next_s_start, next_s_end+1)]
         action = self.action[s_end]
-        reward = [self.reward[i] for i in range(s_end, s_end + self.n_step)]
-        mask = [self.mask[i] for i in range(s_end, s_end + self.n_step)]
-        if self.history_length == 1:
+        reward = [self.reward[i] for i in range(s_end, s_end+self.n_step)]
+        mask = [self.mask[i] for i in range(s_end, s_end+self.n_step)]
+        if self.history_length==1:
             # eliminate the extra dimension if no frame stack
             state = state[0]
             next_state = next_state[0]
