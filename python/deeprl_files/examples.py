@@ -558,12 +558,16 @@ def ddpg_continuous(**kwargs):
     config = Config()
     config.merge(kwargs)
 
-    config.num_workers = 2  ## added by nov05
-    config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
+    config.num_workers = 1  ## added by nov05
+    config.task_fn = lambda: Task(config.game, 
+                                  num_envs=config.num_workers,
+                                  single_process=True)
     config.eval_env = config.task_fn()
-    config.max_steps = 101 #int(1e6)
+    config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
+    # config.save_interval = int(1e5)  ## save model 
+    # config.save_after_steps = int(1e5)  ## save model
 
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim, config.action_dim,
@@ -572,11 +576,12 @@ def ddpg_continuous(**kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    config.replay_fn = lambda: UniformReplay(memory_size=int(1e6), batch_size=100)
+    config.replay_fn = lambda: UniformReplay(memory_size=int(1e6), 
+                                             batch_size=100)
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
-    config.warm_up = 100 #int(1e4)
+    config.warm_up = int(1e4)
     config.target_network_mix = 5e-3
     run_steps(DDPGAgent(config))
 
@@ -645,7 +650,7 @@ if __name__ == '__main__':
     game = 'Reacher-v2'
     # a2c_continuous(game=game)
     # ppo_continuous(game=game)
-    ddpg_continuous(game=game)
+    ddpg_continuous(game=game, remark=ddpg_continuous.__name__)
     # td3_continuous(game=game)
 
     # game = 'BreakoutNoFrameskip-v4'

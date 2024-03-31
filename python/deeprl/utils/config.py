@@ -17,59 +17,78 @@ class Config:
     PRIORITIZED_REPLAY = 'prioritized_replay'
 
     def __init__(self):
-        self.game = None  ## or "env_id", e.g. "unity-Reacher-v2"
         self.parser = argparse.ArgumentParser()
+        ## tasks
+        self.game = None  ## or "env_id", e.g. "unity-Reacher-v2"
         self.task_fn = None  ## task env func
+        self.num_workers = 1  ## task env number
         self.env_fn_kwargs = dict()  ## task env func kwargs
+        self.__eval_env = None
+        self.num_workers_eval = 1
+        self.env_fn_kwargs_eval = dict()  ## eval env func kwargs
         self.tasks = None
-        self.optimizer_fn = None
-        self.actor_optimizer_fn = None
-        self.critic_optimizer_fn = None
+        ## logs
+        self.tag = 'vanilla'  ## for logs
+        self.log_interval = int(1e3)  ## steps
+        self.log_level = 0
+        self.iteration_log_interval = 30
+        self.by_episode = False
+        ## save models
+        self.save_interval = 0  ## save every n steps
+        self.save_after_steps = -1  ## save after training n steps
+        self.save_episode_interval = 0 ## save every n episodes
+        self.save_after_episodes = -1 ## save after training n episodes
+        self.save_filename = None  ## saved torch model file name
+        ## eval models
+        self.eval_interval = 0  ## steps
+        self.eval_episodes = 10  ## eval n episodes 
+        self.eval_episode_interval = 0  ## eval every n episodes
+        self.eval_after_episodes = -1  ## eval after training n episodes
+        ## neural networks
         self.network_fn = None
         self.actor_network_fn = None
         self.critic_network_fn = None
-        self.replay_fn = None
-        self.random_process_fn = None  ## noise function
-        self.discount = None  ## λ lambda, Q-value dicount rate
+        self.optimizer_fn = None
+        self.actor_optimizer_fn = None
+        self.critic_optimizer_fn = None
         self.target_network_update_freq = None
-        self.exploration_steps = None
-        self.log_level = 0
-        self.history_length = None
-        self.double_q = False
-        self.tag = 'vanilla'  ## for logs
-        self.num_workers = 1
+        self.target_network_mix = 0.001  ## τ (tau), soft update rate
         self.gradient_clip = None
         self.entropy_weight = 0
-        self.use_gae = False
-        self.gae_tau = 1.0
-        self.target_network_mix = 0.001  ## τ (tau), soft update rate
+        self.decaying_lr = False
+        self.async_actor = True
+        self.double_q = False
+        ## stepping 
+        self.max_steps = 0  ## task maximum step number
+        self.max_episodes = 0 ## task maximum episodes
+        self.n_step = 1
+        self.random_process_fn = None  ## noise function
         self.state_normalizer = RescaleNormalizer()
         self.reward_normalizer = RescaleNormalizer()
-        self.min_memory_size = None
-        self.max_steps = 0  ## task maximum step number 
+        self.discount = None  ## λ lambda, Q-value dicount rate
+        self.exploration_steps = None
+        self.history_length = None
+        ## replay
+        self.replay_fn = None
+        self.replay_type = Config.DEFAULT_REPLAY
+        self.warm_up = 0
+        self.min_memory_size = None 
+        self.mini_batch_size = 64
+        self.use_gae = False
+        self.gae_tau = 1.0
         self.rollout_length = None
         self.value_loss_weight = 1.0
-        self.iteration_log_interval = 30
         self.categorical_v_min = None
         self.categorical_v_max = None
         self.categorical_n_atoms = 51
         self.num_quantiles = None
         self.optimization_epochs = 4
-        self.mini_batch_size = 64
         self.termination_regularizer = 0
         self.sgd_update_frequency = None
         self.random_action_prob = None
-        self.__eval_env = None
-        self.log_interval = int(1e3)
-        self.save_interval = 0
-        self.eval_interval = 0
-        self.eval_episodes = 10
-        self.async_actor = True
-        self.replay_type = Config.DEFAULT_REPLAY
-        self.decaying_lr = False
+        ## others
         self.shared_repr = False
         self.noisy_linear = False
-        self.n_step = 1
 
     @property
     def eval_env(self):

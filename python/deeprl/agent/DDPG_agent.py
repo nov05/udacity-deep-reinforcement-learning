@@ -7,7 +7,6 @@
 from ..network import *
 from ..component import *
 from .BaseAgent import *
-# import torchvision
 
 
 
@@ -15,84 +14,93 @@ class DDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
-        self.task = config.task_fn()  ## task (with envs) function
-        self.network = config.network_fn()  ## neural network function
-        self.target_network = config.network_fn()
-        self.target_network.load_state_dict(self.network.state_dict())
-        self.replay = config.replay_fn()  ## replay butter function
-        self.random_process = config.random_process_fn()  ## noise function
-        self.total_steps = 0
-        self.state = None
+        self.task = config.task_fn()  ## task (with envs)
+        self.network = config.network_fn()  ## local neural network (actor and critic)
+        self.target_network = config.network_fn()  ## target neural network (actor and critic)
+        self.target_network.load_state_dict(self.network.state_dict()) ## initialize target with local
+        self.replay = config.replay_fn()  ## replay buffer 
+        self.random_process = config.random_process_fn()  ## random states or noise
+        self.states = None
+        self.total_episodic_returns = []
 
 
     def soft_update(self, target, source):
         ## trg = trg*(1-τ) + src*τ
-        ## τ is stored in self.config.target_network_mix
+        ## τ is stored in "self.config.target_network_mix"
         for target_param, source_param in zip(target.parameters(), source.parameters()):
             target_param.detach_()
             target_param.copy_(target_param * (1.0 - self.config.target_network_mix) +
                                source_param * self.config.target_network_mix)
 
 
-    def eval_step(self, state):
-        if not state:
-            raise Exception("\"state\" is None")
+    def eval_step(self, states):
+        if states is None:
+            raise Exception("⚠️ \"states\" is None")
         self.config.state_normalizer.set_read_only()
-        state = self.config.state_normalizer(state)
-        action = self.network(state)
+        states = self.config.state_normalizer(states)
+        actions = self.network(states)  ## get actions from the local network
         self.config.state_normalizer.unset_read_only()
-        return to_np(action)
+        return to_np(actions)
 
 
     def step(self):
-        ## get next_state from action
-        if self.state is None:
+        ## reset the task
+        if self.states is None:
             self.random_process.reset_states()
             if self.env_type in ['unity']:
-                self.state, _, _, _ = self.task.reset()
+                self.states, _, _, _ = self.task.reset()
             else:
-                self.state = self.task.reset()
-            self.state = self.config.state_normalizer(self.state)
+                self.states = self.task.reset()
+            self.states = self.config.state_normalizer(self.states)
 
-        if self.total_steps < self.config.warm_up:
+        ## step
+        if self.total_steps < self.config.warm_up: ## get random actions
             if self.env_type in ['unity']: ## one env has multiple agents
-                action = []
+                actions = []
                 for _ in range(self.task.num_envs):
-                    action.append([self.task.action_space.sample()
-                                   for _ in range(self.task.envs_wrapper.num_agents)])
-            else:
-                action = [self.task.action_space.sample()
-                          for _ in range(self.task.num_envs)]
-        else:
-            action = self.network(self.state)
-            action = to_np(action)
-            action += self.random_process.sample() ## add noise
-            action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
-        next_state, reward, done, info = self.task.step(action)
-        next_state = self.config.state_normalizer(next_state)
-        reward = self.config.reward_normalizer(reward)
-        self.record_online_return(info)  ## log train returns
+                    actions.append([self.task.action_space.sample()
+                                    for _ in range(self.task.envs_wrapper.num_agents)])
+            else: ## one env has one agent
+                actions = [self.task.action_space.sample()
+                           for _ in range(self.task.num_envs)]
+        else: ## get actions from the local network
+            actions = to_np(self.network(self.states)) \
+                    + self.random_process.sample() ## add noise
+        ## task would clip when step
+        next_states, rewards, dones, infos = self.task.step(actions)
+        next_states = self.config.state_normalizer(next_states)
+        rewards = self.config.reward_normalizer(rewards)
+        for done,info in zip(dones,infos):
+            if np.any(done):
+                self.total_episodic_returns.append(info['episodic_return'])
 
         # update replay buffer
-        state_ = self._reshape_for_replay(self.state, keep_dim=2)
-        action_ = self._reshape_for_replay(action, keep_dim=2)
-        reward_ = self._reshape_for_replay(reward, keep_dim=1)
-        next_state_ = self._reshape_for_replay(next_state, keep_dim=2)
-        done_ = self._reshape_for_replay(done, keep_dim=1)
+        states_ = self._reshape_for_replay(self.states, keep_dim=2)
+        actions_ = self._reshape_for_replay(actions, keep_dim=2)
+        rewards_ = self._reshape_for_replay(rewards, keep_dim=1)
+        next_states_ = self._reshape_for_replay(next_states, keep_dim=2)
+        dones_ = self._reshape_for_replay(dones, keep_dim=1)
         self.replay.feed(dict(
-            state=state_, #self.state,
-            action=action_, #action,
-            reward=reward_, #reward,
-            next_state=next_state_, #next_state,
-            mask=1-np.asarray(done_, dtype=np.int32),
+            state=states_, 
+            action=actions_, 
+            reward=rewards_, 
+            next_state=next_states_, 
+            mask=1-np.asarray(dones_, dtype=np.int32),
         ))
     
-        if np.any(done_):
-            self.random_process.reset_states()
-        self.state = next_state
+        ## check whether the episode is done
+        if len(self.total_episodic_returns)==self.task.num_envs:
+            self.episode_done = True
+            self.record_online_return(self.total_episodic_returns, 
+                                      by_episode=self.config.by_episode)  ## log train returns
+            self.total_episodic_returns = []
+            self.states = None
+            self.total_episodes += 1
+        else:
+            self.states = next_states
         self.total_steps += 1
 
-        ## sample batch_size of transition sequences from the replay buffer
+        ## sample config.mini_batch_size of transition sequences from the replay buffer
         ## update neural networks
         if self.replay.size() >= self.config.warm_up:
             transitions = self.replay.sample()  ## batch_size is set in config.replay_fn
@@ -133,6 +141,7 @@ class DDPGAgent(BaseAgent):
             self.soft_update(self.target_network, self.network)
 
 
+    ## added by nov05
     def _reshape_for_replay(self, data, keep_dim=2):
         data = np.array(data)
         if len(data.shape)>keep_dim:

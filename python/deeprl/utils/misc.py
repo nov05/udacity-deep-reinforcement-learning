@@ -5,61 +5,107 @@
 #######################################################################
 
 import numpy as np
-# import pickle
-# import os
 import datetime
 # import torch
 import time
 from pathlib import Path
 import itertools
-# from collections import OrderedDict, Sequence   ## api changed, by nov05
-from collections import OrderedDict               ## api changed, by nov05
-from collections.abc import Sequence              ## api changed, by nov05
+from collections import OrderedDict   ## api changed, by nov05
+from collections.abc import Sequence  ## api changed, by nov05
 from tqdm import tqdm
 from shutil import rmtree
-import json
 
 ## local imports
 from .torch_utils import *
-from ..component.envs import get_env_type
+
 
 
 def run_steps(agent):
 
     config = agent.config
-    ## log config 
+    ## log config info 
     log_info = f"\n{config.__repr__()}\n"
     agent.logger.info(log_info)
-
+    ## log neural network architecture
+    log_info = f"\n{agent.network}\n"
+    agent.logger.info(log_info)
     agent_name = agent.__class__.__name__
     t0 = time.time()
 
     for _ in tqdm(range(config.max_steps), desc='Max steps', position=0, leave=True): 
+
         ## save trained model at intervals
-        if config.save_interval and (not (agent.total_steps+1) % config.save_interval):
+        if config.save_interval and agent.total_steps>config.save_after_steps \
+            and (not agent.total_steps%config.save_interval):
             agent.save('data/%s-%s-%d' % (agent_name, config.tag, agent.total_steps))
             log_info = f"Step {agent.total_steps}, Model saved as 'data/{agent_name}-{config.tag}-{agent.total_steps}'"
             agent.logger.info(log_info)
+
         ## log steps/s at intervals
-        if config.log_interval and (not (agent.total_steps+1) % config.log_interval):
+        if config.log_interval and (not agent.total_steps%config.log_interval):
             time_interval = time.time() - t0
-            if time_interval==0:
-                log_info = f"Step {agent.total_steps}, - steps/s (time interval=0)"
-            else:
-                log_info = 'Step %d, %.2f steps/s' % (agent.total_steps, config.log_interval / time_interval)
+            if time_interval:  ## no divide by 0
+                log_info = f'Step {agent.total_steps}, {config.log_interval/time_interval:.2f} steps/s'
             agent.logger.info(log_info)
             t0 = time.time()
-        ## log eval result at intervals
-        if config.eval_interval and (agent.total_steps==0 or (not (agent.total_steps+1) % config.eval_interval)):
+
+        ## log eval result at intervals (including Step 0)
+        if config.eval_interval and (agent.total_steps==0 or (not agent.total_steps%config.eval_interval)):
             agent.eval_episodes()
 
         agent.step()
         agent.switch_task()
-
+        
     agent.close()
-    if config.eval_env is not None:
-        config.eval_env.close()
 
+
+def run_episodes(agent):
+
+    config = agent.config
+    ## log config info 
+    log_info = f"\n{config.__repr__()}\n"
+    agent.logger.info(log_info)
+    ## log neural network architecture
+    log_info = f"\n{agent.network}\n"
+    agent.logger.info(log_info)
+    agent_name = agent.__class__.__name__
+    t0 = time.time()
+
+    for _ in tqdm(range(config.max_episodes), desc='Max episodes', position=0, leave=True): 
+
+        ## save trained model
+        if config.save_episode_interval and agent.total_episodes>config.save_after_episodes \
+        and (not agent.total_episodes%config.save_episode_interval):
+            agent.save(f"data/{agent_name}-{config.tag}-{agent.total_episodes}")
+            log_info = f"Episode {agent.total_episodes}, Step {agent.total_steps}, model saved as 'data/{agent_name}-{config.tag}-{agent.total_episodes}'"
+            agent.logger.info(log_info)
+
+        ## log every episode
+        log_info = f"Episode {agent.total_episodes}, Step {agent.total_steps}, {time.time()-t0:.2f} s/episode" 
+        agent.logger.info(log_info)
+        t0 = time.time()
+
+        ## log eval result (including episode 0)
+        if config.eval_episode_interval and agent.total_episodes>config.eval_after_episodes \
+        and (not agent.total_episodes%config.eval_episode_interval):
+            agent.eval_episodes(by_episode=True)
+
+        while True:
+            agent.step()
+            if agent.episode_done==True:
+                agent.episode_done = False
+                break
+        agent.switch_task()
+        
+    agent.close()
+
+
+## added by nov05
+def eval_episodes(agent):
+    config = agent.config
+    agent.load(filename=config.save_filename)  ## load saved torch model
+    agent.eval_episodes()  ## set config.eval_episodes
+    agent.close()
 
 
 def get_time_str():
@@ -104,10 +150,10 @@ def generate_tag(params):
     if 'tag' in params.keys():
         return
     params.setdefault('run', 0)
-    exclude = ['game', 'run', 'env_fn', 'env_fn_kwargs']
+    params_include = ['remark']
     str = ['%s_%s' % (k, v if is_plain_type(v) else v.__name__) 
-           for k, v in sorted(params.items()) if k not in exclude]
-    tag = '%s-%s-run-%d' % (params['game'], '-'.join(str), params['run'])
+           for k, v in sorted(params.items()) if k in params_include]
+    tag = f"{params['game']}-{'-'.join(str)}-run-{params['run']}"
     params['tag'] = tag
     ## e.g. tag is "Reacher-v2-remark_ddpg_continuous-run-0"
 

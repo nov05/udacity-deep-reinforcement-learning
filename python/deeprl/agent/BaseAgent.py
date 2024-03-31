@@ -3,14 +3,17 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
-
 import torch
 import numpy as np
-from ..utils import *
 import torch.multiprocessing as mp
 from collections import deque
 from skimage.io import imsave
 import pickle
+
+## local imports
+from ..utils import *
+from deeprl.component.envs import get_env_type
+
 
 
 class BaseAgent:
@@ -19,8 +22,15 @@ class BaseAgent:
         self.logger = get_logger(tag=config.tag, log_level=config.log_level)
         self.task_ind = 0
         self.env_type = get_env_type(game=self.config.game)  ## added by nov05
+        self.total_steps = 0
+        self.total_episodes = 0
+        self.episode_done = False   ## all envs have done an episode, added by nov05
 
     def close(self):
+        try:
+            close_obj(self.config.eval_env)
+        except:
+            pass
         close_obj(self.task)
         print(f"🟢 Task {self.task} has been closed.")
 
@@ -30,57 +40,74 @@ class BaseAgent:
         with open('%s.stats' % (filename), 'wb') as f:
             pickle.dump(self.config.state_normalizer.state_dict(), f)
 
+
     def load(self, filename):
         state_dict = torch.load('%s.model' % filename, map_location=lambda storage, loc:storage) ## cpu
         self.network.load_state_dict(state_dict)
         with open('%s.stats' % (filename), 'rb') as f:
             self.config.state_normalizer.load_state_dict(pickle.load(f))
 
+
     def eval_step(self, state):
         raise NotImplementedError
 
-    def eval_episode(self):
-        ## env here is a Task instance with a wrapper instance of a list of env instances
-        env = self.config.eval_env 
-        if self.env_type in ['unity']: ## added by nov05
-            state, _, _, _ = env.reset(train_mode=False) ## observations, rewards, dones, infos
-        else:
-            state = env.reset()
-        if not state:
-            raise Exception("⚠️ \"state\" is None")
-        print('Evaluating...')
-        while True:
-            action = self.eval_step(state)
-            _, _, dones, infos = env.step(action) ## observations, rewards, dones, infos
-            if np.any(dones):
-                episodic_return = infos[0]['episodic_return']
-                break
-        return episodic_return
 
-    def eval_episodes(self):
+    def eval_episode(self):
+        ## self.config.eval_env is a Task instance with a wrapper instance of a list of env instances
+        eval_task = self.config.eval_env 
+        if self.env_type in ['unity']: ## added by nov05
+            states, _, _, _ = eval_task.reset(train_mode=False) ## observations, rewards, dones, infos
+        else:
+            states = eval_task.reset()
         episodic_returns = []
-        for _ in range(self.config.eval_episodes):
-            total_rewards = self.eval_episode()
-            episodic_returns.append(np.sum(total_rewards))
-        self.logger.info('Step %d, episodic_return_test %.2f(%.2f)' % (
-            self.total_steps, np.mean(episodic_returns), np.std(episodic_returns) / np.sqrt(len(episodic_returns))
-        ))
-        self.logger.add_scalar('episodic_return_test', np.mean(episodic_returns), self.total_steps)
+        while True:
+            actions = self.eval_step(states)
+            states, _, dones, infos = eval_task.step(actions) ## observations, rewards, dones, infos
+            for done,info in zip(dones,infos):
+                if np.any(done):  ## there are multiple agents in one Unity env, hence multiple values in "done"
+                    episodic_returns.append(info['episodic_return'])
+            if len(episodic_returns)==eval_task.num_envs:  ## all envs are done
+                break 
+        return episodic_returns
+
+
+    def eval_episodes(self, by_episode=False):
+        total_episodic_returns = []
+        for i in range(self.config.eval_episodes):
+            print(f"Evaluating episode {i}, with {self.config.eval_env.num_envs} environments...")
+            episodic_returns = self.eval_episode()
+            total_episodic_returns.append(np.sum(episodic_returns))
+        log_info = f"Step {self.total_steps}, " + \
+                   f"episodic_return_test {np.mean(total_episodic_returns):.2f}" + \
+                   f"({np.std(total_episodic_returns)/np.sqrt(len(total_episodic_returns)):.2f})"
+        if by_episode:
+            log_info = f"Episode {self.total_episodes}, " + log_info
+        self.logger.info(log_info)
+        self.logger.add_scalar('episodic_return_test', np.mean(total_episodic_returns), self.total_steps)
         return {
-            'episodic_return_test': np.mean(episodic_returns),
+            'episodic_return_test': np.mean(total_episodic_returns),
         }
 
-    def record_online_return(self, info, offset=0):
+
+    def record_online_return(self, info, offset=0, by_episode=False):
         if isinstance(info, dict):
             ret = info['episodic_return']
             if ret is not None:
-                self.logger.add_scalar('episodic_return_train', ret, self.total_steps + offset)
-                self.logger.info('Step %d, episodic_return_train %s' % (self.total_steps + offset, ret))
+                self.logger.add_scalar('episodic_return_train', ret, self.total_steps+offset)
+                self.logger.info(f"Step {self.total_steps+offset}, episodic_return_train {ret}")
         elif isinstance(info, tuple):
             for i, info_ in enumerate(info):
-                self.record_online_return(info_, i)
+                self.record_online_return(info_, i)   ## recursive
+        elif isinstance(info, list) and isinstance(info[0], float): ## for Unity, added by nov05
+            ret = np.mean(info)
+            self.logger.add_scalar('episodic_return_train', ret, self.total_steps)
+            log_info = f"Step {self.total_steps}, episodic_return_train {ret}"
+            if by_episode: log_info = f"Episode {self.total_episodes}, " + log_info
+            self.logger.info(log_info)
         else:
             raise NotImplementedError
+        return {'episodic_return_train': ret}
+
 
     def switch_task(self):
         config = self.config
@@ -92,6 +119,7 @@ class BaseAgent:
             self.task = config.tasks[self.task_ind]
             self.states = self.task.reset()
             self.states = config.state_normalizer(self.states)
+
 
     def record_episode(self, dir, env):
         mkdir(dir)
@@ -106,14 +134,17 @@ class BaseAgent:
             if ret:
                 break
 
+
     def record_step(self, state):
         raise NotImplementedError
+
 
     # For DMControl
     def record_obs(self, env, dir, steps):
         env = env.env.envs[0]
         obs = env.render(mode='rgb_array')
         imsave('%s/%04d.png' % (dir, steps), obs)
+
 
 
 class BaseActor(mp.Process):

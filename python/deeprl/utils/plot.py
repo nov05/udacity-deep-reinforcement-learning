@@ -7,6 +7,7 @@
 import numpy as np
 import os
 import re
+import pandas as pd
 
 
 class Plotter:
@@ -91,7 +92,10 @@ class Plotter:
         for dir in dirs:
             event_acc = EventAccumulator(dir)
             event_acc.Reload()
-            _, x, y = zip(*event_acc.Scalars(kwargs['tag']))
+            s = event_acc.Scalars(kwargs['tag'])[0]
+            ## object event_acc.Scalars(kwargs['tag'])[0], e.g.
+            ## ScalarEvent(wall_time=1711847217.9241836, step=149, value=-36.37693405151367)
+            _, x, y = zip(*[(s.wall_time,s.step,s.value) for s in event_acc.Scalars(kwargs['tag'])])
             xy_list.append([x, y])
         if kwargs['right_align']:
             x_max = float('inf')
@@ -109,9 +113,9 @@ class Plotter:
         import matplotlib.pyplot as plt
         if x is None:
             x = np.arange(data.shape[1])
-        if kwargs['error'] == 'se':
+        if kwargs['error']=='se':  ## standard error
             e_x = np.std(data, axis=0) / np.sqrt(data.shape[0])
-        elif kwargs['error'] == 'std':
+        elif kwargs['error']=='std':  ## standard deviation
             e_x = np.std(data, axis=0)
         else:
             raise NotImplementedError
@@ -147,11 +151,11 @@ class Plotter:
                     indices = np.linspace(0, len(x) - 1, kwargs['downsample']).astype(np.int)
                     x = x[indices]
                     y = y[:, indices]
-                if kwargs['agg'] == 'mean':
+                if kwargs['agg']=='mean':
                     self.plot_mean(y, x, label=label, color=color, error='se')
-                elif kwargs['agg'] == 'mean_std':
+                elif kwargs['agg']=='mean_std':
                     self.plot_mean(y, x, label=label, color=color, error='std')
-                elif kwargs['agg'] == 'median':
+                elif kwargs['agg']=='median':
                     self.plot_median_std(y, x, label=label, color=color)
                 else:
                     for k in range(y.shape[0]):

@@ -40,6 +40,7 @@ if not sys.warnoptions:  # allow overriding with `-W` option
 gym.logger.set_level(40)   
 
 
+
 ## added by nov05
 import multiprocessing as mp
 import dm_control2gym
@@ -69,6 +70,8 @@ def get_env_type(game=None, env=None):
         env_type = 'atari'
     return env_type
     
+
+
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
 ## refactored, func for unity added, by nov05
 def get_env_fn(game, ## could be called "id", "env_id" in other functions
@@ -115,6 +118,7 @@ def get_env_fn(game, ## could be called "id", "env_id" in other functions
     return env_fn, env_type
 
 
+
 class OriginalReturnWrapper(gym.Wrapper):
     def __init__(self, env):
         gym.Wrapper.__init__(self, env)
@@ -134,6 +138,7 @@ class OriginalReturnWrapper(gym.Wrapper):
         return self.env.reset()
 
 
+
 class TransposeImage(gym.ObservationWrapper):
     def __init__(self, env=None):
         super(TransposeImage, self).__init__(env)
@@ -146,6 +151,7 @@ class TransposeImage(gym.ObservationWrapper):
 
     def observation(self, observation):
         return observation.transpose(2, 0, 1)
+
 
 
 # The original LayzeFrames doesn't work well
@@ -173,6 +179,7 @@ class LazyFrames(object):
         return self.__array__()[i]
 
 
+
 class FrameStack(FrameStack_):
     def __init__(self, env, k):
         FrameStack_.__init__(self, env, k)
@@ -182,9 +189,13 @@ class FrameStack(FrameStack_):
         return LazyFrames(list(self.frames))
 
 
+
 ## The original one in baselines is really bad
 ## baselines\baselines\common\vec_env\dummy_vec_env.py    
 class DummyVecEnv(VecEnv):
+    '''
+    single process, sequentialyl step each environment
+    '''
     def __init__(self, env_fns):
         self.envs = [fn() for fn in env_fns] ## create envs
         env = self.envs[0]
@@ -206,12 +217,13 @@ class DummyVecEnv(VecEnv):
         return observations, np.asarray(rewards), np.asarray(dones), infos
 
     def reset(self):
-        ## reset all envs, and return next_states
+        ## reset all envs, and return observations
         return [env.reset() for env in self.envs]
 
     def close(self):
-        ## close all envs
+        ## close all envs  
         [env.close() for env in self.envs] 
+
 
 
 def get_unity_spaces(brain_params: BrainParameters): 
@@ -229,6 +241,7 @@ def get_unity_spaces(brain_params: BrainParameters):
     return observation_space, action_space
 
 
+
 def get_return_from_brain_info(brain_info: BrainInfo, brain_name):
     if brain_name in ['ReacherBrain']:
         observation = brain_info.vector_observations 
@@ -238,10 +251,11 @@ def get_return_from_brain_info(brain_info: BrainInfo, brain_name):
     return observation, reward, done
 
 
+
 class UnityVecEnv(VecEnv):
     """
     This is a wrapper class for a list of Unity environment instances,
-    operating in a single process
+    operating in a single process, stepping enviroments sequentially
     """
     def __init__(self, env_fns=None, train_mode=False):
         self.envs = [fn() for fn in env_fns]
@@ -274,7 +288,7 @@ class UnityVecEnv(VecEnv):
             observation, reward, done = get_return_from_brain_info(brain_info, self.brain_name)  
             info = {'brain_info': brain_info}
             env.total_reward += np.sum(reward)
-            if np.any(done):
+            if np.any(done): ## one env has multi-agents hence done has multiple values
                 info['episodic_return'] = env.total_reward / len(brain_info.agents)
                 env.total_reward = 0
                 brain_info = env.reset(train_mode=self.train_mode)[self.brain_name]
@@ -301,6 +315,7 @@ class UnityVecEnv(VecEnv):
         [env.close() for env in self.envs]
 
 
+
 def unity_worker(remote, parent_remote, env_fn_wrapper, train_mode):
     parent_remote.close()
     env = env_fn_wrapper.x()
@@ -317,7 +332,7 @@ def unity_worker(remote, parent_remote, env_fn_wrapper, train_mode):
                 observation, reward, done = get_return_from_brain_info(brain_info, brain_name)
                 env.total_reward += np.sum(reward)
                 info = {'brain_info': brain_info}
-                if np.any(done):
+                if np.any(done): ## one env has multi-agents hence done has multiple values
                     ## in "deeprl.agent.BaseAgent", ret = info[0]['episodic_return']
                     info['episodic_return'] = env.total_reward / len(brain_info.agents)
                     env.total_reward = 0
@@ -404,7 +419,7 @@ class UnitySubprocVecEnv(VecEnv):
         data = [remote.recv() for remote in self.remotes]
         self.waiting = False
         observations, rewards, dones, infos = zip(*data)
-        return observations, np.stack(rewards), np.stack(dones), infos
+        return np.stack(observations), np.stack(rewards), np.stack(dones), infos
 
     def reset(self, train_mode=None):
         """
@@ -416,7 +431,7 @@ class UnitySubprocVecEnv(VecEnv):
             remote.send(('reset', train_mode))
             data.append(remote.recv())
         observations, rewards, dones, infos = zip(*data)
-        return observations, np.stack(rewards), np.stack(dones), infos
+        return np.stack(observations), np.stack(rewards), np.stack(dones), infos
 
     def close_extras(self):
         self.closed = True
@@ -436,6 +451,7 @@ class UnitySubprocVecEnv(VecEnv):
             self.close()
 
 
+
 class Task:
     def __init__(self,
                  game, ## gym or unity game, called "id" or "env_id" in other funcs
@@ -449,16 +465,19 @@ class Task:
         '''
         20240310 added logic for unity
         '''
+        ## input parameters
         self.game = game
         self.num_envs = num_envs
         self.env_fn_kwargs = env_fn_kwargs
         self.train_mode = train_mode 
         self.seeds = seeds
+        self.log_dir = log_dir
         self.single_process = single_process
+        self.episode_life = episode_life
 
         self.envs = []
-        self.log_dir = log_dir
-        self.episode_life = episode_life
+
+        ## make log directory
         if log_dir:
             mkdir(log_dir)
 
@@ -487,21 +506,19 @@ class Task:
             self.env_fns.append(env_fn)
 
         ## create envs
-        Wrapper, wrapper_kwargs = None, None
-        if self.env_type=='unity':
+        Wrapper, kwargs = None, {'env_fns':self.env_fns}
+        if self.env_type in ['unity']:
             if single_process:
                 Wrapper = UnityVecEnv
             else:
                 Wrapper = UnitySubprocVecEnv
-            wrapper_kwargs = {'env_fns':self.env_fns, 
-                              'train_mode':self.train_mode}
+            kwargs['train_mode'] = self.train_mode
         else:
             if single_process:
                 Wrapper = DummyVecEnv 
             else:
                 Wrapper = SubprocVecEnv
-            wrapper_kwargs = {'env_fns':self.env_fns}
-        self.envs_wrapper = Wrapper(**wrapper_kwargs)
+        self.envs_wrapper = Wrapper(**kwargs)
             
         self.observation_space = self.envs_wrapper.observation_space
         self.state_dim = int(np.prod(self.observation_space.shape))
@@ -515,17 +532,16 @@ class Task:
         
     def reset(self, train_mode=None):
         ## train_mode is for unity envs only
-        if self.env_type=='unity':
-            if train_mode is None:
-                return self.envs_wrapper.reset(train_mode=self.train_mode)
-            else:
-                return self.envs_wrapper.reset(train_mode=train_mode)
-        else:
-            return self.envs_wrapper.reset()
+        kwargs = {}
+        if self.env_type in ['unity']:
+            if train_mode is not None:
+                self.train_mode = train_mode
+            kwargs['train_mode'] = self.train_mode
+        return self.envs_wrapper.reset(**kwargs)
         
     def step(self, actions):
         if isinstance(self.action_space, Box): 
-            actions = [np.clip(a, self.action_space.low, self.action_space.high) for a in actions]
+            actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return self.envs_wrapper.step(actions)
     
     def close(self):

@@ -67,7 +67,7 @@ def plot_ddpg_td3():
     plotter.plot_games(games=games,
                        patterns=patterns,
                        agg='mean',
-                       downsample=0,
+                       downsample=0,  ## no downsample
                        labels=labels,
                        right_align=False,
                        tag=plotter.RETURN_TEST,
