@@ -105,6 +105,4 @@ ENV/
 
 ## unity mlagents builds
 data/
-python/log/
-python/tf_log/
 python/data/

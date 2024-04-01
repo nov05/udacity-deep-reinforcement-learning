@@ -17,6 +17,7 @@ PrioritizedTransition = namedtuple('Transition',
                                    ['state', 'action', 'reward', 'next_state', 'mask', 'sampling_prob', 'idx'])
 
 
+
 class Storage:
     def __init__(self, memory_size, keys=None):
         if keys is None:
@@ -52,6 +53,7 @@ class Storage:
         data = map(lambda x: torch.cat(x, dim=0), data)
         Entry = namedtuple('Entry', keys)
         return Entry(*list(data))
+
 
 
 class UniformReplay(Storage):
@@ -92,10 +94,9 @@ class UniformReplay(Storage):
     def sample(self, batch_size=None):
         if batch_size is None:
             batch_size = self.batch_size
-
         sampled_data = []
         while len(sampled_data) < batch_size:
-            transition = self.construct_transition(np.random.randint(0, self.size()))
+            transition = self.construct_transition(np.random.randint(0, self.size()))  ## random index
             if transition is not None:
                 sampled_data.append(transition)
         sampled_data = zip(*sampled_data)
@@ -103,9 +104,9 @@ class UniformReplay(Storage):
         return Transition(*sampled_data)
 
     def valid_index(self, index):
-        if index-self.history_length+1 >= 0 and index+self.n_step < self.pos:
+        if index-self.history_length+1>=0 and index+self.n_step<self.pos:
             return True
-        if index-self.history_length+1 >= self.pos and index+self.n_step < self.size():
+        if index-self.history_length+1>=self.pos and index+self.n_step<self.size():
             return True
         return False
 
@@ -114,12 +115,12 @@ class UniformReplay(Storage):
             return None
         s_start = index - self.history_length + 1
         s_end = index
-        if s_start < 0:
-            raise RuntimeError('Invalid index')
+        if s_start<0:
+            raise RuntimeError('⚠️ Invalid index')
         next_s_start = s_start + self.n_step
         next_s_end = s_end + self.n_step
-        if s_end < self.pos and next_s_end >= self.pos:
-            raise RuntimeError('Invalid index')
+        if s_end<self.pos and next_s_end>=self.pos:
+            raise RuntimeError('⚠️ Invalid index')
 
         state = [self.state[i] for i in range(s_start, s_end+1)]
         next_state = [self.state[i] for i in range(next_s_start, next_s_end+1)]
@@ -147,6 +148,7 @@ class UniformReplay(Storage):
 
     def update_priorities(self, info):
         raise NotImplementedError
+
 
 
 class PrioritizedReplay(UniformReplay):
@@ -194,6 +196,7 @@ class PrioritizedReplay(UniformReplay):
         for idx, priority in info:
             self.max_priority = max(self.max_priority, priority)
             self.tree.update(idx, priority)
+
 
 
 class ReplayWrapper(mp.Process):

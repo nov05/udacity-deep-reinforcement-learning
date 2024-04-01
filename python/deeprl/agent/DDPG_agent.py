@@ -14,7 +14,7 @@ class DDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
-        self.task = config.task_fn()  ## task (with envs)
+        self.task = config.task if config.task is not None else config.task_fn()  ## task (with envs)
         self.network = config.network_fn()  ## local neural network (actor and critic)
         self.target_network = config.network_fn()  ## target neural network (actor and critic)
         self.target_network.load_state_dict(self.network.state_dict()) ## initialize target with local
@@ -66,7 +66,8 @@ class DDPGAgent(BaseAgent):
         else: ## get actions from the local network
             actions = to_np(self.network(self.states)) \
                     + self.random_process.sample() ## add noise
-        ## task would clip when step
+        ## task will clip when step. however, actions have to be clipped here for replay buffer
+        actions = np.clip(actions, self.task.action_space.low, self.task.action_space.high)
         next_states, rewards, dones, infos = self.task.step(actions)
         next_states = self.config.state_normalizer(next_states)
         rewards = self.config.reward_normalizer(rewards)
@@ -109,7 +110,7 @@ class DDPGAgent(BaseAgent):
             rewards = tensor(transitions.reward).unsqueeze(-1)
             next_states = tensor(transitions.next_state)
             mask = tensor(transitions.mask).unsqueeze(-1)
-            
+
             ## the networks can process data with dimension of (bath_size, observation_size)
             ## target actor (policy network) and critic (value network) forward
             phi_next = self.target_network.feature(next_states)
@@ -146,7 +147,7 @@ class DDPGAgent(BaseAgent):
         data = np.array(data)
         if len(data.shape)>keep_dim:
             if keep_dim>1:
-                data = data.reshape(-1, data.shape[-1]).tolist()
+                data = data.reshape(-1, *data.shape[-keep_dim+1:]).tolist()
             else:
                 data = data.reshape(-1).tolist()
         elif len(data.shape)<=keep_dim:

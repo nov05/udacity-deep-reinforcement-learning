@@ -20,6 +20,7 @@ from .torch_utils import *
 
 
 
+## changed by nov05
 def run_steps(agent):
 
     config = agent.config
@@ -59,6 +60,8 @@ def run_steps(agent):
     agent.close()
 
 
+
+## added by nov05
 def run_episodes(agent):
 
     config = agent.config
@@ -95,12 +98,12 @@ def run_episodes(agent):
             if agent.episode_done==True:
                 agent.episode_done = False
                 break
-        agent.switch_task()
-        
+        agent.switch_task()    
+
     agent.close()
 
 
-## added by nov05
+## eval and/or visualize trained model, added by nov05
 def eval_episodes(agent):
     config = agent.config
     agent.load(filename=config.save_filename)  ## load saved torch model

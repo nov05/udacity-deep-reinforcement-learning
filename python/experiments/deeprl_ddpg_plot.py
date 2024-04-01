@@ -9,7 +9,7 @@ from deeprl import *
 def plot_ddpg():
     plotter = Plotter()
     games = [
-        'Reacher-v2',
+        'unity-reacher-v2',
     ]
     patterns = [
         'remark_ddpg',
@@ -23,8 +23,8 @@ def plot_ddpg():
                        downsample=0,  ## no downsample
                        labels=labels,
                        right_align=False,
-                    #    tag=plotter.RETURN_TRAIN,
-                       tag=plotter.RETURN_TEST,
+                       tag=plotter.RETURN_TRAIN,
+                    #    tag=plotter.RETURN_TEST,
                        root='.\\data\\tf_log',
                        interpolation=0,
                        window=0,

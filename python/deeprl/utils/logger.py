@@ -19,13 +19,13 @@ def get_logger(tag='default', log_level=0):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     if tag:
-        # fh = logging.FileHandler('./log/%s-%s.txt' % (tag, get_time_str()))
-        fh = logging.FileHandler(f"./log/{tag}-{get_time_str()}.log")
+        # fh = logging.FileHandler('./log/%s-%s.txt' % (tag, get_time_str()))  ## changed by nov05
+        fh = logging.FileHandler(f"./data/log/{tag}-{get_time_str()}.log")     ## changed by nov05
         fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s'))
         fh.setLevel(logging.INFO)
         logger.addHandler(fh)
-    # return Logger(logger, './tf_log/logger-%s-%s' % (tag, get_time_str()), log_level)
-    return Logger(logger, f"./tf_log/logger-{tag}-{get_time_str()}", log_level)
+    # return Logger(logger, './tf_log/logger-%s-%s' % (tag, get_time_str()), log_level)  ## changed by nov05
+    return Logger(logger, f"./data/tf_log/logger-{tag}-{get_time_str()}", log_level)     ## changed by nov05
 
 
 class Logger(object):

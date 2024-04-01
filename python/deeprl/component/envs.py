@@ -56,6 +56,7 @@ env_fn_mappings = {'dm': dm_control2gym.make,
                    'atari': make_atari,
                    'gym': gym.make,
                    'unity': make_unity}
+
 def get_env_type(game=None, env=None):
     env_type = None
     if game is not None:
@@ -93,8 +94,8 @@ def get_env_fn(game, ## could be called "id", "env_id" in other functions
         kwargs.update({'id':game})
 
     if env_type=='unity':
-        ## can't wrap unity env here. define info['episodic_return'] in return later 
-        ## in the UnityVecEnv and UnitySubprocVecEnv implementations 
+        ## can't wrap unity env here. define info['episodic_return'] in return  
+        ## later in the UnityVecEnv and UnitySubprocVecEnv implementations 
         env_fn = env_fn_mappings[env_type](**kwargs)
     else:
         env = env_fn_mappings[env_type](**kwargs)
@@ -291,8 +292,8 @@ class UnityVecEnv(VecEnv):
             if np.any(done): ## one env has multi-agents hence done has multiple values
                 info['episodic_return'] = env.total_reward / len(brain_info.agents)
                 env.total_reward = 0
-                brain_info = env.reset(train_mode=self.train_mode)[self.brain_name]
-                observation, _, _ = get_return_from_brain_info(brain_info, self.brain_name)
+                # brain_info = env.reset(train_mode=self.train_mode)[self.brain_name]
+                # observation, _, _ = get_return_from_brain_info(brain_info, self.brain_name)
             else:
                 info['episodic_return'] = None
             data.append([observation, reward, done, info])
@@ -308,6 +309,7 @@ class UnityVecEnv(VecEnv):
             info = {'brain_info': brain_info}
             info['episodic_return'] = None
             data.append([observation, reward, done, info])
+            print('🟢 Unity environment has been resetted.')
         observations, rewards, dones, infos = zip(*data)
         return observations, np.asarray(rewards), np.asarray(dones), infos
 
@@ -336,8 +338,8 @@ def unity_worker(remote, parent_remote, env_fn_wrapper, train_mode):
                     ## in "deeprl.agent.BaseAgent", ret = info[0]['episodic_return']
                     info['episodic_return'] = env.total_reward / len(brain_info.agents)
                     env.total_reward = 0
-                    brain_info = env.reset(train_mode=train_mode)[brain_name] 
-                    observation, _, _ = get_return_from_brain_info(brain_info, brain_name)
+                    # brain_info = env.reset(train_mode=train_mode)[brain_name] 
+                    # observation, _, _ = get_return_from_brain_info(brain_info, brain_name)
                 else:
                     info['episodic_return'] = None
                 remote.send((observation, reward, done, info))
@@ -363,6 +365,7 @@ def unity_worker(remote, parent_remote, env_fn_wrapper, train_mode):
         print('⚠️ UnitySubprocVecEnv worker: got KeyboardInterrupt')
     finally:
         env.close()
+
 
 
 class UnitySubprocVecEnv(VecEnv):
@@ -489,10 +492,11 @@ class Task:
         ## get seeds
         if not self.seeds:
             if self.env_type=='unity':
-                self.seeds = [np.random.RandomState().randint(-2147483648, 2147483647) for _ in range(self.num_envs)]
+                self.seeds = [np.random.RandomState().randint(-2147483648, 2147483647) 
+                              for _ in range(self.num_envs)]
             else:
-                self.seeds = [np.random.RandomState().randint(0, 2**31) for _ in range(self.num_envs)] 
-
+                self.seeds = [np.random.RandomState().randint(0, 2**31) 
+                              for _ in range(self.num_envs)] 
         ## get env_fns
         self.env_fns = []
         for i in range(self.num_envs):

@@ -19,28 +19,32 @@ class Config:
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         ## tasks
-        self.game = None  ## or "env_id", e.g. "unity-Reacher-v2"
-        self.task_fn = None  ## task env func
+        self.game = None  ## or "env_id", e.g. "unity-reacher-v2"
+        self.task_name = None  ## task.game
+        self.state_dim = None
+        self.action_dim = None
+        self.task_fn = None  ## task env func; set either config.task or config.task_fn
+        self._task = None  ## task env; set either config.task or config.task_fn
         self.num_workers = 1  ## task env number
         self.env_fn_kwargs = dict()  ## task env func kwargs
-        self.__eval_env = None
+        self._eval_env = None
         self.num_workers_eval = 1
         self.env_fn_kwargs_eval = dict()  ## eval env func kwargs
         self.tasks = None
-        ## logs
+        ## log
         self.tag = 'vanilla'  ## for logs
         self.log_interval = int(1e3)  ## steps
         self.log_level = 0
         self.iteration_log_interval = 30
         self.by_episode = False
         ## save models
-        self.save_interval = 0  ## save every n steps
+        self.save_interval = 0  ## save every n steps; 0 = no save
         self.save_after_steps = -1  ## save after training n steps
         self.save_episode_interval = 0 ## save every n episodes
         self.save_after_episodes = -1 ## save after training n episodes
         self.save_filename = None  ## saved torch model file name
         ## eval models
-        self.eval_interval = 0  ## steps
+        self.eval_interval = 0  ## eval every n steps; 0 = no eval
         self.eval_episodes = 10  ## eval n episodes 
         self.eval_episode_interval = 0  ## eval every n episodes
         self.eval_after_episodes = -1  ## eval after training n episodes
@@ -91,12 +95,23 @@ class Config:
         self.noisy_linear = False
 
     @property
+    def task(self):
+        return self._task
+
+    @task.setter
+    def task(self, env):
+        self._task = env
+        if self.task_name is None: self.task_name = env.game 
+        if self.state_dim is None: self.state_dim = env.state_dim 
+        if self.action_dim is None: self.action_dim = env.action_dim 
+
+    @property
     def eval_env(self):
-        return self.__eval_env
+        return self._eval_env
 
     @eval_env.setter
     def eval_env(self, env):
-        self.__eval_env = env
+        self._eval_env = env
         self.state_dim = env.state_dim
         self.action_dim = env.action_dim
         self.task_name = env.game

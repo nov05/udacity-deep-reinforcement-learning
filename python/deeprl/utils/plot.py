@@ -10,6 +10,7 @@ import re
 import pandas as pd
 
 
+
 class Plotter:
     COLORS = ['blue', 'green', 'red', 'black', 'cyan', 'magenta', 'yellow', 'brown', 'purple', 'pink',
               'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
@@ -18,18 +19,22 @@ class Plotter:
     RETURN_TRAIN = 'episodic_return_train'
     RETURN_TEST = 'episodic_return_test'
 
+
     def __init__(self):
         pass
+
 
     def _rolling_window(self, a, window):
         shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
         strides = a.strides + (a.strides[-1],)
         return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
+
     def _window_func(self, x, y, window, func):
         yw = self._rolling_window(y, window)
         yw_func = func(yw, axis=-1)
         return x[window - 1:], yw_func
+
 
     def load_results(self, dirs, **kwargs):
         kwargs.setdefault('tag', self.RETURN_TRAIN)
@@ -66,11 +71,12 @@ class Plotter:
 
         return x, y
 
-    def filter_log_dirs(self, pattern, negative_pattern=' ', root='./log', **kwargs):
+
+    def filter_log_dirs(self, pattern, negative_pattern=' ', root='./data/log', **kwargs):
         dirs = [item[0] for item in os.walk(root)]
         leaf_dirs = []
         for i in range(len(dirs)):
-            if i + 1 < len(dirs) and dirs[i + 1].startswith(dirs[i]):
+            if i + 1 < len(dirs) and dirs[i+1].startswith(dirs[i]):
                 continue
             leaf_dirs.append(dirs[i])
         names = []
@@ -125,6 +131,7 @@ class Plotter:
         del kwargs['label']
         plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
 
+
     def plot_median_std(self, data, x=None, **kwargs):
         import matplotlib.pyplot as plt
         if x is None:
@@ -134,6 +141,7 @@ class Plotter:
         plt.plot(x, m_x, **kwargs)
         del kwargs['label']
         plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
+
 
     def plot_games(self, games, **kwargs):
         kwargs.setdefault('agg', 'mean')

@@ -15,27 +15,27 @@ def ddpg_continuous(**kwargs):
     config = Config()
     config.merge(kwargs)
 
-    config.task_fn = lambda:Task(config.game, 
-                                 num_envs=config.num_workers,
-                                 env_fn_kwargs=config.env_fn_kwargs, 
-                                 train_mode=True,
-                                 single_process=False)
-    config.eval_env = Task(config.game, 
-                           num_envs=config.num_workers_eval,
-                           env_fn_kwargs=config.env_fn_kwargs_eval, 
-                           train_mode=False,
-                           single_process=False)
+    config.task = Task(config.game, 
+                       num_envs=config.num_workers,
+                       env_fn_kwargs=config.env_fn_kwargs, 
+                       train_mode=True,
+                       single_process=False)
+    # config.eval_env = Task(config.game, 
+    #                        num_envs=config.num_workers_eval,
+    #                        env_fn_kwargs=config.env_fn_kwargs_eval, 
+    #                        train_mode=False,
+    #                        single_process=False)
     config.by_episode = True
-    config.max_episodes = 320
-    config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
+    config.max_episodes = 70 #320
+    # config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
     # config.eval_after_episodes = 280
-    config.eval_episode_interval = 10
+    # config.eval_episode_interval = 10
     config.save_after_episodes = 280 ## save model
     config.save_episode_interval = 10 ## save model
 
     config.network_fn = lambda: DeterministicActorCriticNet(
-        config.state_dim, 
-        config.action_dim,
+        config.state_dim,  
+        config.action_dim,  
         actor_body=FCBody(config.state_dim, (128, 128), gate=F.relu),
         critic_body=FCBody(config.state_dim + config.action_dim, (128, 128), gate=F.relu),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
@@ -47,7 +47,7 @@ def ddpg_continuous(**kwargs):
     config.discount = 0.99  ## λ lambda, Q-value discount rate
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
-    config.warm_up = int(1e4)
+    config.warm_up = int(1e4)  ## can't be 0, or it will create a deadloop. i didn't do it.
     config.target_network_mix = 1e-3  ## τ soft update rate=0.1%, trg = trg*(1-τ) + src*τ
 
     if is_training:
@@ -61,8 +61,8 @@ def ddpg_continuous(**kwargs):
 
 if __name__ == '__main__':
 
-    is_training = False
-    save_filename = r'data\DDPGAgent-unity-Reacher-v2-remark_ddpg_continuous-run-0-310'
+    is_training = True
+    save_filename = r''
 
     env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
     # env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
@@ -73,8 +73,6 @@ if __name__ == '__main__':
         # $ python -m tests2.test_rmdir
         ## remove all log and saved files
         try:
-            rmdir('data\\log')
-            rmdir('data\\tf_log')
             rmdir('data')
         except:
             pass
@@ -83,7 +81,7 @@ if __name__ == '__main__':
         mkdir('data') ## trained models
         select_device(0) ## GPU, an non-negative integer is the index of GPU
         num_envs = 1
-        num_envs_eval = 10
+        num_envs_eval = 1
         eval_no_graphics = True
         num_eval_episodes = 1
     else:
@@ -96,7 +94,7 @@ if __name__ == '__main__':
     env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': True}
     env_fn_kwargs_eval = {'file_name': env_file_name, 'no_graphics': eval_no_graphics, 
                           'base_port':5005+num_envs}
-    ddpg_continuous(game='unity-Reacher-v2', 
+    ddpg_continuous(game='unity-reacher-v2', 
                     run=0,
                     env_fn_kwargs=env_fn_kwargs,
                     env_fn_kwargs_eval=env_fn_kwargs_eval,
@@ -106,13 +104,13 @@ if __name__ == '__main__':
     
 
 
-## $ python -m experiments.deeprl_ddpg_continuous    <- run this file, train or eval
+## $ python -m experiments.deeprl_ddpg_continuous    <- run this file, train or eval unity reacher
 ## $ python -m experiments.deeprl_ddpg_plot          <- plot tensorflow log data (tf_log)
-## $ python -m deeprl_files.examples
-## $ python -m tests2.test_deeprl_envs
-## $ python -m tests2.test_rmdir   <- delete logs, models, plots. run with caution
+## $ python -m deeprl_files.examples                 <- train mujoco reacher
+## $ python -m tests2.test_deeprl_envs               <- test unity envs
+## $ python -m tests2.test_rmdir                     <- delete logs, models, plots. run with caution
 
-## example network architecture for "unity-Reacher-v2"
+## example network architecture for "unity-reacher-v2"
 '''
 DeterministicActorCriticNet(
   (phi_body): DummyBody()
