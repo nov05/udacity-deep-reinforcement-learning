@@ -1,13 +1,17 @@
+from torch import nn
+import torch.nn.functional as F
+
 ## local imports
 from deeprl import *
 from deeprl.utils.misc import rmdir, run_episodes, eval_episodes
 
 
 
-## refer to D:\github\udacity-deep-reinforcement-learning\python\deeprl_files\examples.py 
-##          $ python -m deeprl_files.examples
-## refer to D:\github\udacity-deep-reinforcement-learning\python\tests2\test_deeprl_envs.py
-##          $ python -m tests2.test_deeprl_envs
+## 1. find the config here or in "./deeprl/utils/config.py"
+## 2. refer to ".\deeprl_files\examples.py" 
+##    $ python -m deeprl_files.examples
+## 3. refer to "\tests2\test_deeprl_envs.py"
+##    $ python -m tests2.test_deeprl_envs
 
 def ddpg_continuous(**kwargs): 
     generate_tag(kwargs)
@@ -20,34 +24,41 @@ def ddpg_continuous(**kwargs):
                        env_fn_kwargs=config.env_fn_kwargs, 
                        train_mode=True,
                        single_process=False)
-    # config.eval_env = Task(config.game, 
-    #                        num_envs=config.num_workers_eval,
-    #                        env_fn_kwargs=config.env_fn_kwargs_eval, 
-    #                        train_mode=False,
-    #                        single_process=False)
-    config.by_episode = True
-    config.max_episodes = 70 #320
-    # config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
+    config.eval_env = Task(config.game, 
+                           num_envs=config.num_workers_eval,
+                           env_fn_kwargs=config.env_fn_kwargs_eval, 
+                           train_mode=False,
+                           single_process=False)
+    config.by_episode = True  ## control by episode; if false, by step
+    config.max_episodes = 100 #320
+    config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
     # config.eval_after_episodes = 280
-    # config.eval_episode_interval = 10
+    config.eval_episode_interval = 10
     config.save_after_episodes = 280 ## save model
     config.save_episode_interval = 10 ## save model
 
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim,  
         config.action_dim,  
-        actor_body=FCBody(config.state_dim, (128, 128), gate=F.relu),
-        critic_body=FCBody(config.state_dim + config.action_dim, (128, 128), gate=F.relu),
+        actor_body=FCBody(config.state_dim, (128, 128), gate=nn.LeakyReLU, 
+                          init_method='uniform_fan_in', batch_norm=nn.BatchNorm1d),
+        critic_body=FCBody(config.state_dim + config.action_dim, (128, 128), gate=nn.LeakyReLU, 
+                           init_method='uniform_fan_in', batch_norm=nn.BatchNorm1d),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=1e-4))
-
+        ## for the critic optimizer, 1e-3 won't converge
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=3e-4, weight_decay=1e-5),  
+        )
+    ## replay settings
     config.min_memory_size = int(1e6)
+    config.mini_batch_size = 64
     config.replay_fn = lambda: UniformReplay(memory_size=config.min_memory_size, 
                                              batch_size=config.mini_batch_size)
     config.discount = 0.99  ## λ lambda, Q-value discount rate
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
-    config.warm_up = int(1e4)  ## can't be 0, or it will create a deadloop. i didn't do it.
+    ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
+    config.warm_up = int(1e3) #int(1e4)  ## can't be 0 steps, or it will create a deadloop in buffer.
+    config.replay_interval = 2  ## replay every 2 steps
     config.target_network_mix = 1e-3  ## τ soft update rate=0.1%, trg = trg*(1-τ) + src*τ
 
     if is_training:
@@ -62,7 +73,7 @@ def ddpg_continuous(**kwargs):
 if __name__ == '__main__':
 
     is_training = True
-    save_filename = r''
+    save_filename = r''  ## saved torch model file name
 
     env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
     # env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
@@ -111,6 +122,7 @@ if __name__ == '__main__':
 ## $ python -m tests2.test_rmdir                     <- delete logs, models, plots. run with caution
 
 ## example network architecture for "unity-reacher-v2"
+## check the example log file
 '''
 DeterministicActorCriticNet(
   (phi_body): DummyBody()

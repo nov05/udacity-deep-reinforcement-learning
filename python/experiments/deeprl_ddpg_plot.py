@@ -9,6 +9,7 @@ from deeprl import *
 def plot_ddpg():
     plotter = Plotter()
     games = [
+        # 'Reacher-v2',  ## mujoco
         'unity-reacher-v2',
     ]
     patterns = [
@@ -17,21 +18,25 @@ def plot_ddpg():
     labels = [
         'DDPG',
     ]
-    plotter.plot_games(games=games,
-                       patterns=patterns,
-                       agg='mean',
-                       downsample=0,  ## no downsample
-                       labels=labels,
-                       right_align=False,
-                       tag=plotter.RETURN_TRAIN,
-                    #    tag=plotter.RETURN_TEST,
-                       root='.\\data\\tf_log',
-                       interpolation=0,
-                       window=0,
-                       )
-    # plt.show()
-    plt.tight_layout()
-    plt.savefig('data/images/unity-reacher-v2_test.png', bbox_inches='tight')
+    for log_type in ['train', 'test']:
+    # for log_type in ['train']:
+        tag = plotter.RETURN_TRAIN if log_type=='train' else plotter.RETURN_TEST
+        moving_average = 50 if log_type=='train' else 5
+        plotter.plot_games(games=games,
+                        patterns=patterns,
+                        agg='mean',
+                        moving_average=moving_average,
+                        downsample=0,  ## no downsample
+                        labels=labels,
+                        right_align=False,
+                        tag=tag,
+                        root='.\\data\\tf_log',
+                        interpolation=0,
+                        window=0,
+                        )
+        # plt.show()
+        plt.tight_layout()
+        plt.savefig(f'data/images/{games[0]}_{log_type}.png', bbox_inches='tight')
 
 
 

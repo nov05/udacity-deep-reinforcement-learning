@@ -12,6 +12,7 @@ import math
 from ..utils import *
 
 
+
 class BaseNet:
     def __init__(self):
         pass
@@ -20,11 +21,25 @@ class BaseNet:
         pass
 
 
-def layer_init(layer, w_scale=1.0):
-    nn.init.orthogonal_(layer.weight.data)
-    layer.weight.data.mul_(w_scale)
-    nn.init.constant_(layer.bias.data, 0)
+
+## add uniform methods etc., by nov05
+def layer_init(layer, w_scale=1.0, 
+               method='orthogonal', fr=0, to=1):
+    if method=='orthogonal':
+        nn.init.orthogonal_(layer.weight.data)
+        layer.weight.data.mul_(w_scale)
+        nn.init.constant_(layer.bias.data, 0)
+    elif method=='uniform':
+        layer.weight.data.uniform_(fr, to)  ## default (0,1)
+    elif method=='uniform_fan_in':
+        fan_in = layer.weight.data.size()[0]
+        to = 1./np.sqrt(fan_in)
+        fr = -to 
+        layer.weight.data.uniform_(fr, to)
+    else:
+        raise NotImplementedError
     return layer
+
 
 
 # Adapted from https://github.com/saj1919/RL-Adventure/blob/master/5.noisy%20dqn.ipynb

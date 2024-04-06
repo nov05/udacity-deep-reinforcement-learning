@@ -3,7 +3,10 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
+from torch import nn 
+import torch.nn.functional as F
 
+## local imports
 from .network_utils import *
 
 
@@ -33,6 +36,7 @@ class NatureConvBody(nn.Module):
         return y
 
 
+
 class DDPGConvBody(nn.Module):
     def __init__(self, in_channels=4):
         super(DDPGConvBody, self).__init__()
@@ -47,30 +51,41 @@ class DDPGConvBody(nn.Module):
         return y
 
 
+
 class FCBody(nn.Module):
-    def __init__(self, state_dim, hidden_units=(64, 64), gate=F.relu, noisy_linear=False):
+    def __init__(self, state_dim, hidden_units=(64, 64), gate=nn.ReLU, noisy_linear=False,
+                 init_method='orthogonal', batch_norm=None):
         super(FCBody, self).__init__()
-        dims = (state_dim,) + hidden_units
-        if noisy_linear:
-            self.layers = nn.ModuleList(
-                [NoisyLinear(dim_in, dim_out) for dim_in, dim_out in zip(dims[:-1], dims[1:])])
-        else:
-            self.layers = nn.ModuleList(
-                [layer_init(nn.Linear(dim_in, dim_out)) for dim_in, dim_out in zip(dims[:-1], dims[1:])])
-
         self.gate = gate
-        self.feature_dim = dims[-1]
         self.noisy_linear = noisy_linear
+        dims = (state_dim,) + hidden_units
+        self.feature_dim = dims[-1]
 
+        self.layers = nn.ModuleList()
+        for i,(dim_in,dim_out) in enumerate(zip(dims[:-1], dims[1:])):
+            if noisy_linear:
+                self.layers.append(NoisyLinear(dim_in, dim_out))
+            else:
+                self.layers.append(layer_init(nn.Linear(dim_in, dim_out), method=init_method))
+            self.layers.append(gate())  ## activation
+            # if i==0 and batch_norm:
+            #     self.layers.append(batch_norm(dims[i+1]))
+        
     def reset_noise(self):
         if self.noisy_linear:
             for layer in self.layers:
-                layer.reset_noise()
+                if isinstance(layer, NoisyLinear):
+                    layer.reset_noise()
 
     def forward(self, x):
-        for layer in self.layers:
-            x = self.gate(layer(x))
-        return x
+        try:
+            for layer in self.layers:
+                x = layer(x)
+        except:
+            print('👉', x.shape, layer)
+            raise
+        return(x)
+
 
 
 class DummyBody(nn.Module):

@@ -85,9 +85,9 @@ class Plotter:
         for dir in leaf_dirs:
             if p.match(dir) and not np.match(dir):
                 names.append(dir)
-                print(dir)
-        print('')
+                print('👉', dir)
         return sorted(names)
+
 
     def load_log_dirs(self, dirs, **kwargs):
         kwargs.setdefault('right_align', False)
@@ -149,7 +149,7 @@ class Plotter:
         l = len(games)
         plt.figure(figsize=(l * 5, 5))
         for i, game in enumerate(games):
-            plt.subplot(1, l, i + 1)
+            plt.subplot(1, l, i+1)
             for j, p in enumerate(kwargs['patterns']):
                 label = kwargs['labels'][j]
                 color = self.COLORS[j]
@@ -169,6 +169,9 @@ class Plotter:
                     for k in range(y.shape[0]):
                         plt.plot(x, y[i], label=label, color=color)
                         label = None
+                if 'moving_average' in kwargs:  ## added by nov05
+                    y_ = pd.DataFrame(y).transpose().rolling(kwargs['moving_average']).mean().values.tolist()
+                    plt.plot(x, y_, color=self.COLORS[j+6], linewidth=2)
             plt.xlabel('steps')
             if not i:
                 plt.ylabel(kwargs['tag'])

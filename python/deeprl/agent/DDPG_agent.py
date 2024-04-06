@@ -3,7 +3,9 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
+import torch.nn.functional as F
 
+## local imports
 from ..network import *
 from ..component import *
 from .BaseAgent import *
@@ -44,7 +46,7 @@ class DDPGAgent(BaseAgent):
 
 
     def step(self):
-        ## reset the task
+        ## reset the task (envs)
         if self.states is None:
             self.random_process.reset_states()
             if self.env_type in ['unity']:
@@ -64,16 +66,16 @@ class DDPGAgent(BaseAgent):
                 actions = [self.task.action_space.sample()
                            for _ in range(self.task.num_envs)]
         else: ## get actions from the local network
-            actions = to_np(self.network(self.states)) \
-                    + self.random_process.sample() ## add noise
+            self.network.eval()
+            with torch.no_grad():
+                actions = to_np(self.network(self.states)) \
+                        + self.random_process.sample()*(1/np.sqrt(self.total_episodes+1)) ## add noise with decay
+            self.network.train()
         ## task will clip when step. however, actions have to be clipped here for replay buffer
         actions = np.clip(actions, self.task.action_space.low, self.task.action_space.high)
         next_states, rewards, dones, infos = self.task.step(actions)
         next_states = self.config.state_normalizer(next_states)
         rewards = self.config.reward_normalizer(rewards)
-        for done,info in zip(dones,infos):
-            if np.any(done):
-                self.total_episodic_returns.append(info['episodic_return'])
 
         # update replay buffer
         states_ = self._reshape_for_replay(self.states, keep_dim=2)
@@ -88,14 +90,17 @@ class DDPGAgent(BaseAgent):
             next_state=next_states_, 
             mask=1-np.asarray(dones_, dtype=np.int32),
         ))
-    
+
         ## check whether the episode is done
+        for done,info in zip(dones,infos):
+            if np.any(done):
+                self.total_episodic_returns.append(info['episodic_return'])
         if len(self.total_episodic_returns)==self.task.num_envs:
             self.episode_done = True
             self.record_online_return(self.total_episodic_returns, 
                                       by_episode=self.config.by_episode)  ## log train returns
             self.total_episodic_returns = []
-            self.states = None
+            self.states = None  ## indicate to reset the envs
             self.total_episodes += 1
         else:
             self.states = next_states
@@ -103,7 +108,9 @@ class DDPGAgent(BaseAgent):
 
         ## sample config.mini_batch_size of transition sequences from the replay buffer
         ## update neural networks
-        if self.replay.size() >= self.config.warm_up:
+        if self.replay.size()>=self.config.warm_up \
+        and self.total_steps%self.config.replay_interval==0:  ## replay every 2 steps
+            # print("👉", self.total_steps)
             transitions = self.replay.sample()  ## batch_size is set in config.replay_fn
             states = tensor(transitions.state)
             actions = tensor(transitions.action)
@@ -113,29 +120,32 @@ class DDPGAgent(BaseAgent):
 
             ## the networks can process data with dimension of (bath_size, observation_size)
             ## target actor (policy network) and critic (value network) forward
-            phi_next = self.target_network.feature(next_states)
-            a_next = self.target_network.actor(phi_next)  ## get action
-            q_next = self.target_network.critic(phi_next, a_next)  ## get Q-value
-            q_next = self.config.discount * mask * q_next ## multiply λ-discount rate
-            q_next.add_(rewards)
-            q_next = q_next.detach()
+            phi_target = self.target_network.feature(next_states)
+            a_target = self.target_network.actor(phi_target)  ## get action
+            with torch.no_grad():
+                q_target = self.target_network.critic(phi_target, a_target)  ## get Q-value
+            q_target = q_target * mask * self.config.discount  ## multiply λ-discount rate
+            q_target.add_(rewards).detach() ## shape: [mini_batch_size, 1]
 
             ## local critic forward
+            self.network.critic_opt.zero_grad()  ## added by nov05
             phi = self.network.feature(states)
-            q = self.network.critic(phi, actions)
+            q_critic = self.network.critic(phi, actions)  ## expected Q-value
             ## local critic loss and backpropagate
-            value_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean()
-            self.network.zero_grad()
-            value_loss.backward()
+            critic_loss = torch.mean((q_critic - q_target).pow(2).mul(0.5).sum(-1), 0)  ## MSE
+            # critic_loss = F.mse_loss(q_critic, q_target)  ## nov05
+            critic_loss.backward()
             self.network.critic_opt.step()  ## optimizer step
 
             ## local actor forward
+            self.network.actor_opt.zero_grad()  ## added by nov05
             phi = self.network.feature(states)
             a = self.network.actor(phi)
             ## local actor loss and backpropagation
-            policy_loss = -self.network.critic(phi.detach(), a).mean()
-            self.network.zero_grad()
-            policy_loss.backward()
+            actor_loss = -self.network.critic(phi.detach(), a).mean(dim=0) 
+            # if self.total_steps==1000: 
+            #     print('👉', actor_loss.shape)
+            actor_loss.backward()
             self.network.actor_opt.step()  ## optimizer step
 
             ## update target network

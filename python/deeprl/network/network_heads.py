@@ -8,6 +8,7 @@ from .network_utils import *
 from .network_bodies import *
 
 
+
 class VanillaNet(nn.Module, BaseNet):
     def __init__(self, output_dim, body):
         super(VanillaNet, self).__init__()
@@ -19,6 +20,7 @@ class VanillaNet(nn.Module, BaseNet):
         phi = self.body(tensor(x))
         q = self.fc_head(phi)
         return dict(q=q)
+
 
 
 class DuelingNet(nn.Module, BaseNet):
@@ -37,6 +39,7 @@ class DuelingNet(nn.Module, BaseNet):
         return dict(q=q)
 
 
+
 class CategoricalNet(nn.Module, BaseNet):
     def __init__(self, action_dim, num_atoms, body):
         super(CategoricalNet, self).__init__()
@@ -52,6 +55,7 @@ class CategoricalNet(nn.Module, BaseNet):
         prob = F.softmax(pre_prob, dim=-1)
         log_prob = F.log_softmax(pre_prob, dim=-1)
         return dict(prob=prob, log_prob=log_prob)
+
 
 
 class RainbowNet(nn.Module, BaseNet):
@@ -102,6 +106,7 @@ class QuantileNet(nn.Module, BaseNet):
         return dict(quantile=quantiles)
 
 
+
 class OptionCriticNet(nn.Module, BaseNet):
     def __init__(self, body, action_dim, num_options):
         super(OptionCriticNet, self).__init__()
@@ -127,6 +132,8 @@ class OptionCriticNet(nn.Module, BaseNet):
                 'pi': pi}
 
 
+
+## so far it is only used in DDPG
 class DeterministicActorCriticNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
@@ -137,21 +144,19 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
                  actor_body=None,
                  critic_body=None):
         super(DeterministicActorCriticNet, self).__init__()
-        if phi_body is None: phi_body = DummyBody(state_dim)
+        if phi_body is None: phi_body = DummyBody(state_dim)  ## state, aka. obs, observations
         if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
         if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
         self.phi_body = phi_body
         self.actor_body = actor_body
         self.critic_body = critic_body
-        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
-        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
-
-        self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
-        self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
-        self.phi_params = list(self.phi_body.parameters())
-        
-        self.actor_opt = actor_opt_fn(self.actor_params + self.phi_params)
-        self.critic_opt = critic_opt_fn(self.critic_params + self.phi_params)
+        self.actor_body.layers.append(layer_init(nn.Linear(actor_body.feature_dim, action_dim), 
+                                                 method='uniform', fr=-3e-3, to=3e-3))
+        self.actor_body.layers.append(nn.Tanh())
+        self.critic_body.layers.append(layer_init(nn.Linear(critic_body.feature_dim, 1), 
+                                                  method='uniform', fr=-3e-3, to=3e-3))
+        self.actor_opt = actor_opt_fn(list(self.actor_body.parameters()))
+        self.critic_opt = critic_opt_fn(list(self.critic_body.parameters()))
         self.to(Config.DEVICE)
 
     def forward(self, obs):
@@ -159,15 +164,22 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         action = self.actor(phi)
         return action
 
+    def actor(self, phi):
+        x = phi
+        for layer in self.actor_body.layers:
+            x = layer(x)
+        return x
+
+    def critic(self, phi, a):
+        x = torch.cat([phi, a], dim=1)
+        for layer in self.critic_body.layers:
+            x = layer(x)
+        return x
+
     def feature(self, obs):
         obs = tensor(obs)
         return self.phi_body(obs)
 
-    def actor(self, phi):
-        return torch.tanh(self.fc_action(self.actor_body(phi)))
-
-    def critic(self, phi, a):
-        return self.fc_critic(self.critic_body(torch.cat([phi, a], dim=1)))
 
 
 class GaussianActorCriticNet(nn.Module, BaseNet):
@@ -184,7 +196,7 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
         self.phi_body = phi_body
         self.actor_body = actor_body
         self.critic_body = critic_body
-        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_actor_fc = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
         self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
         self.std = nn.Parameter(torch.zeros(action_dim))
         self.phi_params = list(self.phi_body.parameters())
@@ -212,6 +224,7 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
                 'entropy': entropy,
                 'mean': mean,
                 'v': v}
+
 
 
 class CategoricalActorCriticNet(nn.Module, BaseNet):
@@ -253,6 +266,7 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
                 'log_pi_a': log_prob,
                 'entropy': entropy,
                 'v': v}
+
 
 
 class TD3Net(nn.Module, BaseNet):

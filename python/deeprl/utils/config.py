@@ -62,7 +62,7 @@ class Config:
         self.decaying_lr = False
         self.async_actor = True
         self.double_q = False
-        ## stepping 
+        ## step
         self.max_steps = 0  ## task maximum step number
         self.max_episodes = 0 ## task maximum episodes
         self.n_step = 1
@@ -75,7 +75,8 @@ class Config:
         ## replay
         self.replay_fn = None
         self.replay_type = Config.DEFAULT_REPLAY
-        self.warm_up = 0
+        self.warm_up = 0  ## replay after n steps
+        self.replay_interval = 1  ## replay per n steps
         self.min_memory_size = None 
         self.mini_batch_size = 64
         self.use_gae = False

@@ -3,7 +3,7 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
-
+from torch import nn
 ## local imports
 from deeprl import *
 
@@ -563,16 +563,16 @@ def ddpg_continuous(**kwargs):
                                   num_envs=config.num_workers,
                                   single_process=True)
     config.eval_env = config.task_fn()
-    config.max_steps = int(1e6)
-    config.eval_interval = int(1e4)
+    config.max_steps = int(5e4) #int(1e6)
+    config.eval_interval = int(1e3)
     config.eval_episodes = 20
     # config.save_interval = int(1e5)  ## save model 
     # config.save_after_steps = int(1e5)  ## save model
 
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim, config.action_dim,
-        actor_body=FCBody(config.state_dim, (400, 300), gate=F.relu),
-        critic_body=FCBody(config.state_dim + config.action_dim, (400, 300), gate=F.relu),
+        actor_body=FCBody(config.state_dim, (400, 300), gate=nn.ReLU),
+        critic_body=FCBody(config.state_dim + config.action_dim, (400, 300), gate=nn.ReLU),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
