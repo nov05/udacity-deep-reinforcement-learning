@@ -1,0 +1,458 @@
+2024-04-09 12:36:15,993 - root - INFO: 
+{   '_eval_env': <deeprl.component.envs.Task object at 0x0000018186B34D00>,
+    '_task': <deeprl.component.envs.Task object at 0x0000018186B34CA0>,
+    'action_dim': 4,
+    'actor_network_fn': None,
+    'actor_optimizer_fn': None,
+    'async_actor': True,
+    'by_episode': True,
+    'categorical_n_atoms': 51,
+    'categorical_v_max': None,
+    'categorical_v_min': None,
+    'critic_network_fn': None,
+    'critic_optimizer_fn': None,
+    'decaying_lr': False,
+    'discount': 0.9,
+    'double_q': False,
+    'entropy_weight': 0,
+    'env_fn_kwargs': {   'base_port': 5005,
+                         'file_name': '..\\data\\Reacher_Windows_x86_64_1\\Reacher.exe',
+                         'no_graphics': True,
+                         'worker_id': 0},
+    'env_fn_kwargs_eval': {   'base_port': 5006,
+                              'file_name': '..\\data\\Reacher_Windows_x86_64_1\\Reacher.exe',
+                              'no_graphics': True,
+                              'worker_id': 2},
+    'eval_after_episodes': 10,
+    'eval_episode_interval': 10,
+    'eval_episodes': 2,
+    'eval_interval': 0,
+    'exploration_steps': None,
+    'gae_tau': 1.0,
+    'game': 'unity-reacher-v2',
+    'gradient_clip': None,
+    'history_length': None,
+    'iteration_log_interval': 30,
+    'log_interval': 1000,
+    'log_level': 0,
+    'max_episodes': 160,
+    'max_steps': 0,
+    'min_memory_size': 1000000,
+    'mini_batch_size': 128,
+    'n_step': 1,
+    'network_fn': <function ddpg_continuous.<locals>.<lambda> at 0x0000018189B2A8C0>,
+    'noisy_linear': False,
+    'num_quantiles': None,
+    'num_workers': 1,
+    'num_workers_eval': 3,
+    'optimization_epochs': 4,
+    'optimizer_fn': None,
+    'parser': ArgumentParser(prog='deeprl_ddpg_continuous.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True),
+    'random_action_prob': None,
+    'random_process_fn': <function ddpg_continuous.<locals>.<lambda> at 0x0000018189B2A9E0>,
+    'remark': 'ddpg_continuous',
+    'replay_fn': <function ddpg_continuous.<locals>.<lambda> at 0x0000018189B2A950>,
+    'replay_interval': 1,
+    'replay_type': 'replay',
+    'reward_normalizer': <deeprl.utils.normalizer.RescaleNormalizer object at 0x00000181E105A860>,
+    'rollout_length': None,
+    'run': 0,
+    'save_after_episodes': 140,
+    'save_after_steps': -1,
+    'save_episode_interval': 5,
+    'save_filename': None,
+    'save_interval': 0,
+    'sgd_update_frequency': None,
+    'shared_repr': False,
+    'state_dim': 33,
+    'state_normalizer': <deeprl.utils.normalizer.RescaleNormalizer object at 0x00000181BF7FE9E0>,
+    'tag': 'unity-reacher-v2-remark_ddpg_continuous-run-0',
+    'target_network_mix': 0.001,
+    'target_network_update_freq': None,
+    'task_fn': None,
+    'task_name': 'unity-reacher-v2',
+    'tasks': None,
+    'termination_regularizer': 0,
+    'use_gae': False,
+    'value_loss_weight': 1.0,
+    'warm_up': 10000}
+
+2024-04-09 12:36:15,996 - root - INFO: 
+DeterministicActorCriticNet(
+  (phi_body): DummyBody()
+  (actor_body): FCBody(
+    (layers): ModuleList(
+      (0): Linear(in_features=33, out_features=128, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): Linear(in_features=128, out_features=128, bias=True)
+      (4): LeakyReLU(negative_slope=0.01)
+      (5): Linear(in_features=128, out_features=4, bias=True)
+      (6): Tanh()
+    )
+  )
+  (critic_body): FCBody(
+    (layers): ModuleList(
+      (0): Linear(in_features=37, out_features=128, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): Linear(in_features=128, out_features=128, bias=True)
+      (4): LeakyReLU(negative_slope=0.01)
+      (5): Linear(in_features=128, out_features=1, bias=True)
+    )
+  )
+)
+
+2024-04-09 12:36:15,999 - root - INFO: Episode 0, Step 0, 0.00 s/episode
+2024-04-09 12:36:17,385 - root - INFO: Episode 0, Step 1000, episodic_return_train 0.07999999821186066
+2024-04-09 12:36:17,385 - root - INFO: Episode 1, Step 1001, 1.39 s/episode
+2024-04-09 12:36:18,721 - root - INFO: Episode 1, Step 2001, episodic_return_train 0.0
+2024-04-09 12:36:18,721 - root - INFO: Episode 2, Step 2002, 1.34 s/episode
+2024-04-09 12:36:20,038 - root - INFO: Episode 2, Step 3002, episodic_return_train 0.0
+2024-04-09 12:36:20,038 - root - INFO: Episode 3, Step 3003, 1.32 s/episode
+2024-04-09 12:36:21,374 - root - INFO: Episode 3, Step 4003, episodic_return_train 0.5299999881535769
+2024-04-09 12:36:21,374 - root - INFO: Episode 4, Step 4004, 1.34 s/episode
+2024-04-09 12:36:22,696 - root - INFO: Episode 4, Step 5004, episodic_return_train 0.4899999890476465
+2024-04-09 12:36:22,697 - root - INFO: Episode 5, Step 5005, 1.32 s/episode
+2024-04-09 12:36:24,083 - root - INFO: Episode 5, Step 6005, episodic_return_train 0.0
+2024-04-09 12:36:24,084 - root - INFO: Episode 6, Step 6006, 1.39 s/episode
+2024-04-09 12:36:25,570 - root - INFO: Episode 6, Step 7006, episodic_return_train 0.0
+2024-04-09 12:36:25,570 - root - INFO: Episode 7, Step 7007, 1.49 s/episode
+2024-04-09 12:36:27,080 - root - INFO: Episode 7, Step 8007, episodic_return_train 0.5999999865889549
+2024-04-09 12:36:27,080 - root - INFO: Episode 8, Step 8008, 1.51 s/episode
+2024-04-09 12:36:28,621 - root - INFO: Episode 8, Step 9008, episodic_return_train 0.0
+2024-04-09 12:36:28,621 - root - INFO: Episode 9, Step 9009, 1.54 s/episode
+2024-04-09 12:36:30,434 - root - INFO: Episode 9, Step 10009, episodic_return_train 0.04999999888241291
+2024-04-09 12:36:30,436 - root - INFO: Episode 10, Step 10010, 1.82 s/episode
+2024-04-09 12:36:30,473 - root - INFO: Step 10010, evaluating 2 episodes in 3 environments
+2024-04-09 12:39:12,384 - root - INFO: Episode 10, Step 10010, episodic_return_test 0.00(0.00)
+2024-04-09 12:39:25,262 - root - INFO: Episode 10, Step 11010, episodic_return_train 0.5699999872595072
+2024-04-09 12:39:25,263 - root - INFO: Episode 11, Step 11011, 174.83 s/episode
+2024-04-09 12:39:37,953 - root - INFO: Episode 11, Step 12011, episodic_return_train 0.11999999731779099
+2024-04-09 12:39:37,954 - root - INFO: Episode 12, Step 12012, 12.69 s/episode
+2024-04-09 12:39:50,863 - root - INFO: Episode 12, Step 13012, episodic_return_train 0.6299999859184027
+2024-04-09 12:39:50,864 - root - INFO: Episode 13, Step 13013, 12.91 s/episode
+2024-04-09 12:40:03,516 - root - INFO: Episode 13, Step 14013, episodic_return_train 0.4999999888241291
+2024-04-09 12:40:03,517 - root - INFO: Episode 14, Step 14014, 12.65 s/episode
+2024-04-09 12:40:16,115 - root - INFO: Episode 14, Step 15014, episodic_return_train 0.9899999778717756
+2024-04-09 12:40:16,116 - root - INFO: Episode 15, Step 15015, 12.60 s/episode
+2024-04-09 12:40:28,813 - root - INFO: Episode 15, Step 16015, episodic_return_train 1.099999975413084
+2024-04-09 12:40:28,814 - root - INFO: Episode 16, Step 16016, 12.70 s/episode
+2024-04-09 12:40:41,535 - root - INFO: Episode 16, Step 17016, episodic_return_train 0.5599999874830246
+2024-04-09 12:40:41,535 - root - INFO: Episode 17, Step 17017, 12.72 s/episode
+2024-04-09 12:40:54,187 - root - INFO: Episode 17, Step 18017, episodic_return_train 0.2799999937415123
+2024-04-09 12:40:54,187 - root - INFO: Episode 18, Step 18018, 12.65 s/episode
+2024-04-09 12:41:07,369 - root - INFO: Episode 18, Step 19018, episodic_return_train 0.3899999912828207
+2024-04-09 12:41:07,370 - root - INFO: Episode 19, Step 19019, 13.18 s/episode
+2024-04-09 12:41:23,142 - root - INFO: Episode 19, Step 20019, episodic_return_train 1.6099999640136957
+2024-04-09 12:41:23,143 - root - INFO: Episode 20, Step 20020, 15.77 s/episode
+2024-04-09 12:41:23,150 - root - INFO: Step 20020, evaluating 2 episodes in 3 environments
+2024-04-09 12:44:05,071 - root - INFO: Episode 20, Step 20020, episodic_return_test 0.94(0.24)
+2024-04-09 12:44:18,102 - root - INFO: Episode 20, Step 21020, episodic_return_train 1.699999962002039
+2024-04-09 12:44:18,103 - root - INFO: Episode 21, Step 21021, 174.96 s/episode
+2024-04-09 12:44:31,247 - root - INFO: Episode 21, Step 22021, episodic_return_train 0.7799999825656414
+2024-04-09 12:44:31,247 - root - INFO: Episode 22, Step 22022, 13.14 s/episode
+2024-04-09 12:44:44,160 - root - INFO: Episode 22, Step 23022, episodic_return_train 1.389999968931079
+2024-04-09 12:44:44,161 - root - INFO: Episode 23, Step 23023, 12.91 s/episode
+2024-04-09 12:44:57,066 - root - INFO: Episode 23, Step 24023, episodic_return_train 1.289999971166253
+2024-04-09 12:44:57,066 - root - INFO: Episode 24, Step 24024, 12.90 s/episode
+2024-04-09 12:45:10,299 - root - INFO: Episode 24, Step 25024, episodic_return_train 0.3199999928474426
+2024-04-09 12:45:10,299 - root - INFO: Episode 25, Step 25025, 13.23 s/episode
+2024-04-09 12:45:23,627 - root - INFO: Episode 25, Step 26025, episodic_return_train 2.299999948590994
+2024-04-09 12:45:23,629 - root - INFO: Episode 26, Step 26026, 13.33 s/episode
+2024-04-09 12:45:37,667 - root - INFO: Episode 26, Step 27026, episodic_return_train 3.0799999311566353
+2024-04-09 12:45:37,668 - root - INFO: Episode 27, Step 27027, 14.04 s/episode
+2024-04-09 12:45:53,887 - root - INFO: Episode 27, Step 28027, episodic_return_train 2.579999942332506
+2024-04-09 12:45:53,887 - root - INFO: Episode 28, Step 28028, 16.22 s/episode
+2024-04-09 12:46:11,856 - root - INFO: Episode 28, Step 29028, episodic_return_train 2.799999937415123
+2024-04-09 12:46:11,857 - root - INFO: Episode 29, Step 29029, 17.97 s/episode
+2024-04-09 12:46:29,836 - root - INFO: Episode 29, Step 30029, episodic_return_train 0.909999979659915
+2024-04-09 12:46:29,837 - root - INFO: Episode 30, Step 30030, 17.98 s/episode
+2024-04-09 12:46:29,844 - root - INFO: Step 30030, evaluating 2 episodes in 3 environments
+2024-04-09 12:49:11,763 - root - INFO: Episode 30, Step 30030, episodic_return_test 4.32(0.04)
+2024-04-09 12:49:25,006 - root - INFO: Episode 30, Step 31030, episodic_return_train 3.8199999146163464
+2024-04-09 12:49:25,007 - root - INFO: Episode 31, Step 31031, 175.17 s/episode
+2024-04-09 12:49:38,191 - root - INFO: Episode 31, Step 32031, episodic_return_train 2.12999995239079
+2024-04-09 12:49:38,192 - root - INFO: Episode 32, Step 32032, 13.18 s/episode
+2024-04-09 12:49:51,215 - root - INFO: Episode 32, Step 33032, episodic_return_train 1.2299999725073576
+2024-04-09 12:49:51,216 - root - INFO: Episode 33, Step 33033, 13.02 s/episode
+2024-04-09 12:50:04,425 - root - INFO: Episode 33, Step 34033, episodic_return_train 5.669999873265624
+2024-04-09 12:50:04,426 - root - INFO: Episode 34, Step 34034, 13.21 s/episode
+2024-04-09 12:50:17,656 - root - INFO: Episode 34, Step 35034, episodic_return_train 3.0699999313801527
+2024-04-09 12:50:17,656 - root - INFO: Episode 35, Step 35035, 13.23 s/episode
+2024-04-09 12:50:31,020 - root - INFO: Episode 35, Step 36035, episodic_return_train 2.9799999333918095
+2024-04-09 12:50:31,021 - root - INFO: Episode 36, Step 36036, 13.37 s/episode
+2024-04-09 12:50:44,343 - root - INFO: Episode 36, Step 37036, episodic_return_train 1.8999999575316906
+2024-04-09 12:50:44,344 - root - INFO: Episode 37, Step 37037, 13.32 s/episode
+2024-04-09 12:50:58,350 - root - INFO: Episode 37, Step 38037, episodic_return_train 1.3199999704957008
+2024-04-09 12:50:58,351 - root - INFO: Episode 38, Step 38038, 14.01 s/episode
+2024-04-09 12:51:15,046 - root - INFO: Episode 38, Step 39038, episodic_return_train 9.789999781176448
+2024-04-09 12:51:15,047 - root - INFO: Episode 39, Step 39039, 16.70 s/episode
+2024-04-09 12:51:33,377 - root - INFO: Episode 39, Step 40039, episodic_return_train 11.759999737143517
+2024-04-09 12:51:33,378 - root - INFO: Episode 40, Step 40040, 18.33 s/episode
+2024-04-09 12:51:33,386 - root - INFO: Step 40040, evaluating 2 episodes in 3 environments
+2024-04-09 12:54:15,306 - root - INFO: Episode 40, Step 40040, episodic_return_test 15.29(1.78)
+2024-04-09 12:54:31,261 - root - INFO: Episode 40, Step 41040, episodic_return_train 3.8899999130517244
+2024-04-09 12:54:31,261 - root - INFO: Episode 41, Step 41041, 177.88 s/episode
+2024-04-09 12:54:44,122 - root - INFO: Episode 41, Step 42041, episodic_return_train 11.249999748542905
+2024-04-09 12:54:44,122 - root - INFO: Episode 42, Step 42042, 12.86 s/episode
+2024-04-09 12:54:57,172 - root - INFO: Episode 42, Step 43042, episodic_return_train 10.719999760389328
+2024-04-09 12:54:57,173 - root - INFO: Episode 43, Step 43043, 13.05 s/episode
+2024-04-09 12:55:09,884 - root - INFO: Episode 43, Step 44043, episodic_return_train 10.489999765530229
+2024-04-09 12:55:09,885 - root - INFO: Episode 44, Step 44044, 12.71 s/episode
+2024-04-09 12:55:22,512 - root - INFO: Episode 44, Step 45044, episodic_return_train 26.13999941572547
+2024-04-09 12:55:22,512 - root - INFO: Episode 45, Step 45045, 12.63 s/episode
+2024-04-09 12:55:35,719 - root - INFO: Episode 45, Step 46045, episodic_return_train 10.779999759048223
+2024-04-09 12:55:35,721 - root - INFO: Episode 46, Step 46046, 13.21 s/episode
+2024-04-09 12:55:49,726 - root - INFO: Episode 46, Step 47046, episodic_return_train 24.659999448806047
+2024-04-09 12:55:49,726 - root - INFO: Episode 47, Step 47047, 14.01 s/episode
+2024-04-09 12:56:04,887 - root - INFO: Episode 47, Step 48047, episodic_return_train 13.339999701827765
+2024-04-09 12:56:04,887 - root - INFO: Episode 48, Step 48048, 15.16 s/episode
+2024-04-09 12:56:23,922 - root - INFO: Episode 48, Step 49048, episodic_return_train 25.879999421536922
+2024-04-09 12:56:23,923 - root - INFO: Episode 49, Step 49049, 19.03 s/episode
+2024-04-09 12:56:40,315 - root - INFO: Episode 49, Step 50049, episodic_return_train 17.69999960437417
+2024-04-09 12:56:40,316 - root - INFO: Episode 50, Step 50050, 16.39 s/episode
+2024-04-09 12:56:40,322 - root - INFO: Step 50050, evaluating 2 episodes in 3 environments
+2024-04-09 12:59:22,226 - root - INFO: Episode 50, Step 50050, episodic_return_test 17.45(3.38)
+2024-04-09 12:59:35,096 - root - INFO: Episode 50, Step 51050, episodic_return_train 2.659999940544367
+2024-04-09 12:59:35,096 - root - INFO: Episode 51, Step 51051, 174.78 s/episode
+2024-04-09 12:59:48,756 - root - INFO: Episode 51, Step 52051, episodic_return_train 19.849999556317925
+2024-04-09 12:59:48,758 - root - INFO: Episode 52, Step 52052, 13.66 s/episode
+2024-04-09 13:00:01,638 - root - INFO: Episode 52, Step 53052, episodic_return_train 11.609999740496278
+2024-04-09 13:00:01,638 - root - INFO: Episode 53, Step 53053, 12.88 s/episode
+2024-04-09 13:00:15,556 - root - INFO: Episode 53, Step 54053, episodic_return_train 18.179999593645334
+2024-04-09 13:00:15,556 - root - INFO: Episode 54, Step 54054, 13.92 s/episode
+2024-04-09 13:00:29,479 - root - INFO: Episode 54, Step 55054, episodic_return_train 11.57999974116683
+2024-04-09 13:00:29,479 - root - INFO: Episode 55, Step 55055, 13.92 s/episode
+2024-04-09 13:00:43,112 - root - INFO: Episode 55, Step 56055, episodic_return_train 21.529999518767
+2024-04-09 13:00:43,113 - root - INFO: Episode 56, Step 56056, 13.63 s/episode
+2024-04-09 13:00:56,379 - root - INFO: Episode 56, Step 57056, episodic_return_train 37.28999916650355
+2024-04-09 13:00:56,380 - root - INFO: Episode 57, Step 57057, 13.27 s/episode
+2024-04-09 13:01:09,604 - root - INFO: Episode 57, Step 58057, episodic_return_train 21.209999525919557
+2024-04-09 13:01:09,604 - root - INFO: Episode 58, Step 58058, 13.22 s/episode
+2024-04-09 13:01:25,449 - root - INFO: Episode 58, Step 59058, episodic_return_train 5.579999875277281
+2024-04-09 13:01:25,449 - root - INFO: Episode 59, Step 59059, 15.84 s/episode
+2024-04-09 13:01:46,258 - root - INFO: Episode 59, Step 60059, episodic_return_train 15.379999656230211
+2024-04-09 13:01:46,259 - root - INFO: Episode 60, Step 60060, 20.81 s/episode
+2024-04-09 13:01:46,317 - root - INFO: Step 60060, evaluating 2 episodes in 3 environments
+2024-04-09 13:04:28,221 - root - INFO: Episode 60, Step 60060, episodic_return_test 21.97(1.21)
+2024-04-09 13:04:41,149 - root - INFO: Episode 60, Step 61060, episodic_return_train 25.839999422430992
+2024-04-09 13:04:41,150 - root - INFO: Episode 61, Step 61061, 174.89 s/episode
+2024-04-09 13:04:54,163 - root - INFO: Episode 61, Step 62061, episodic_return_train 9.279999792575836
+2024-04-09 13:04:54,163 - root - INFO: Episode 62, Step 62062, 13.01 s/episode
+2024-04-09 13:05:07,344 - root - INFO: Episode 62, Step 63062, episodic_return_train 26.71999940276146
+2024-04-09 13:05:07,344 - root - INFO: Episode 63, Step 63063, 13.18 s/episode
+2024-04-09 13:05:20,413 - root - INFO: Episode 63, Step 64063, episodic_return_train 11.249999748542905
+2024-04-09 13:05:20,414 - root - INFO: Episode 64, Step 64064, 13.07 s/episode
+2024-04-09 13:05:33,243 - root - INFO: Episode 64, Step 65064, episodic_return_train 9.36999979056418
+2024-04-09 13:05:33,243 - root - INFO: Episode 65, Step 65065, 12.83 s/episode
+2024-04-09 13:05:45,914 - root - INFO: Episode 65, Step 66065, episodic_return_train 27.29999938979745
+2024-04-09 13:05:45,914 - root - INFO: Episode 66, Step 66066, 12.67 s/episode
+2024-04-09 13:06:01,413 - root - INFO: Episode 66, Step 67066, episodic_return_train 31.819999288767576
+2024-04-09 13:06:01,413 - root - INFO: Episode 67, Step 67067, 15.50 s/episode
+2024-04-09 13:06:16,948 - root - INFO: Episode 67, Step 68067, episodic_return_train 32.21999927982688
+2024-04-09 13:06:16,949 - root - INFO: Episode 68, Step 68068, 15.54 s/episode
+2024-04-09 13:06:32,582 - root - INFO: Episode 68, Step 69068, episodic_return_train 31.75999929010868
+2024-04-09 13:06:32,584 - root - INFO: Episode 69, Step 69069, 15.63 s/episode
+2024-04-09 13:06:47,901 - root - INFO: Episode 69, Step 70069, episodic_return_train 33.939999241381884
+2024-04-09 13:06:47,901 - root - INFO: Episode 70, Step 70070, 15.32 s/episode
+2024-04-09 13:06:47,908 - root - INFO: Step 70070, evaluating 2 episodes in 3 environments
+2024-04-09 13:09:29,829 - root - INFO: Episode 70, Step 70070, episodic_return_test 29.55(0.86)
+2024-04-09 13:09:42,735 - root - INFO: Episode 70, Step 71070, episodic_return_train 37.899999152868986
+2024-04-09 13:09:42,735 - root - INFO: Episode 71, Step 71071, 174.83 s/episode
+2024-04-09 13:09:55,649 - root - INFO: Episode 71, Step 72071, episodic_return_train 5.209999883547425
+2024-04-09 13:09:55,649 - root - INFO: Episode 72, Step 72072, 12.91 s/episode
+2024-04-09 13:10:08,901 - root - INFO: Episode 72, Step 73072, episodic_return_train 34.47999922931194
+2024-04-09 13:10:08,901 - root - INFO: Episode 73, Step 73073, 13.25 s/episode
+2024-04-09 13:10:21,754 - root - INFO: Episode 73, Step 74073, episodic_return_train 21.209999525919557
+2024-04-09 13:10:21,754 - root - INFO: Episode 74, Step 74074, 12.85 s/episode
+2024-04-09 13:10:34,635 - root - INFO: Episode 74, Step 75074, episodic_return_train 23.089999483898282
+2024-04-09 13:10:34,636 - root - INFO: Episode 75, Step 75075, 12.88 s/episode
+2024-04-09 13:10:48,832 - root - INFO: Episode 75, Step 76075, episodic_return_train 37.84999915398657
+2024-04-09 13:10:48,833 - root - INFO: Episode 76, Step 76076, 14.20 s/episode
+2024-04-09 13:11:01,925 - root - INFO: Episode 76, Step 77076, episodic_return_train 36.929999174550176
+2024-04-09 13:11:01,926 - root - INFO: Episode 77, Step 77077, 13.09 s/episode
+2024-04-09 13:11:15,198 - root - INFO: Episode 77, Step 78077, episodic_return_train 36.71999917924404
+2024-04-09 13:11:15,199 - root - INFO: Episode 78, Step 78078, 13.27 s/episode
+2024-04-09 13:11:30,425 - root - INFO: Episode 78, Step 79078, episodic_return_train 37.899999152868986
+2024-04-09 13:11:30,425 - root - INFO: Episode 79, Step 79079, 15.23 s/episode
+2024-04-09 13:11:47,578 - root - INFO: Episode 79, Step 80079, episodic_return_train 33.64999924786389
+2024-04-09 13:11:47,578 - root - INFO: Episode 80, Step 80080, 17.15 s/episode
+2024-04-09 13:11:47,585 - root - INFO: Step 80080, evaluating 2 episodes in 3 environments
+2024-04-09 13:14:29,507 - root - INFO: Episode 80, Step 80080, episodic_return_test 36.98(0.61)
+2024-04-09 13:14:42,218 - root - INFO: Episode 80, Step 81080, episodic_return_train 34.11999923735857
+2024-04-09 13:14:42,218 - root - INFO: Episode 81, Step 81081, 174.64 s/episode
+2024-04-09 13:14:54,870 - root - INFO: Episode 81, Step 82081, episodic_return_train 37.9499991517514
+2024-04-09 13:14:54,871 - root - INFO: Episode 82, Step 82082, 12.65 s/episode
+2024-04-09 13:15:07,527 - root - INFO: Episode 82, Step 83082, episodic_return_train 37.36999916471541
+2024-04-09 13:15:07,528 - root - INFO: Episode 83, Step 83083, 12.66 s/episode
+2024-04-09 13:15:20,174 - root - INFO: Episode 83, Step 84083, episodic_return_train 24.379999455064535
+2024-04-09 13:15:20,175 - root - INFO: Episode 84, Step 84084, 12.65 s/episode
+2024-04-09 13:15:33,493 - root - INFO: Episode 84, Step 85084, episodic_return_train 32.8399992659688
+2024-04-09 13:15:33,493 - root - INFO: Episode 85, Step 85085, 13.32 s/episode
+2024-04-09 13:15:46,131 - root - INFO: Episode 85, Step 86085, episodic_return_train 38.819999132305384
+2024-04-09 13:15:46,131 - root - INFO: Episode 86, Step 86086, 12.64 s/episode
+2024-04-09 13:15:58,814 - root - INFO: Episode 86, Step 87086, episodic_return_train 32.64999927021563
+2024-04-09 13:15:58,815 - root - INFO: Episode 87, Step 87087, 12.68 s/episode
+2024-04-09 13:16:11,601 - root - INFO: Episode 87, Step 88087, episodic_return_train 32.47999927401543
+2024-04-09 13:16:11,601 - root - INFO: Episode 88, Step 88088, 12.79 s/episode
+2024-04-09 13:16:24,436 - root - INFO: Episode 88, Step 89088, episodic_return_train 26.589999405667186
+2024-04-09 13:16:24,437 - root - INFO: Episode 89, Step 89089, 12.84 s/episode
+2024-04-09 13:16:39,788 - root - INFO: Episode 89, Step 90089, episodic_return_train 27.969999374821782
+2024-04-09 13:16:39,789 - root - INFO: Episode 90, Step 90090, 15.35 s/episode
+2024-04-09 13:16:39,795 - root - INFO: Step 90090, evaluating 2 episodes in 3 environments
+2024-04-09 13:19:21,716 - root - INFO: Episode 90, Step 90090, episodic_return_test 30.42(1.37)
+2024-04-09 13:19:34,714 - root - INFO: Episode 90, Step 91090, episodic_return_train 21.80999951250851
+2024-04-09 13:19:34,715 - root - INFO: Episode 91, Step 91091, 174.93 s/episode
+2024-04-09 13:19:47,419 - root - INFO: Episode 91, Step 92091, episodic_return_train 21.14999952726066
+2024-04-09 13:19:47,420 - root - INFO: Episode 92, Step 92092, 12.71 s/episode
+2024-04-09 13:20:00,284 - root - INFO: Episode 92, Step 93092, episodic_return_train 36.19999919086695
+2024-04-09 13:20:00,285 - root - INFO: Episode 93, Step 93093, 12.87 s/episode
+2024-04-09 13:20:13,485 - root - INFO: Episode 93, Step 94093, episodic_return_train 32.32999927736819
+2024-04-09 13:20:13,485 - root - INFO: Episode 94, Step 94094, 13.20 s/episode
+2024-04-09 13:20:26,353 - root - INFO: Episode 94, Step 95094, episodic_return_train 36.619999181479216
+2024-04-09 13:20:26,354 - root - INFO: Episode 95, Step 95095, 12.87 s/episode
+2024-04-09 13:20:39,225 - root - INFO: Episode 95, Step 96095, episodic_return_train 38.199999146163464
+2024-04-09 13:20:39,225 - root - INFO: Episode 96, Step 96096, 12.87 s/episode
+2024-04-09 13:20:52,080 - root - INFO: Episode 96, Step 97096, episodic_return_train 38.96999912895262
+2024-04-09 13:20:52,081 - root - INFO: Episode 97, Step 97097, 12.86 s/episode
+2024-04-09 13:21:04,939 - root - INFO: Episode 97, Step 98097, episodic_return_train 38.8099991325289
+2024-04-09 13:21:04,939 - root - INFO: Episode 98, Step 98098, 12.86 s/episode
+2024-04-09 13:21:19,903 - root - INFO: Episode 98, Step 99098, episodic_return_train 34.329999232664704
+2024-04-09 13:21:19,904 - root - INFO: Episode 99, Step 99099, 14.96 s/episode
+2024-04-09 13:21:35,999 - root - INFO: Episode 99, Step 100099, episodic_return_train 37.12999917007983
+2024-04-09 13:21:35,999 - root - INFO: Episode 100, Step 100100, 16.09 s/episode
+2024-04-09 13:21:36,006 - root - INFO: Step 100100, evaluating 2 episodes in 3 environments
+2024-04-09 13:24:17,912 - root - INFO: Episode 100, Step 100100, episodic_return_test 29.86(3.39)
+2024-04-09 13:24:30,715 - root - INFO: Episode 100, Step 101100, episodic_return_train 32.6099992711097
+2024-04-09 13:24:30,716 - root - INFO: Episode 101, Step 101101, 174.72 s/episode
+2024-04-09 13:24:43,392 - root - INFO: Episode 101, Step 102101, episodic_return_train 36.3999991863966
+2024-04-09 13:24:43,392 - root - INFO: Episode 102, Step 102102, 12.68 s/episode
+2024-04-09 13:24:56,321 - root - INFO: Episode 102, Step 103102, episodic_return_train 34.869999220594764
+2024-04-09 13:24:56,321 - root - INFO: Episode 103, Step 103103, 12.93 s/episode
+2024-04-09 13:25:09,339 - root - INFO: Episode 103, Step 104103, episodic_return_train 36.04999919421971
+2024-04-09 13:25:09,339 - root - INFO: Episode 104, Step 104104, 13.02 s/episode
+2024-04-09 13:25:22,097 - root - INFO: Episode 104, Step 105104, episodic_return_train 30.929999308660626
+2024-04-09 13:25:22,098 - root - INFO: Episode 105, Step 105105, 12.76 s/episode
+2024-04-09 13:25:34,943 - root - INFO: Episode 105, Step 106105, episodic_return_train 35.62999920360744
+2024-04-09 13:25:34,944 - root - INFO: Episode 106, Step 106106, 12.85 s/episode
+2024-04-09 13:25:47,635 - root - INFO: Episode 106, Step 107106, episodic_return_train 34.02999923937023
+2024-04-09 13:25:47,637 - root - INFO: Episode 107, Step 107107, 12.69 s/episode
+2024-04-09 13:26:00,393 - root - INFO: Episode 107, Step 108107, episodic_return_train 32.71999926865101
+2024-04-09 13:26:00,393 - root - INFO: Episode 108, Step 108108, 12.76 s/episode
+2024-04-09 13:26:13,072 - root - INFO: Episode 108, Step 109108, episodic_return_train 36.12999919243157
+2024-04-09 13:26:13,072 - root - INFO: Episode 109, Step 109109, 12.68 s/episode
+2024-04-09 13:26:27,217 - root - INFO: Episode 109, Step 110109, episodic_return_train 24.999999441206455
+2024-04-09 13:26:27,218 - root - INFO: Episode 110, Step 110110, 14.15 s/episode
+2024-04-09 13:26:27,275 - root - INFO: Step 110110, evaluating 2 episodes in 3 environments
+2024-04-09 13:29:09,180 - root - INFO: Episode 110, Step 110110, episodic_return_test 32.97(0.07)
+2024-04-09 13:29:21,901 - root - INFO: Episode 110, Step 111110, episodic_return_train 28.80999935604632
+2024-04-09 13:29:21,902 - root - INFO: Episode 111, Step 111111, 174.68 s/episode
+2024-04-09 13:29:34,790 - root - INFO: Episode 111, Step 112111, episodic_return_train 31.009999306872487
+2024-04-09 13:29:34,791 - root - INFO: Episode 112, Step 112112, 12.89 s/episode
+2024-04-09 13:29:47,599 - root - INFO: Episode 112, Step 113112, episodic_return_train 27.33999938890338
+2024-04-09 13:29:47,600 - root - INFO: Episode 113, Step 113113, 12.81 s/episode
+2024-04-09 13:30:00,479 - root - INFO: Episode 113, Step 114113, episodic_return_train 27.449999386444688
+2024-04-09 13:30:00,479 - root - INFO: Episode 114, Step 114114, 12.88 s/episode
+2024-04-09 13:30:13,223 - root - INFO: Episode 114, Step 115114, episodic_return_train 24.029999462887645
+2024-04-09 13:30:13,223 - root - INFO: Episode 115, Step 115115, 12.74 s/episode
+2024-04-09 13:30:25,971 - root - INFO: Episode 115, Step 116115, episodic_return_train 33.599999248981476
+2024-04-09 13:30:25,972 - root - INFO: Episode 116, Step 116116, 12.75 s/episode
+2024-04-09 13:30:39,047 - root - INFO: Episode 116, Step 117116, episodic_return_train 35.92999919690192
+2024-04-09 13:30:39,047 - root - INFO: Episode 117, Step 117117, 13.07 s/episode
+2024-04-09 13:30:52,023 - root - INFO: Episode 117, Step 118117, episodic_return_train 37.24999916739762
+2024-04-09 13:30:52,023 - root - INFO: Episode 118, Step 118118, 12.98 s/episode
+2024-04-09 13:31:04,706 - root - INFO: Episode 118, Step 119118, episodic_return_train 26.429999409243464
+2024-04-09 13:31:04,706 - root - INFO: Episode 119, Step 119119, 12.68 s/episode
+2024-04-09 13:31:19,526 - root - INFO: Episode 119, Step 120119, episodic_return_train 34.569999227300286
+2024-04-09 13:31:19,526 - root - INFO: Episode 120, Step 120120, 14.82 s/episode
+2024-04-09 13:31:19,532 - root - INFO: Step 120120, evaluating 2 episodes in 3 environments
+2024-04-09 13:34:01,453 - root - INFO: Episode 120, Step 120120, episodic_return_test 33.34(1.48)
+2024-04-09 13:34:14,175 - root - INFO: Episode 120, Step 121120, episodic_return_train 36.389999186620116
+2024-04-09 13:34:14,175 - root - INFO: Episode 121, Step 121121, 174.65 s/episode
+2024-04-09 13:34:27,107 - root - INFO: Episode 121, Step 122121, episodic_return_train 35.39999920874834
+2024-04-09 13:34:27,107 - root - INFO: Episode 122, Step 122122, 12.93 s/episode
+2024-04-09 13:34:40,012 - root - INFO: Episode 122, Step 123122, episodic_return_train 33.89999924227595
+2024-04-09 13:34:40,013 - root - INFO: Episode 123, Step 123123, 12.91 s/episode
+2024-04-09 13:34:52,751 - root - INFO: Episode 123, Step 124123, episodic_return_train 34.20999923534691
+2024-04-09 13:34:52,751 - root - INFO: Episode 124, Step 124124, 12.74 s/episode
+2024-04-09 13:35:05,428 - root - INFO: Episode 124, Step 125124, episodic_return_train 37.72999915666878
+2024-04-09 13:35:05,429 - root - INFO: Episode 125, Step 125125, 12.68 s/episode
+2024-04-09 13:35:18,174 - root - INFO: Episode 125, Step 126125, episodic_return_train 24.889999443665147
+2024-04-09 13:35:18,175 - root - INFO: Episode 126, Step 126126, 12.75 s/episode
+2024-04-09 13:35:30,902 - root - INFO: Episode 126, Step 127126, episodic_return_train 35.78999920003116
+2024-04-09 13:35:30,903 - root - INFO: Episode 127, Step 127127, 12.73 s/episode
+2024-04-09 13:35:43,678 - root - INFO: Episode 127, Step 128127, episodic_return_train 34.85999922081828
+2024-04-09 13:35:43,678 - root - INFO: Episode 128, Step 128128, 12.78 s/episode
+2024-04-09 13:35:56,369 - root - INFO: Episode 128, Step 129128, episodic_return_train 27.049999395385385
+2024-04-09 13:35:56,369 - root - INFO: Episode 129, Step 129129, 12.69 s/episode
+2024-04-09 13:36:11,319 - root - INFO: Episode 129, Step 130129, episodic_return_train 32.359999276697636
+2024-04-09 13:36:11,320 - root - INFO: Episode 130, Step 130130, 14.95 s/episode
+2024-04-09 13:36:11,325 - root - INFO: Step 130130, evaluating 2 episodes in 3 environments
+2024-04-09 13:38:53,246 - root - INFO: Episode 130, Step 130130, episodic_return_test 35.20(1.00)
+2024-04-09 13:39:06,223 - root - INFO: Episode 130, Step 131130, episodic_return_train 29.759999334812164
+2024-04-09 13:39:06,224 - root - INFO: Episode 131, Step 131131, 174.90 s/episode
+2024-04-09 13:39:18,968 - root - INFO: Episode 131, Step 132131, episodic_return_train 30.969999307766557
+2024-04-09 13:39:18,968 - root - INFO: Episode 132, Step 132132, 12.74 s/episode
+2024-04-09 13:39:31,888 - root - INFO: Episode 132, Step 133132, episodic_return_train 37.79999915510416
+2024-04-09 13:39:31,888 - root - INFO: Episode 133, Step 133133, 12.92 s/episode
+2024-04-09 13:39:44,641 - root - INFO: Episode 133, Step 134133, episodic_return_train 37.33999916538596
+2024-04-09 13:39:44,642 - root - INFO: Episode 134, Step 134134, 12.75 s/episode
+2024-04-09 13:39:57,452 - root - INFO: Episode 134, Step 135134, episodic_return_train 25.16999943740666
+2024-04-09 13:39:57,453 - root - INFO: Episode 135, Step 135135, 12.81 s/episode
+2024-04-09 13:40:10,199 - root - INFO: Episode 135, Step 136135, episodic_return_train 27.30999938957393
+2024-04-09 13:40:10,200 - root - INFO: Episode 136, Step 136136, 12.75 s/episode
+2024-04-09 13:40:22,918 - root - INFO: Episode 136, Step 137136, episodic_return_train 35.69999920204282
+2024-04-09 13:40:22,919 - root - INFO: Episode 137, Step 137137, 12.72 s/episode
+2024-04-09 13:40:36,282 - root - INFO: Episode 137, Step 138137, episodic_return_train 30.819999311119318
+2024-04-09 13:40:36,282 - root - INFO: Episode 138, Step 138138, 13.36 s/episode
+2024-04-09 13:40:50,685 - root - INFO: Episode 138, Step 139138, episodic_return_train 32.05999928340316
+2024-04-09 13:40:50,685 - root - INFO: Episode 139, Step 139139, 14.40 s/episode
+2024-04-09 13:41:06,849 - root - INFO: Episode 139, Step 140139, episodic_return_train 31.189999302849174
+2024-04-09 13:41:06,850 - root - INFO: Episode 140, Step 140140, 16.16 s/episode
+2024-04-09 13:41:06,857 - root - INFO: Step 140140, evaluating 2 episodes in 3 environments
+2024-04-09 13:43:48,778 - root - INFO: Episode 140, Step 140140, episodic_return_test 30.64(0.50)
+2024-04-09 13:44:01,568 - root - INFO: Episode 140, Step 141140, episodic_return_train 34.329999232664704
+2024-04-09 13:44:01,568 - root - INFO: Episode 141, Step 141141, 174.72 s/episode
+2024-04-09 13:44:14,324 - root - INFO: Episode 141, Step 142141, episodic_return_train 32.75999926775694
+2024-04-09 13:44:14,324 - root - INFO: Episode 142, Step 142142, 12.76 s/episode
+2024-04-09 13:44:26,989 - root - INFO: Episode 142, Step 143142, episodic_return_train 34.139999236911535
+2024-04-09 13:44:26,990 - root - INFO: Episode 143, Step 143143, 12.67 s/episode
+2024-04-09 13:44:39,819 - root - INFO: Episode 143, Step 144143, episodic_return_train 34.85999922081828
+2024-04-09 13:44:39,820 - root - INFO: Episode 144, Step 144144, 12.83 s/episode
+2024-04-09 13:44:52,742 - root - INFO: Episode 144, Step 145144, episodic_return_train 32.2099992800504
+2024-04-09 13:44:52,763 - root - INFO: Episode 145, Step 145145, model saved as 'data/DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-145'
+2024-04-09 13:44:52,763 - root - INFO: Episode 145, Step 145145, 12.94 s/episode
+2024-04-09 13:45:05,694 - root - INFO: Episode 145, Step 146145, episodic_return_train 24.739999447017908
+2024-04-09 13:45:05,694 - root - INFO: Episode 146, Step 146146, 12.93 s/episode
+2024-04-09 13:45:18,400 - root - INFO: Episode 146, Step 147146, episodic_return_train 31.429999297484756
+2024-04-09 13:45:18,400 - root - INFO: Episode 147, Step 147147, 12.71 s/episode
+2024-04-09 13:45:31,267 - root - INFO: Episode 147, Step 148147, episodic_return_train 33.83999924361706
+2024-04-09 13:45:31,267 - root - INFO: Episode 148, Step 148148, 12.87 s/episode
+2024-04-09 13:45:46,448 - root - INFO: Episode 148, Step 149148, episodic_return_train 34.51999922841787
+2024-04-09 13:45:46,449 - root - INFO: Episode 149, Step 149149, 15.18 s/episode
+2024-04-09 13:46:03,057 - root - INFO: Episode 149, Step 150149, episodic_return_train 31.669999292120337
+2024-04-09 13:46:03,064 - root - INFO: Episode 150, Step 150150, model saved as 'data/DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-150'
+2024-04-09 13:46:03,065 - root - INFO: Episode 150, Step 150150, 16.62 s/episode
+2024-04-09 13:46:03,074 - root - INFO: Step 150150, evaluating 2 episodes in 3 environments
+2024-04-09 13:48:44,978 - root - INFO: Episode 150, Step 150150, episodic_return_test 30.60(1.56)
+2024-04-09 13:48:58,424 - root - INFO: Episode 150, Step 151150, episodic_return_train 35.54999920539558
+2024-04-09 13:48:58,424 - root - INFO: Episode 151, Step 151151, 175.36 s/episode
+2024-04-09 13:49:11,218 - root - INFO: Episode 151, Step 152151, episodic_return_train 33.869999242946506
+2024-04-09 13:49:11,219 - root - INFO: Episode 152, Step 152152, 12.79 s/episode
+2024-04-09 13:49:24,485 - root - INFO: Episode 152, Step 153152, episodic_return_train 34.95999921858311
+2024-04-09 13:49:24,485 - root - INFO: Episode 153, Step 153153, 13.27 s/episode
+2024-04-09 13:49:37,826 - root - INFO: Episode 153, Step 154153, episodic_return_train 30.409999320283532
+2024-04-09 13:49:37,827 - root - INFO: Episode 154, Step 154154, 13.34 s/episode
+2024-04-09 13:49:51,074 - root - INFO: Episode 154, Step 155154, episodic_return_train 36.579999182373285
+2024-04-09 13:49:51,079 - root - INFO: Episode 155, Step 155155, model saved as 'data/DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-155'
+2024-04-09 13:49:51,080 - root - INFO: Episode 155, Step 155155, 13.25 s/episode
+2024-04-09 13:50:03,918 - root - INFO: Episode 155, Step 156155, episodic_return_train 35.78999920003116
+2024-04-09 13:50:03,918 - root - INFO: Episode 156, Step 156156, 12.84 s/episode
+2024-04-09 13:50:17,243 - root - INFO: Episode 156, Step 157156, episodic_return_train 33.26999925635755
+2024-04-09 13:50:17,244 - root - INFO: Episode 157, Step 157157, 13.33 s/episode
+2024-04-09 13:50:35,349 - root - INFO: Episode 157, Step 158157, episodic_return_train 34.409999230876565
+2024-04-09 13:50:35,349 - root - INFO: Episode 158, Step 158158, 18.10 s/episode
+2024-04-09 13:50:54,586 - root - INFO: Episode 158, Step 159158, episodic_return_train 32.75999926775694
+2024-04-09 13:50:54,586 - root - INFO: Episode 159, Step 159159, 19.24 s/episode
+2024-04-09 13:51:11,645 - root - INFO: Episode 159, Step 160159, episodic_return_train 35.379999209195375
