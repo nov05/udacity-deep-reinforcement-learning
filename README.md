@@ -1,17 +1,75 @@
 
-✅ setup Python environment  
 
+
+## **👉 Unity enviroment `Reacher-v2` vector game (Project Submission)**  
+
+✅ **setup Python environment**   
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
-* [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)  
+* [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)
 
-## **👉 Unity enviroment `Reacher-v2` vector game**  
+✅ **entry points**  
+* working directory: `$ cd python`   
+* [python/experiments/**deeprl_ddpg_continuous.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_continuous.py): train and eval  
+  `$ python -m experiments.deeprl_ddpg_continuous`  
+* [python/experiments/**deeprl_ddpg_plot.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_plot.py): plot train and eval scores  
+  `$ python -m experiments.deeprl_ddpg_plot`
+  
+✅ **Result:** trained an DDPG model in one Unity-Reacher-v2 environment with 1 agent (1 robot arm) for **155 episodes**, then evaluated the model in 3 environments (each with 1 agent) parallelly for **150 consecutive episodes** and got a score of **33.92(0.26)** (0.26 is the standard standard deviation of scores in different envs). also used the trained model to control 20 agents in 4 envs parallelly and got a score of **34.24(0.10)**.   
 
-* **launch multiple Unity environments parallelly** from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)  
-  check the major code file [`python\unityagents\environment2.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/unityagents/environment2.py)  
-  check the video of [how to run the code](https://www.youtube.com/watch?v=AYbpY-Wk7N0) ($[`python -m tests2.test_unity_multiprocessing`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/tests2/test_unity_multiprocessing.py))  
+* evaluation with graphics       
+  <img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-04-09_17-35-39_V2.gif?raw=true" width=800>
+  Note:  
+  * the envs and agents above were controlled by the same DDPG model at the same time.   
+  * observation dimention `[num_envs, num_agents (per env), state_size]` will be converted to `[num_envs*num_agents, state_size]` to pass through the neural networks.   
+  * during training, action dimention will be `[mini_batch_size (replay batch), action_size]`;   
+           during evaluation, the local network will ouput actions with dimention `[num_envs*num_agents, action_size]`, and it will be converted to `[num_envs, num_agents, action_size]` to step the envs.  
 
-[<img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-03-07_08-05-28_reacher_V1-ezgif.com-optimize.gif?raw=true" width=500>](https://www.youtube.com/shorts/z9_dMrkPsz0)  
+* train and eval scores   
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/20240409_unity-reacher-v2_train_eval_scores.jpg" width=600>
+  
+* DDPG neural networks architecture  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2001_13_04-unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614.log_%20-%20udacity-deep-.jpg" width=500>  
 
+* evaluation result (in 3 envs for 150 consecutive episodes)
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-09%2021_48_17-deeprl_ddpg_continuous.py%20-%20udacity-deep-reinforcement-learning%20-%20Visual%20Studio%20.jpg" width=800>  
+
+* saved files
+  * [trained model](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-155.model)     
+  * [train log](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614.log_) (human readable):  
+    you can find all the configuration including training **hyperparameters**, **network architecture**, train and eval scores, here.   
+  * [tf_log](https://github.com/Nov05/udacity-deep-reinforcement-learning/tree/master/python/experiments/ddpg_unity-reacher-v2/logger-unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614) (tensorflow log, will be read by the plot modules)
+  * [eval log](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/unity-reacher-v2-remark_ddpg_continuous-run-0-240409-172621.log_) (human readable) 
+   
+✅ **major efforts in coding**  
+* all the code is integrated with `ShangtongZhang`'s [`deeprl`](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) framework which uses some OpenAI `Baselines` functionalities.    
+* one task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be executed sequentially.
+* to enable multiprocessing of Unity environments, the following code has had to be modified.
+  in `python/unityagents/rpc_communicator.py`
+  ```python
+  class UnityToExternalServicerImplementation(UnityToExternalServicer):
+      # parent_conn, child_conn = Pipe() ## removed by nov05
+  ...
+  class RpcCommunicator(Communicator):
+      def initialize(self, inputs: UnityInput) -> UnityOutput: # type: ignore
+          try:
+              self.unity_to_external = UnityToExternalServicerImplementation()
+              self.unity_to_external.parent_conn, self.unity_to_external.child_conn = Pipe() ## added by nov05
+  ```
+* Task UML diagram   
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2013_06_18-20240410_deeprl_task_uml%20--%20SmartDraw.jpg" width=800>  
+  
+* **launch multiple Unity environments parallelly (not used in the project)** from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)  
+  * the major code file [`python\unityagents\environment2.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/unityagents/environment2.py)  
+  * check the video of [how to run the code](https://www.youtube.com/watch?v=AYbpY-Wk7N0) ($[`python -m tests2.test_unity_multiprocessing`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/tests2/test_unity_multiprocessing.py))   
+  [<img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-03-07_08-05-28_reacher_V1-ezgif.com-optimize.gif?raw=true" width=500>](https://www.youtube.com/shorts/z9_dMrkPsz0)  
+
+✅ reference   
+* https://arxiv.org/abs/1509.02971  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/20240410_ddpg_arxiv1509.02971.jpg" width=500>  
+  
+<br>  
+
+---
 
 ## **👉 OpenAI Gym's Atari `Pong` pixel game**  
 
@@ -21,7 +79,11 @@
   * PPO without clipping: [Colab](https://drive.google.com/file/d/17-HyqTB121RjHvJ03GzY81eGxmmpjY3t), [GitHub](https://github.com/Nov05/Google-Colaboratory/blob/master/20240217_pong_REINFORCE.ipynb)   
   * PPO with clipping, [Colab](https://drive.google.com/file/d/1lAvn0_pPyFBnWJ4HPyXfVBhh7qjPo2gP), [GitHub](https://github.com/Nov05/Google-Colaboratory/blob/master/20240218_pong_PPO.ipynb)    
 
-## **👉 Unity ML-Agents `Banana Collectors` Project Submission**  
+<br>  
+
+---  
+
+## **👉 Unity ML-Agents `Banana Collectors` (Project Submission)**  
 
 <img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/p1_navigation_project_submission.gif?raw=true">
 
@@ -79,6 +141,7 @@
 	* [Video recording](https://youtu.be/SwAwWLsa9f0?t=35) (which demonstrates how trained models are run on the local machine)  
     * [Project submission repo](https://github.com/Nov05/udacity-drlnd-p1_navigation-submission)  
 
+<br>  
 ---
 
 ## **👉 Logs**  
@@ -88,6 +151,7 @@
 2024-02-11 Unity MLAgent [Banana env set up](https://gist.github.com/Nov05/bf63ac7e0a2d0f94a635fb3858894cca)  
 2024-02-10 repo cloned  
 
+<br>  
 ---
 
 [//]: # (Image References)
