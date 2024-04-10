@@ -41,7 +41,7 @@
   * [eval log](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/unity-reacher-v2-remark_ddpg_continuous-run-0-240409-172621.log_) (human readable) 
    
 ✅ **major efforts in coding**  
-* all the code is integrated with `ShangtongZhang`'s `[deep_rl](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl)` framework.  
+* all the code is integrated with `ShangtongZhang`'s [`deeprl`](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) framework.  
 * one task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be executed sequentially.   
 
   
