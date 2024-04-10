@@ -11,9 +11,9 @@
 
 * evaluation with graphics  
   Note:  
-  1. the envs and agents were controlled by the same DDPG model at the same time.   
-  2. observation dimention `[num_envs, num_agents (per env), state_size]` will be converted to `[num_envs*num_agents, state_size]` to pass through the neural networks.   
-  3. during training, action dimention will be `[mini_batch_size (replay batch), action_size]`;   
+  * the envs and agents were controlled by the same DDPG model at the same time.   
+  * observation dimention `[num_envs, num_agents (per env), state_size]` will be converted to `[num_envs*num_agents, state_size]` to pass through the neural networks.   
+  * during training, action dimention will be `[mini_batch_size (replay batch), action_size]`;   
            during evaluation, the local network will ouput actions with dimention `[num_envs*num_agents, action_size]`, and it will be converted to `[num_envs, num_agents, action_size]` to step the envs.     
   <img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-04-09_17-35-39_V2.gif?raw=true" width=800>
 
