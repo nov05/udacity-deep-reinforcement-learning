@@ -41,7 +41,7 @@
   * [eval log](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/unity-reacher-v2-remark_ddpg_continuous-run-0-240409-172621.log_) (human readable) 
    
 ✅ **major efforts in coding**  
-* all the code is integrated with `ShangtongZhang`'s [`deeprl`](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) framework.  
+* all the code is integrated with `ShangtongZhang`'s [`deeprl`](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) framework which uses some OpenAI `Baselines` functionalities.    
 * one task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be executed sequentially.
 * to enable multiprocessing of Unity environments, the following code has had to be modified.
   in `python/unityagents/rpc_communicator.py`
@@ -55,7 +55,8 @@
               self.unity_to_external = UnityToExternalServicerImplementation()
               self.unity_to_external.parent_conn, self.unity_to_external.child_conn = Pipe() ## added by nov05
   ```
-
+* Task UML diagram   
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2013_06_18-20240410_deeprl_task_uml%20--%20SmartDraw.jpg" width=800>  
   
 * **launch multiple Unity environments parallelly (not used in the project)** from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)  
   * the major code file [`python\unityagents\environment2.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/unityagents/environment2.py)  
