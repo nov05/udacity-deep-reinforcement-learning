@@ -8,9 +8,9 @@
 * [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)
 
 ✅ entry points  
-* [python/experiments/deeprl_ddpg_continuous.py](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_continuous.py): train and eval
+* [python/experiments/deeprl_ddpg_continuous.py](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_continuous.py): train and eval  
   `$ python -m experiments.deeprl_ddpg_continuous`  
-* [python/experiments/deeprl_ddpg_plot.py](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_plot.py): plot train and eval scores
+* [python/experiments/deeprl_ddpg_plot.py](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_plot.py): plot train and eval scores  
   `$ python -m experiments.deeprl_ddpg_plot`
   
 ✅ **Result:** trained an DDPG model in one Unity-Reacher-v2 environment with 1 agent (1 robot arm) for **155 episodes**, then evaluated the model in 3 environments (each with 1 agent) parallelly for **150 consecutive episodes** and got a score of **33.92(0.26)** (0.26 is the standard standard deviation of scores in different envs). also used the trained model to control 20 agents in 4 envs parallelly and got a score of **34.24(0.10)**.   
