@@ -17,7 +17,7 @@
 
 
 * evaluation with graphics       
-  <img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-04-09_17-35-39_V2.gif?raw=true" width=800>
+  <img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-04-09_17-35-39_V2.gif?raw=true" width=800>  
   Note:  
   * the 4 envs and each own 1 (or 20 agents) above were controlled by one single DDPG model at the same time.   
   * observation dimension `[num_envs, num_agents (per env), state_size]` will be converted to `[num_envs*num_agents, state_size]` to pass through the neural networks.   
