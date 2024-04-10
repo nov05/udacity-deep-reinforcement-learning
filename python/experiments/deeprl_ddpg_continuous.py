@@ -26,7 +26,7 @@ def ddpg_continuous(**kwargs):
                        train_mode=True,
                        single_process=False)
     config.by_episode = True  ## control by episode; if false, by step
-    config.max_episodes = 160
+    config.max_episodes = 161
 
     ## eval
     config.eval_env = Task(config.game, 
@@ -110,7 +110,9 @@ if __name__ == '__main__':
         select_device(0)  ## -1: CPU
         num_envs = 1
         num_envs_eval = 4
-        offset = 4  ## if run train and test at the same time
+        ## if run train and test at the same time
+        ## e.g. for training num_envs=1, num_envs_eval=3, hence Unity env port offset=4
+        offset = 4  
         eval_no_graphics = False
         num_eval_episodes = 2
 
