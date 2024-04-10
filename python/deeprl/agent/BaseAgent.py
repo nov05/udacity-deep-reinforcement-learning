@@ -23,7 +23,7 @@ class BaseAgent:
         self.task_ind = 0
         self.env_type = get_env_type(game=self.config.game)  ## added by nov05
         self.total_steps = 0
-        self.total_episodes = 0
+        self.total_episodes = 0  ## added by nov05
         self.episode_done = False   ## all envs have done an episode, added by nov05
 
     def close(self):

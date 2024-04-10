@@ -33,7 +33,7 @@
 * evaluation result (in 3 envs for 150 consecutive episodes)
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-09%2021_48_17-deeprl_ddpg_continuous.py%20-%20udacity-deep-reinforcement-learning%20-%20Visual%20Studio%20.jpg" width=800>  
 
-* saved files
+* saved files (check [the folder](https://github.com/Nov05/udacity-deep-reinforcement-learning/tree/master/python/experiments/ddpg_unity-reacher-v2))  
   * [trained model](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-155.model)     
   * [train log](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614.log_) (human readable):  
     you can find all the configuration including training **hyperparameters**, **network architecture**, train and eval scores, here.   
@@ -56,7 +56,9 @@
               self.unity_to_external.parent_conn, self.unity_to_external.child_conn = Pipe() ## added by nov05
   ```
 * Task UML diagram   
-  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2013_06_18-20240410_deeprl_task_uml%20--%20SmartDraw.jpg" width=800>  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2013_06_18-20240410_deeprl_task_uml%20--%20SmartDraw.jpg" width=800>   
+  Agent UML diagram  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2014_20_50-20240410_deeprl_ddpg_agent_uml%20--%20SmartDraw.jpg" width=700>  
   
 * **launch multiple Unity environments parallelly (not used in the project)** from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)  
   * the major code file [`python\unityagents\environment2.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/unityagents/environment2.py)  
@@ -142,6 +144,7 @@
     * [Project submission repo](https://github.com/Nov05/udacity-drlnd-p1_navigation-submission)  
 
 <br>  
+
 ---
 
 ## **👉 Logs**  
@@ -152,6 +155,7 @@
 2024-02-10 repo cloned  
 
 <br>  
+
 ---
 
 [//]: # (Image References)
