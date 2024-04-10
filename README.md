@@ -39,6 +39,8 @@
   check the video of [how to run the code](https://www.youtube.com/watch?v=AYbpY-Wk7N0) ($[`python -m tests2.test_unity_multiprocessing`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/tests2/test_unity_multiprocessing.py))   
   [<img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/2024-03-07_08-05-28_reacher_V1-ezgif.com-optimize.gif?raw=true" width=500>](https://www.youtube.com/shorts/z9_dMrkPsz0)  
 
+<br>  
+
 ---
 
 ## **👉 OpenAI Gym's Atari `Pong` pixel game**  
@@ -48,6 +50,10 @@
 * notebooks 
   * PPO without clipping: [Colab](https://drive.google.com/file/d/17-HyqTB121RjHvJ03GzY81eGxmmpjY3t), [GitHub](https://github.com/Nov05/Google-Colaboratory/blob/master/20240217_pong_REINFORCE.ipynb)   
   * PPO with clipping, [Colab](https://drive.google.com/file/d/1lAvn0_pPyFBnWJ4HPyXfVBhh7qjPo2gP), [GitHub](https://github.com/Nov05/Google-Colaboratory/blob/master/20240218_pong_PPO.ipynb)    
+
+<br>  
+
+---  
 
 ## **👉 Unity ML-Agents `Banana Collectors` Project Submission**  
 
@@ -107,6 +113,7 @@
 	* [Video recording](https://youtu.be/SwAwWLsa9f0?t=35) (which demonstrates how trained models are run on the local machine)  
     * [Project submission repo](https://github.com/Nov05/udacity-drlnd-p1_navigation-submission)  
 
+<br>  
 ---
 
 ## **👉 Logs**  
@@ -116,6 +123,7 @@
 2024-02-11 Unity MLAgent [Banana env set up](https://gist.github.com/Nov05/bf63ac7e0a2d0f94a635fb3858894cca)  
 2024-02-10 repo cloned  
 
+<br>  
 ---
 
 [//]: # (Image References)
