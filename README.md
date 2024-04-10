@@ -42,7 +42,19 @@
    
 ✅ **major efforts in coding**  
 * all the code is integrated with `ShangtongZhang`'s [`deeprl`](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) framework.  
-* one task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be executed sequentially.   
+* one task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be executed sequentially.
+* to enable multiprocessing of Unity environments, the following code has had to be modified.
+  in `python/unityagents/rpc_communicator.py`
+  ```python
+  class UnityToExternalServicerImplementation(UnityToExternalServicer):
+      # parent_conn, child_conn = Pipe() ## removed by nov05
+  ...
+  class RpcCommunicator(Communicator):
+      def initialize(self, inputs: UnityInput) -> UnityOutput: # type: ignore
+          try:
+              self.unity_to_external = UnityToExternalServicerImplementation()
+              self.unity_to_external.parent_conn, self.unity_to_external.child_conn = Pipe() ## added by nov05
+  ```
 
   
 * **launch multiple Unity environments parallelly (not used in the project)** from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)  
