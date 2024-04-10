@@ -6,6 +6,7 @@
 ✅ setup Python environment   
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
 * [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)
+* working directory: `$ cd python`   
 
 ✅ entry points  
 * [python/experiments/deeprl_ddpg_continuous.py](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_continuous.py): train and eval  
