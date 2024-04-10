@@ -9,7 +9,8 @@
 
 ✅ **Result:** trained an DDPG model in one Unity-Reacher-v2 environment with 1 agent (1 robot arm) for **155 episodes**, then evaluated the model in 3 environments (each with 1 agent) parallelly for **150 consecutive episodes** and got a score of **33.92(0.26)** (0.26 is the standard standard deviation of scores in different envs). also used the trained model to control 20 agents in 4 envs parallelly and got a score of **34.24(0.10)**.   
 
-* logs
+* saved files
+  * [trained model](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-155.model)     
   * [train log](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614.log_) (human readable):  
     you can find all the configuration including training **hyperparameters**, **network architecture**, train and eval scores, here.   
   * [tf_log](https://github.com/Nov05/udacity-deep-reinforcement-learning/tree/master/python/experiments/ddpg_unity-reacher-v2/logger-unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614) (tensorflow log, will be read by the plot modules)
