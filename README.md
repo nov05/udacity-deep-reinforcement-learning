@@ -15,7 +15,7 @@
 * train and eval scores   
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/20240409_unity-reacher-v2_train_eval_scores.jpg" width=600>
   
-* DDPG neural networks architecture
+* DDPG neural networks architecture  
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2001_13_04-unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614.log_%20-%20udacity-deep-.jpg" width=500>  
 
 * evaluation result (in 3 envs for 150 consecutive episodes)
