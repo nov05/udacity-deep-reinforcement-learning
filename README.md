@@ -3,11 +3,11 @@
 
 ## **👉 Unity enviroment `Reacher-v2` vector game (Project Submission)**  
 
-✅ setup Python environment   
+✅ **setup Python environment**   
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
 * [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)
 
-✅ entry points  
+✅ **entry points**  
 * working directory: `$ cd python`   
 * [python/experiments/**deeprl_ddpg_continuous.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_continuous.py): train and eval  
   `$ python -m experiments.deeprl_ddpg_continuous`  
@@ -40,7 +40,11 @@
   * [tf_log](https://github.com/Nov05/udacity-deep-reinforcement-learning/tree/master/python/experiments/ddpg_unity-reacher-v2/logger-unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614) (tensorflow log, will be read by the plot modules)
   * [eval log](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/ddpg_unity-reacher-v2/unity-reacher-v2-remark_ddpg_continuous-run-0-240409-172621.log_) (human readable) 
    
+✅ **major efforts in coding**  
+* all the code is integrated with `ShangtongZhang`'s `[deep_rl](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl)` framework.
+* one task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be executed sequentially.  
 
+  
 * **launch multiple Unity environments parallelly (not used in the project)** from an executable file (using Python `Subprocess` and `Multiprocess`, without `MLAgents`)  
   check the major code file [`python\unityagents\environment2.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/unityagents/environment2.py)  
   check the video of [how to run the code](https://www.youtube.com/watch?v=AYbpY-Wk7N0) ($[`python -m tests2.test_unity_multiprocessing`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/tests2/test_unity_multiprocessing.py))   
