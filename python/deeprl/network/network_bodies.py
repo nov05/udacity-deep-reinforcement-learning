@@ -5,9 +5,9 @@
 #######################################################################
 from torch import nn 
 import torch.nn.functional as F
-
 ## local imports
 from .network_utils import *
+
 
 
 class NatureConvBody(nn.Module):
@@ -68,22 +68,20 @@ class FCBody(nn.Module):
             else:
                 self.layers.append(layer_init(nn.Linear(dim_in, dim_out), method=init_method))
             self.layers.append(gate())  ## activation
-            # if i==0 and batch_norm:
-            #     self.layers.append(batch_norm(dims[i+1]))
+            if i==0 and batch_norm is not None:  ## normalize the output of the 1st layer
+                self.layers.append(batch_norm(dim_out))
         
+
     def reset_noise(self):
         if self.noisy_linear:
             for layer in self.layers:
                 if isinstance(layer, NoisyLinear):
                     layer.reset_noise()
 
+
     def forward(self, x):
-        try:
-            for layer in self.layers:
-                x = layer(x)
-        except:
-            print('👉', x.shape, layer)
-            raise
+        for layer in self.layers:
+            x = layer(x)
         return(x)
 
 

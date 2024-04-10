@@ -19,47 +19,56 @@ def ddpg_continuous(**kwargs):
     config = Config()
     config.merge(kwargs)
 
+    ## train
     config.task = Task(config.game, 
                        num_envs=config.num_workers,
                        env_fn_kwargs=config.env_fn_kwargs, 
                        train_mode=True,
                        single_process=False)
+    config.by_episode = True  ## control by episode; if false, by step
+    config.max_episodes = 160
+
+    ## eval
     config.eval_env = Task(config.game, 
                            num_envs=config.num_workers_eval,
                            env_fn_kwargs=config.env_fn_kwargs_eval, 
                            train_mode=False,
                            single_process=False)
-    config.by_episode = True  ## control by episode; if false, by step
-    config.max_episodes = 100 #320
     config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
-    # config.eval_after_episodes = 280
     config.eval_episode_interval = 10
-    config.save_after_episodes = 280 ## save model
-    config.save_episode_interval = 10 ## save model
+    config.eval_after_episodes = 10
 
+    ## save
+    config.save_after_episodes = 140 ## save model
+    config.save_episode_interval = 5 ## save model
+
+    ## neural network
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim,  
         config.action_dim,  
-        actor_body=FCBody(config.state_dim, (128, 128), gate=nn.LeakyReLU, 
-                          init_method='uniform_fan_in', batch_norm=nn.BatchNorm1d),
-        critic_body=FCBody(config.state_dim + config.action_dim, (128, 128), gate=nn.LeakyReLU, 
+        actor_body=FCBody(config.state_dim, (128,128), gate=nn.LeakyReLU, 
+                          init_method='uniform_fan_in', 
+                          batch_norm=nn.BatchNorm1d,),
+        critic_body=FCBody(config.state_dim+config.action_dim, (128,128), gate=nn.LeakyReLU, 
                            init_method='uniform_fan_in', batch_norm=nn.BatchNorm1d),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        ## for the critic optimizer, 1e-3 won't converge
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=3e-4, weight_decay=1e-5),  
+        ## for the critic optimizer, it seems that 1e-3 won't converge
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),  
+        # batch_norm=nn.BatchNorm1d,
         )
+    
     ## replay settings
     config.min_memory_size = int(1e6)
-    config.mini_batch_size = 64
+    config.mini_batch_size = 128
     config.replay_fn = lambda: UniformReplay(memory_size=config.min_memory_size, 
                                              batch_size=config.mini_batch_size)
-    config.discount = 0.99  ## λ lambda, Q-value discount rate
+    config.discount = 0.9  ## λ lambda, Q-value discount rate
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
-    config.warm_up = int(1e3) #int(1e4)  ## can't be 0 steps, or it will create a deadloop in buffer.
-    config.replay_interval = 2  ## replay every 2 steps
-    config.target_network_mix = 1e-3  ## τ soft update rate=0.1%, trg = trg*(1-τ) + src*τ
+    config.warm_up = int(1e4)  ## can't be 0 steps, or it will create a deadloop in buffer.
+    config.replay_interval = 1  ## replay every n steps
+    config.target_network_mix = 1e-3  ## τ: soft update rate=0.1%, trg = trg*(1-τ) + src*τ
 
     if is_training:
         # run_steps(DDPGAgent(config))
@@ -72,8 +81,9 @@ def ddpg_continuous(**kwargs):
 
 if __name__ == '__main__':
 
-    is_training = True
-    save_filename = r''  ## saved torch model file name
+    is_training = False
+    ## saved torch model file name
+    save_filename = '.\experiments\ddpg_unity-reacher-v2\DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-155'  
 
     env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
     # env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
@@ -87,24 +97,26 @@ if __name__ == '__main__':
             rmdir('data')
         except:
             pass
-        mkdir('data\\log')
-        mkdir('data\\tf_log')
-        mkdir('data') ## trained models
-        select_device(0) ## GPU, an non-negative integer is the index of GPU
+        mkdir('data\\log')  ## readable logs
+        mkdir('data\\tf_log')  ## tensorflow logs
+        mkdir('data\\models')  ## trained models
+        select_device(0) ## 0: GPU, an non-negative integer is the index of GPU
         num_envs = 1
-        num_envs_eval = 1
+        num_envs_eval = 3
+        offset = 0
         eval_no_graphics = True
-        num_eval_episodes = 1
+        num_eval_episodes = 2
     else:
-        select_device(-1)  ## CPU
+        select_device(0)  ## -1: CPU
         num_envs = 1
-        num_envs_eval = 1
+        num_envs_eval = 4
+        offset = 4  ## if run train and test at the same time
         eval_no_graphics = False
-        num_eval_episodes = 1
+        num_eval_episodes = 2
 
-    env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': True}
+    env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': True, 'base_port':5005+offset}
     env_fn_kwargs_eval = {'file_name': env_file_name, 'no_graphics': eval_no_graphics, 
-                          'base_port':5005+num_envs}
+                          'base_port':5005+offset+num_envs}
     ddpg_continuous(game='unity-reacher-v2', 
                     run=0,
                     env_fn_kwargs=env_fn_kwargs,
@@ -128,17 +140,24 @@ DeterministicActorCriticNet(
   (phi_body): DummyBody()
   (actor_body): FCBody(
     (layers): ModuleList(
-      (0): Linear(in_features=33, out_features=256, bias=True)
-      (1): Linear(in_features=256, out_features=128, bias=True)
+      (0): Linear(in_features=33, out_features=128, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): Linear(in_features=128, out_features=128, bias=True)
+      (4): LeakyReLU(negative_slope=0.01)
+      (5): Linear(in_features=128, out_features=4, bias=True)
+      (6): Tanh()
     )
   )
   (critic_body): FCBody(
     (layers): ModuleList(
-      (0): Linear(in_features=37, out_features=256, bias=True)
-      (1): Linear(in_features=256, out_features=128, bias=True)
+      (0): Linear(in_features=37, out_features=128, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): Linear(in_features=128, out_features=128, bias=True)
+      (4): LeakyReLU(negative_slope=0.01)
+      (5): Linear(in_features=128, out_features=1, bias=True)
     )
   )
-  (fc_action): Linear(in_features=128, out_features=4, bias=True)
-  (fc_critic): Linear(in_features=128, out_features=1, bias=True)
 )
 '''

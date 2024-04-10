@@ -142,19 +142,24 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
                  critic_opt_fn,
                  phi_body=None,
                  actor_body=None,
-                 critic_body=None):
+                 critic_body=None,
+                 batch_norm=None):
         super(DeterministicActorCriticNet, self).__init__()
+        ## networks
         if phi_body is None: phi_body = DummyBody(state_dim)  ## state, aka. obs, observations
         if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
         if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
         self.phi_body = phi_body
         self.actor_body = actor_body
         self.critic_body = critic_body
+        if batch_norm:
+            self.actor_body.layers.insert(0, batch_norm(phi_body.feature_dim))
         self.actor_body.layers.append(layer_init(nn.Linear(actor_body.feature_dim, action_dim), 
                                                  method='uniform', fr=-3e-3, to=3e-3))
         self.actor_body.layers.append(nn.Tanh())
         self.critic_body.layers.append(layer_init(nn.Linear(critic_body.feature_dim, 1), 
                                                   method='uniform', fr=-3e-3, to=3e-3))
+        ## optimizers
         self.actor_opt = actor_opt_fn(list(self.actor_body.parameters()))
         self.critic_opt = critic_opt_fn(list(self.critic_body.parameters()))
         self.to(Config.DEVICE)
@@ -206,6 +211,7 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
         self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters()) + self.phi_params
 
         self.to(Config.DEVICE)
+
 
     def forward(self, obs, action=None):
         obs = tensor(obs)

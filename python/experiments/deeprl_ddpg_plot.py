@@ -21,7 +21,7 @@ def plot_ddpg():
     for log_type in ['train', 'test']:
     # for log_type in ['train']:
         tag = plotter.RETURN_TRAIN if log_type=='train' else plotter.RETURN_TEST
-        moving_average = 50 if log_type=='train' else 5
+        moving_average = 20 if log_type=='train' else 5
         plotter.plot_games(games=games,
                         patterns=patterns,
                         agg='mean',
@@ -48,4 +48,4 @@ if __name__ == '__main__':
     mkdir('data\\images')
     plot_ddpg()
 
-## $ python -m experiments.deeprl_ddpg_plot          <- plot tensorflow log data (tf_log)
+## $ python -m experiments.deeprl_ddpg_plot     <- plot tensorflow log data (tf_log)

@@ -28,7 +28,8 @@ class BaseAgent:
 
     def close(self):
         try:
-            close_obj(self.config.eval_env)
+            close_obj(self.eval_task)
+            print(f"🟢 Eval task {self.eval_task} has been closed.")
         except:
             pass
         close_obj(self.task)
@@ -42,7 +43,8 @@ class BaseAgent:
 
 
     def load(self, filename):
-        state_dict = torch.load('%s.model' % filename, map_location=lambda storage, loc:storage) ## cpu
+        # state_dict = torch.load('%s.model' % filename, map_location=lambda storage, loc:storage) ## cpu
+        state_dict = torch.load('%s.model' % filename)
         self.network.load_state_dict(state_dict)
         with open('%s.stats' % (filename), 'rb') as f:
             self.config.state_normalizer.load_state_dict(pickle.load(f))
@@ -53,30 +55,30 @@ class BaseAgent:
 
 
     def eval_episode(self):
-        ## self.config.eval_env is a Task instance with a wrapper instance of a list of env instances
-        eval_task = self.config.eval_env 
-        if self.env_type in ['unity']: ## added by nov05
-            states, _, _, _ = eval_task.reset(train_mode=False) ## observations, rewards, dones, infos
-        else:
-            states = eval_task.reset()
         episodic_returns = []
         while True:
-            actions = self.eval_step(states)
-            states, _, dones, infos = eval_task.step(actions) ## observations, rewards, dones, infos
+            actions = self.eval_step(self.eval_states)
+            self.eval_states, _, dones, infos = self.eval_task.step(actions) ## observations, rewards, dones, infos
             for done,info in zip(dones,infos):
                 if np.any(done):  ## there are multiple agents in one Unity env, hence multiple values in "done"
                     episodic_returns.append(info['episodic_return'])
-            if len(episodic_returns)==eval_task.num_envs:  ## all envs are done
+            if len(episodic_returns)==self.eval_task.num_envs:  ## all envs are done
                 break 
         return episodic_returns
 
 
     def eval_episodes(self, by_episode=False):
+        ## self.config.eval_env is a Task instance with a wrapper instance of a list of env instances
+        self.eval_task = self.config.eval_env 
+        self.eval_states = self._reset_task(self.eval_task, train_mode=False)
+        log_info = f"Step {self.total_steps}, evaluating {self.config.eval_episodes} episodes " + \
+                   f"in {self.config.num_workers_eval} environments"
+        self.logger.info(log_info)
         total_episodic_returns = []
         for i in range(self.config.eval_episodes):
-            print(f"Evaluating episode {i}, with {self.config.eval_env.num_envs} environments...")
+            print(f"Evaluating episode {i}...")
             episodic_returns = self.eval_episode()
-            total_episodic_returns.append(np.sum(episodic_returns))
+            total_episodic_returns.append(np.mean(episodic_returns))
         log_info = f"Step {self.total_steps}, " + \
                    f"episodic_return_test {np.mean(total_episodic_returns):.2f}" + \
                    f"({np.std(total_episodic_returns)/np.sqrt(len(total_episodic_returns)):.2f})"
@@ -145,6 +147,36 @@ class BaseAgent:
         obs = env.render(mode='rgb_array')
         imsave('%s/%04d.png' % (dir, steps), obs)
 
+
+    ## added by nov05
+    def _reshape_for_network(self, data, keep_dim=2):
+        data = np.array(data)
+        if len(data.shape)>keep_dim:
+            if keep_dim>1:
+                data = data.reshape(-1, *data.shape[-keep_dim+1:]).tolist()
+            else:
+                data = data.reshape(-1).tolist()
+        elif len(data.shape)<=keep_dim:
+            data = data.tolist()
+        return data
+    
+
+    ## added by nov05
+    def _reshape_for_task(self, task, data):
+        if self.env_type in ['unity']: ## one env has multiple agents
+            data = np.array(data)
+            data = data.reshape(task.num_envs, task.envs_wrapper.num_agents, -1)
+        return data
+    
+
+    ## added by nov05
+    def _reset_task(self, task, train_mode=True):
+        if self.env_type in ['unity']: ## one env has multiple agents
+            states, _, _, _ = task.reset(train_mode=train_mode)  ## observations, rewards, dones, infos
+            states = self._reshape_for_network(states, keep_dim=2)
+        else:
+            states = task.reset()
+        return states
 
 
 class BaseActor(mp.Process):

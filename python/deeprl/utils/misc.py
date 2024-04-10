@@ -38,7 +38,7 @@ def run_steps(agent):
         ## save trained model at intervals
         if config.save_interval and agent.total_steps>config.save_after_steps \
             and (not agent.total_steps%config.save_interval):
-            agent.save('data/%s-%s-%d' % (agent_name, config.tag, agent.total_steps))
+            agent.save('data/models/%s-%s-%d' % (agent_name, config.tag, agent.total_steps))
             log_info = f"Step {agent.total_steps}, Model saved as 'data/{agent_name}-{config.tag}-{agent.total_steps}'"
             agent.logger.info(log_info)
 
@@ -52,7 +52,9 @@ def run_steps(agent):
 
         ## log eval result at intervals (including Step 0)
         if config.eval_interval and (agent.total_steps==0 or (not agent.total_steps%config.eval_interval)):
+            agent.network.eval()
             agent.eval_episodes()
+            agent.network.train()
 
         agent.step()
         agent.switch_task()
@@ -79,7 +81,7 @@ def run_episodes(agent):
         ## save trained model
         if config.save_episode_interval and agent.total_episodes>config.save_after_episodes \
         and (not agent.total_episodes%config.save_episode_interval):
-            agent.save(f"data/{agent_name}-{config.tag}-{agent.total_episodes}")
+            agent.save(f"data/models/{agent_name}-{config.tag}-{agent.total_episodes}")
             log_info = f"Episode {agent.total_episodes}, Step {agent.total_steps}, model saved as 'data/{agent_name}-{config.tag}-{agent.total_episodes}'"
             agent.logger.info(log_info)
 
@@ -89,9 +91,11 @@ def run_episodes(agent):
         t0 = time.time()
 
         ## log eval result (including episode 0)
-        if config.eval_episode_interval and agent.total_episodes>config.eval_after_episodes \
+        if config.eval_episode_interval and agent.total_episodes>=config.eval_after_episodes \
         and (not agent.total_episodes%config.eval_episode_interval):
-            agent.eval_episodes(by_episode=True)
+            agent.network.eval()
+            agent.eval_episodes(by_episode=config.by_episode)
+            agent.network.train()
 
         while True:
             agent.step()
@@ -107,6 +111,7 @@ def run_episodes(agent):
 def eval_episodes(agent):
     config = agent.config
     agent.load(filename=config.save_filename)  ## load saved torch model
+    agent.network.eval()
     agent.eval_episodes()  ## set config.eval_episodes
     agent.close()
 
@@ -172,6 +177,7 @@ def split(a, n):
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
+
 class HyperParameter:
     def __init__(self, id, param):
         self.id = id
@@ -184,6 +190,7 @@ class HyperParameter:
 
     def dict(self):
         return self.param
+
 
 
 class HyperParameters(Sequence):

@@ -33,10 +33,10 @@ class Config:
         self.tasks = None
         ## log
         self.tag = 'vanilla'  ## for logs
+        self.by_episode = False  ## control by step/interval; True: by episode
         self.log_interval = int(1e3)  ## steps
         self.log_level = 0
         self.iteration_log_interval = 30
-        self.by_episode = False
         ## save models
         self.save_interval = 0  ## save every n steps; 0 = no save
         self.save_after_steps = -1  ## save after training n steps
