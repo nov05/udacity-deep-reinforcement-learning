@@ -1,7 +1,7 @@
 
 
 
-## **👉 Unity enviroment `Reacher-v2` vector game**  
+## **👉 Unity enviroment `Reacher-v2` vector game (Project Submission)**  
 
 ✅ setup Python environment   
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
@@ -55,7 +55,7 @@
 
 ---  
 
-## **👉 Unity ML-Agents `Banana Collectors` Project Submission**  
+## **👉 Unity ML-Agents `Banana Collectors` (Project Submission)**  
 
 <img src="https://github.com/Nov05/pictures/blob/master/Udacity/20231221_reinforcement%20learning/p1_navigation_project_submission.gif?raw=true">
 
