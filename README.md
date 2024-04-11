@@ -60,9 +60,9 @@
               self.unity_to_external = UnityToExternalServicerImplementation()
               self.unity_to_external.parent_conn, self.unity_to_external.child_conn = Pipe() ## added by nov05
   ```
-* Task UML diagram   
+* [Task](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py) UML diagram   
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2013_06_18-20240410_deeprl_task_uml%20--%20SmartDraw.jpg" width=800>   
-  Agent UML diagram  
+  [Agent](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/agent/DDPG_agent.py) UML diagram  
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2014_20_50-20240410_deeprl_ddpg_agent_uml%20--%20SmartDraw.jpg" width=700>  
   
 
