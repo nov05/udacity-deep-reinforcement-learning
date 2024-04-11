@@ -47,7 +47,7 @@
 
 ✅ **major efforts in coding**  
 * all the code is integrated with `ShangtongZhang`'s [`deeprl`](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) framework which uses some OpenAI `Baselines` functionalities.    
-* one task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be executed sequentially.
+* one task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be stepped synchronously.
 * to enable multiprocessing of Unity environments, the following code has had to be modified.  
   in `python/unityagents/rpc_communicator.py`
   ```python
