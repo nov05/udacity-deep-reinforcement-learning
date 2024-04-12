@@ -11,6 +11,7 @@
   `$ python -m experiments.deeprl_ddpg_continuous`  
 * [python/experiments/**deeprl_ddpg_plot.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_plot.py): plot train and eval scores  
   `$ python -m experiments.deeprl_ddpg_plot`
+* launch tensorboard in VSCode: `$ tensorboard --logdir=./data/tf_log`  
   
 
 ✅ **Result:** A DDPG model was trained in one Unity-Reacher-v2 environment with 1 agent (1 robot arm) for **155 episodes**, then evaluated in 3 environments (each with 1 agent) parallelly for **150 consecutive episodes** and got an average score of **33.92(0.26)** (0.26 is the standard standard deviation of scores in different envs). also the trained model is tested to control 20 agents in 4 envs parallelly and got a score of **34.24(0.10)**.    
@@ -28,6 +29,10 @@
 * train and eval scores   
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/20240409_unity-reacher-v2_train_eval_scores.jpg" width=600>
   
+
+* monitor train-eval scores with tensorboard
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-12%2014_34_58-ddpg_unity_reacher_tensorflow.jpg" width=800>
+
 
 * DDPG neural networks architecture  
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-10%2001_13_04-unity-reacher-v2-remark_ddpg_continuous-run-0-240409-123614.log_%20-%20udacity-deep-.jpg" width=500>  
