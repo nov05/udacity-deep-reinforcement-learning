@@ -14,7 +14,7 @@
 * launch tensorboard in VSCode: `$ tensorboard --logdir=./data/tf_log`  
   
 
-✅ **Result:** A DDPG model was trained in one Unity-Reacher-v2 environment with 1 agent (1 robot arm) for **155 episodes**, then evaluated in 3 environments (each with 1 agent) parallelly for **150 consecutive episodes** and got an average score of **33.92(0.26)** (0.26 is the standard standard deviation of scores in different envs). also the trained model is tested to control 20 agents in 4 envs parallelly and got a score of **34.24(0.10)**.    
+✅ **Result:** A DDPG model was trained in one Unity-Reacher-v2 environment with 1 agent (1 robot arm) for **155 episodes**, then evaluated in 3 environments (each with 1 agent) parallelly for **150 consecutive episodes** and got an average score of **33.92(0.26)** (0.26 is the standard deviation of scores in different envs). also the trained model is tested to control 20 agents in 4 envs parallelly and got a score of **34.24(0.10)**.    
 
 
 * evaluation with graphics       
