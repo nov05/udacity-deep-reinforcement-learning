@@ -92,7 +92,7 @@ class DDPGAgent(BaseAgent):
             q_critic = self.network.critic(phi, actions)  ## expected Q-value
             ## local critic loss and backpropagate
             # critic_loss = (q_critic-q_target).pow(2).mul(0.5).sum(-1).mean(dim=0) ## RMSE, converge faster?
-            critic_loss = F.mse_loss(q_critic, q_target)  
+            critic_loss = F.mse_loss(q_critic, q_target)  ## MSE
             self.network.critic_opt.zero_grad() 
             critic_loss.backward()
             self.network.critic_opt.step()  ## optimizer step

@@ -107,7 +107,7 @@ class ConnectN:
           new_game.score = self.score
           return new_game
     
-    
+
      # check victory condition
      # fast version
      def get_score(self):
@@ -219,7 +219,8 @@ class ConnectN:
     
      def available_moves(self):
           indices = np.moveaxis(np.indices(self.state.shape), 0, -1)
-          return indices[np.abs(self.state) != 1]
+          return indices[np.abs(self.state)!=1]
+
 
      def available_mask(self):
-          return (np.abs(self.state) != 1).astype(np.uint8)
+          return (np.abs(self.state)!=1).astype(np.uint8)

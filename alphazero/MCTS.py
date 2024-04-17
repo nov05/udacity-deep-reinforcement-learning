@@ -8,6 +8,8 @@ from copy import copy
 from math import *
 import random
 
+
+
 c=1.0
 
 # transformations
@@ -30,6 +32,7 @@ def flip(x, dim):
     return x[tuple(indices)]
 
 
+
 t0inv= lambda x: x
 t1inv= lambda x: flip(x,1)
 t2inv= lambda x: flip(x,0)
@@ -48,12 +51,13 @@ transformation_list_half = list(zip(tlist_half, tinvlist_half))
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") 
 device ='cpu'
 
+
+
 def process_policy(policy, game):
 
     # for square board, add rotations as well
     if game.size[0]==game.size[1]:
         t, tinv = random.choice(transformation_list)
-
     # otherwise only add reflections
     else:
         t, tinv = random.choice(transformation_list_half)
@@ -66,6 +70,8 @@ def process_policy(policy, game):
     # we add a negative sign because when deciding next move,
     # the current player is the previous player making the move
     return game.available_moves(), tinv(prob)[mask].view(-1), v.squeeze().squeeze()
+
+
 
 class Node:
     def __init__(self, game, mother=None, prob=torch.tensor(0., dtype=torch.float)):
@@ -100,7 +106,7 @@ class Node:
         # if game is won/loss/draw
         if self.game.score is not None:
             self.V = self.game.score*self.game.player
-            self.U = 0 if self.game.score is 0 else self.V*float('inf')
+            self.U = 0 if self.game.score==0 else self.V*float('inf')
 
         # link to previous node
         self.mother = mother
