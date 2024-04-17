@@ -1,3 +1,14 @@
+
+## **👉 Setup Python environment for the repo**    
+
+* [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
+* [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)
+
+## **👉 AlphaZero**  
+
+* AlphaZero, [Tic-Tac-Toe notebook](https://nbviewer.org/github/Nov05/udacity-deep-reinforcement-learning/blob/master/alphazero/alphazero-TicTacToe.ipynb)  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/20240416_alphazero.jpg" width=400>  
+
 ## **👉 Unity enviroment `Reacher-v2` vector game (Project Submission)**  
 
 ✅ **setup Python environment**   
@@ -30,7 +41,7 @@
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/20240409_unity-reacher-v2_train_eval_scores.jpg" width=600>
   
 
-* monitor train-eval scores with tensorboard
+* monitor train-eval scores with tensorboard  
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/2024-04-12%2014_34_58-ddpg_unity_reacher_tensorflow.jpg" width=800>
 
 

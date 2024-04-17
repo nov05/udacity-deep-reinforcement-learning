@@ -102,7 +102,6 @@ class Node:
         # and there is a known perfect play
         self.outcome = self.game.score
 
-
         # if game is won/loss/draw
         if self.game.score is not None:
             self.V = self.game.score*self.game.player
@@ -110,6 +109,7 @@ class Node:
 
         # link to previous node
         self.mother = mother
+
 
     def create_child(self, actions, probs):
         # create a dictionary of children
@@ -120,7 +120,8 @@ class Node:
 
         child = { tuple(a):Node(g, self, p) for a,g,p in zip(actions, games, probs) }
         self.child = child
-        
+
+
     def explore(self, policy):
 
         if self.game.score is not None:
@@ -163,7 +164,6 @@ class Node:
             current.nn_v = -v
             current.create_child(next_actions, probs)
             current.V = -float(v)
-
         
         current.N += 1
 
@@ -182,7 +182,6 @@ class Node:
             current = current.mother
 
 
-               
     def next(self, temperature=1.0):
 
         if self.game.score is not None:
@@ -221,6 +220,7 @@ class Node:
         # V was for the previous player making a move
         # to convert to the current player we add - sign
         return nextstate, (-self.V, -self.nn_v, prob, nn_prob)
+
 
     def detach_mother(self):
         del self.mother
