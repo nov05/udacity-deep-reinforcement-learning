@@ -128,6 +128,7 @@ class DDPGAgent(BaseAgent):
 
 
     def eval_step(self, states):
+        '''step the local actor network'''
         if states is None:
             raise Exception("⚠️ \"states\" is None")
         states = self._reshape_for_network(states, keep_dim=2)

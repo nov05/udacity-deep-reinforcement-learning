@@ -137,8 +137,8 @@ class MADDPGAgent(BaseAgent):
                     a_target = tensor([])
                     for k in range(self.num_agents):
                         a_target_k = self.target_networks[k].actor(next_states_[k])
-                        a_target_k += tensor(self.random_process.sample() 
-                            * (1/(self.total_episodes+1)**self.config.noise_decay_rate))  ## add noise with decay
+                        # a_target_k += tensor(self.random_process.sample() 
+                        #     * (1/(self.total_episodes+1)**self.config.noise_decay_rate))  ## add noise with decay
                         a_target_k = torch.clamp(a_target_k,  
                             self.task.action_space.low[k], self.task.action_space.high[k])
                         a_target = torch.cat([a_target, a_target_k], dim=1)

@@ -84,14 +84,14 @@ def maddpg_continuous(**kwargs):
     #     size=(config.action_dim,), std=LinearSchedule(0.2))
     config.random_process_fn = lambda: GaussianProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
-    config.noise_decay_rate = 0.5
+    config.noise_decay_rate = 0.1 ## config.random_process.sample() * (1/(self.total_episodes+1)**config.noise_decay_rate)
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
     config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
     config.actor_network_update_freq = 2  ## update the actor once for every n updates to the critic
     config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
 
-    # config.state_normalizer = MeanStdNormalizer()  ## bound in range [-10, 10]
+    # config.state_normalizer = MeanStdNormalizer()  ## value bound in range [-10, 10]
     
     if is_training:
         # run_steps(MADDPGAgent(config))  ## log by steps

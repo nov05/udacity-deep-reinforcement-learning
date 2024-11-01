@@ -113,8 +113,8 @@ https://arxiv.org/pdf/1706.02275
 * Local and target actor-critic netowrks architecture (It can be found in each human readable log file.) 
   <image src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_20_09-unity-tennis-remark_maddpg_continuous-run-0-241030-145721.log%20-%20Untitled%20(Worksp.jpg" width=600>
 
-* Some of the hyperparameter settings  
-  (compared to [this model](https://github.com/tomtung/drlnd/blob/main/tennis-maddpg.ipynb), which uses mostly the same settings, was trained for about 10 hours, and achieved an average score of around 2.0–2.5, its critic network has one additional ReLU layer at the output. It also introduces constant factors as noise, and calculates MSE loss differently — getting one MSE value per agent and using the smallest value.)     
+* **1st training run**     
+  * Some of the hyperparameter settings (Compare them to [this model](https://github.com/tomtung/drlnd/blob/main/tennis-maddpg.ipynb), which uses mostly the same settings, was trained for about 10 hours, and achieved an average score of around 2.0–2.5, its critic network has one additional ReLU layer at the output. It also introduces constant factors as noise, and calculates MSE loss differently — getting one MSE value per agent and using the smallest value.)     
   ```
     config.min_memory_size = int(1e6)
     config.mini_batch_size = 256
@@ -130,8 +130,9 @@ https://arxiv.org/pdf/1706.02275
     config.actor_update_freq = 2  ## update the actor once for every n updates to the critic
     config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
   ```
-  * With these settings, the model successfully solved the environment, achieving an average score **above 0.5** after **60,000 training steps** (around 1,200 episodes). However, progress slowed afterward (slower to reach higher scores), likely due to excessive noise and an insufficient decay rate."  
+  * With these settings, the model successfully solved the environment, achieving an average score **above 0.5** after **60,000 training steps** (around 1,200 episodes). The progress slowed afterward (slower to reach higher scores), likely due to excessive noise and an insufficient decay rate. However if add too little noise at the start, the model easily gets stuck and hard to move on, if add too much moise latter, the training score climbs slowly.     
   <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/20241101_imgonline-com-ua-twotoone-uty9fO98pZoX.jpg" width=600>  
+
 
 
 <br><br><br>  
