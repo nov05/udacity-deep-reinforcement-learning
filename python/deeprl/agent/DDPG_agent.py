@@ -34,7 +34,8 @@ class DDPGAgent(BaseAgent):
         if self.states is None:
             self.random_process.reset_states()
             self.states = self._reset_task(self.task)
-            self.states = self.config.state_normalizer(self.states)
+        self.states = self.config.state_normalizer(self.states)
+        self.states = self._reshape_for_network(self.states, keep_dim=2)
 
         ## step
         if self.total_steps < self.config.warm_up: ## generate random actions
@@ -118,7 +119,7 @@ class DDPGAgent(BaseAgent):
             if np.any(done):
                 self.episodic_returns_all_envs.append(info['episodic_return'])
         if len(self.episodic_returns_all_envs)>=self.task.num_envs:
-            self.episode_done_all_envs = True
+            self.episode_done_all_envs = True  ## used in func 'run_episodes()' in misc.py
             self.record_online_return(self.episodic_returns_all_envs, 
                                       by_episode=self.config.by_episode)  ## log train returns
             self.episodic_returns_all_envs = []

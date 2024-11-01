@@ -20,10 +20,12 @@
 
 
 import torch.nn.functional as F
+
 ## local imports
 from ..network import *
 from ..component import *
 from .BaseAgent import *
+from unityagents.exception import UnityActionException
 
 
 
@@ -40,7 +42,8 @@ class MADDPGAgent(BaseAgent):
         self.target_networks = [config.network_fn() for _ in range(self.num_agents)] ## target neural network (actor and critic)
         self.replays = [config.replay_fn() for _ in range(self.num_agents)]  ## replay buffers 
         self.random_process = config.random_process_fn()  ## random states aka. noise
-        self.states = None
+        self.states = None  ## if None, reset task to states
+        self.last_reset_at_step = 0
         self.actor_update_counter = [0] * self.num_agents
 
         ## initialize target networks with local networks
@@ -58,10 +61,12 @@ class MADDPGAgent(BaseAgent):
             shapes for the replay buffer (3, 2, 24) (3, 2, 2) (3, 2) (3, 2, 24) (3, 2)
         '''
         ## reset the task (envs)
-        if self.states is None:
+        if (self.config.task_name=='unity-tennis' and self.total_steps-self.last_reset_at_step >= 4999) \
+        or self.states is None:
             self.random_process.reset_states() ## denoted as 𝒩 in the paper
             self.states = self._reset_task(self.task) ## [num_envs, num_agents, state dims]
-        states_ = self._reshape_for_network(self.states, keep_dim=3) ## do nothing in this case
+            self.last_reset_at_step = self.total_steps
+        states_ = self._reshape_for_network(self.states, keep_dim=3) ## no change in dims in this case
         states_ = self.config.state_normalizer(states_) ## do nothing in this case
 
         ## step
@@ -121,7 +126,7 @@ class MADDPGAgent(BaseAgent):
                 masks_ = tensor(transitions.mask).unsqueeze(-1).transpose(0, 1)
                 sampling_probs_ = tensor(transitions.sampling_prob).unsqueeze(-1).transpose(0, 1)
                 sample_weights_ = 1.0 / (sampling_probs_ * self.replays[i].size())  ## make sure it is not Inf
-
+                
                 ## the networks can process data with dimension [mini_batch_size, *network_input_dim]
                 ## no backprobagation for the target network; it will be updated from local later
                 with torch.no_grad():
@@ -168,7 +173,7 @@ class MADDPGAgent(BaseAgent):
             
                 ## update local actor
                 self.actor_update_counter[i] += 1
-                if self.actor_update_counter[i] >= self.config.actor_update_freq:
+                if self.actor_update_counter[i] >= self.config.actor_network_update_freq:
 
                     ## local actor forward
                     ## input ok_j, output shape [mini_batch_size, action_vector_length]
@@ -199,14 +204,15 @@ class MADDPGAgent(BaseAgent):
 
         ## Some environments have a fixed number of steps per episode, like Unity’s Reacher V2, 
         ## while others don’t, such as Unity Tennis. Still, this setup helps with monitoring the training process.
+        ## When latter, this works as getting a total (config.max_episodes * self.task.num_envs) of episodes.
         for done,info in zip(dones,infos): ## check whether an episode is done in each env
             if np.any(done):
                 self.episodic_returns_all_envs.append(info['episodic_return'])
-        if len(self.total_episodic_returns)==self.task.num_envs:
+        if len(self.episodic_returns_all_envs)>=self.task.num_envs:
             self.episode_done = True
-            self.record_online_return(self.total_episodic_returns, 
+            self.record_online_return(self.episodic_returns_all_envs, 
                                       by_episode=self.config.by_episode)  ## log train returns
-            self.total_episodic_returns = []
+            self.episodic_returns_all_envs = []
             self.total_episodes += 1
         self.total_steps += 1
 

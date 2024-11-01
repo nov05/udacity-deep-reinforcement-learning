@@ -26,7 +26,7 @@ class BaseAgent:
         ## the following attrs are added by nov05 in April 2024
         self.env_type = get_env_type(game=self.config.game)   ## for unity envs
         ## If the task has only one environment, or multiple identical environments with
-        ## a fixed number of steps per episode, then total_episodes and episode_done could be in use.
+        ## a fixed number of steps per episode, then the following attrs could be in use.
         self.total_episodes = 0  ## how many episodes have been executed
         self.episode_done_all_envs = False   ## all envs have done an episode
         self.episodic_returns_all_envs = []
@@ -190,7 +190,6 @@ class BaseAgent:
     def _reset_task(self, task, train_mode=True):
         if self.env_type in ['unity']: ## one env has multiple agents
             states, _, _, _ = task.reset(train_mode=train_mode)  ## observations, rewards, dones, infos
-            states = self._reshape_for_network(states, keep_dim=2)
         else:
             states = task.reset()
         return states
@@ -200,8 +199,8 @@ class BaseAgent:
         if self.env_type in ['unity']: ## one env has multiple agents
             actions = []
             for _ in range(self.task.num_envs):
-                actions += [self.task.action_space.sample()
-                            for _ in range(self.task.envs_wrapper.num_agents)]
+                actions.append([self.task.action_space.sample() 
+                                for _ in range(self.task.envs_wrapper.num_agents)])
         else: ## one env has one agent
             actions = [self.task.action_space.sample()
                        for _ in range(self.task.num_envs)]

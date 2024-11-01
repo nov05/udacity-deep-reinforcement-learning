@@ -55,6 +55,7 @@ class Config:
         self.optimizer_fn = None
         self.actor_optimizer_fn = None
         self.critic_optimizer_fn = None
+        self.actor_network_update_freq = 1
         self.target_network_update_freq = None
         self.target_network_mix = 0.001  ## τ (tau), soft update rate
         self.gradient_clip = None

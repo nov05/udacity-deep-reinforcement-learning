@@ -232,7 +232,8 @@ def get_unity_spaces(brain_params: BrainParameters):
     tranlate Unity ML-Agents spaces to gym spaces for compatibility with deeprl and Baselines 
     """
     if brain_params.vector_observation_space_type=='continuous':
-        observation_space = Box(float('-inf'), float('inf'), (brain_params.vector_observation_space_size,), np.float64)
+        observation_space = Box(float('-inf'), float('inf'), 
+            (brain_params.vector_observation_space_size, brain_params.num_stacked_vector_observations), np.float64)
     else:
         raise NotImplementedError
     if brain_params.vector_action_space_type=='continuous':
@@ -520,7 +521,8 @@ class Task:
             else:
                 Wrapper = SubprocVecEnv
         self.envs_wrapper = Wrapper(**kwargs)
-            
+
+        ## observation_space.shape, e.g. Unity-Reacher-V2 (33,1), Unity-Tennis (8,3)  
         self.observation_space = self.envs_wrapper.observation_space
         self.state_dim = int(np.prod(self.observation_space.shape))
         self.action_space = self.envs_wrapper.action_space
@@ -530,6 +532,7 @@ class Task:
             self.action_dim = self.action_space.shape[0]
         else:
             assert 'unknown action space'
+        
         
     def reset(self, train_mode=None):
         ## train_mode is for unity envs only

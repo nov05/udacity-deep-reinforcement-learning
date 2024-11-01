@@ -23,9 +23,10 @@ def maddpg_continuous(**kwargs):
     config = Config()
     config.merge(kwargs)
 
-    config.by_episode = False  ## control by episode; if false, by step
-    # config.max_episodes = int(5e4)
-    config.max_steps = int(1e6)
+    config.by_episode = True  ## control by episode; if false, by step
+    config.max_episodes = int(5e4)
+    # config.by_episode = False
+    # config.max_steps = int(1e6)
 
     ## train
     if config.num_workers > 0:
@@ -66,7 +67,7 @@ def maddpg_continuous(**kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         ## for the critic optimizer, it seems that 1e-3 won't converge
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),  
-        batch_norm=nn.BatchNorm1d,
+        # batch_norm=nn.BatchNorm1d,
         )
     
     ## replay settings
@@ -85,7 +86,7 @@ def maddpg_continuous(**kwargs):
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
     config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
-    config.actor_update_freq = 2  ## update the actor once for every n updates to the critic
+    config.actor_network_update_freq = 2  ## update the actor once for every n updates to the critic
     config.target_network_mix = 5e-3  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
 
     # config.state_normalizer = MeanStdNormalizer()  ## bound in range [-10, 10]
@@ -131,9 +132,9 @@ if __name__ == '__main__':
         mkdir('data\\tf_log')  ## tensorflow logs ..\python\data\tf_log
         mkdir('data\\models')  ## trained models ..\python\data\models
         select_device(0) ## 0: GPU, an non-negative integer is the index of GPU
-        num_envs = 1  
+        num_envs = 1
         num_envs_eval = 10
-        num_eval_episodes = 20
+        num_eval_episodes = 10
         eval_no_graphics = True
         offset = 0
     else:
