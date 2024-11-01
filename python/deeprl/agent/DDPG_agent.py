@@ -27,7 +27,6 @@ class DDPGAgent(BaseAgent):
         self.replay = config.replay_fn()  ## replay buffer 
         self.random_process = config.random_process_fn()  ## random states or noise
         self.states = None
-        self.total_episodic_returns = []
 
 
     def step(self):
@@ -114,15 +113,15 @@ class DDPGAgent(BaseAgent):
 
         ## Some environments have a fixed number of steps per episode, like Unity’s Reacher V2, 
         ## while others don’t, such as Unity Tennis. Still, this setup helps with monitoring the training process.
-        ## check whether the episode is done
-        for done,info in zip(dones,infos):
+        ## When latter, this works as getting a total (config.max_episodes * self.task.num_envs) of episodes.
+        for done,info in zip(dones,infos): ## check whether the episodes are done
             if np.any(done):
-                self.total_episodic_returns.append(info['episodic_return'])
-        if len(self.total_episodic_returns)==self.task.num_envs:
-            self.episode_done = True
-            self.record_online_return(self.total_episodic_returns, 
+                self.episodic_returns_all_envs.append(info['episodic_return'])
+        if len(self.episodic_returns_all_envs)>=self.task.num_envs:
+            self.episode_done_all_envs = True
+            self.record_online_return(self.episodic_returns_all_envs, 
                                       by_episode=self.config.by_episode)  ## log train returns
-            self.total_episodic_returns = []
+            self.episodic_returns_all_envs = []
             self.total_episodes += 1
         self.total_steps += 1
 

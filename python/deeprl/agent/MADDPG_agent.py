@@ -199,11 +199,9 @@ class MADDPGAgent(BaseAgent):
 
         ## Some environments have a fixed number of steps per episode, like Unity’s Reacher V2, 
         ## while others don’t, such as Unity Tennis. Still, this setup helps with monitoring the training process.
-        ## check whether an episode is done in each env
-        ## check whether the episode is done
-        for done,info in zip(dones,infos):
+        for done,info in zip(dones,infos): ## check whether an episode is done in each env
             if np.any(done):
-                self.total_episodic_returns.append(info['episodic_return'])
+                self.episodic_returns_all_envs.append(info['episodic_return'])
         if len(self.total_episodic_returns)==self.task.num_envs:
             self.episode_done = True
             self.record_online_return(self.total_episodic_returns, 

@@ -64,6 +64,8 @@ def run_steps(agent):
 
 
 ## added by nov05
+## If the task has only one environment, or multiple identical environments with a fixed number of episodes,
+## then it can be run by episodes, otherwise by steps only.
 def run_episodes(agent):
 
     config = agent.config
@@ -99,8 +101,8 @@ def run_episodes(agent):
 
         while True:
             agent.step()
-            if agent.episode_done==True:
-                agent.episode_done = False
+            if agent.episode_done_all_envs==True:
+                agent.episode_done_all_envs = False
                 break
         agent.switch_task()    
 

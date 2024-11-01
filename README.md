@@ -97,14 +97,6 @@ https://arxiv.org/pdf/1706.02275
 
 * Add the brain name **'TennisBrain'** and the episodic return logic in the function `get_return_from_brain_info()` in the file [`..\python\deeprl\component\envs.py`'](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py).   
   *In the `get_env_fn()` function, for `Gym` games, the environment class is wrapped using `OriginalReturnWrapper()`. Inside the wrapper class's `step()` and `reset()` method, `info['episodic_return'] = self.total_rewards` is defined. However, for `Unity` games, the environment is already instantiated at the same location, so it can't be wrapped with an wrapper class. Instead, we define `info['episodic_return']` within classes `UnityVecEnv` and `UnitySubprocVecEnv`, which call the `get_return_from_brain_info()` function where `info` is actually populated. And for the `Tennis` game, we add up the rewards that each agent received (without discounting), to get a score for each agent, which yields 2 (potentially different) scores, and we **take the maximum of these 2 scores** as the episodic return.*    
-  ```
-    if phase=='step':
-        if np.any(done): ## one env has multi-agents hence done has multiple values
-            ...
-            elif mode=='max':
-                info['episodic_return'] = np.max(env.total_reward)  ## single value
-    ...
-  ```
 
 * The class `PrioritizedReplay` implementation is in the file [`..\deeprl\component\replay.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py)  
 

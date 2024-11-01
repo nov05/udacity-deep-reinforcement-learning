@@ -292,8 +292,6 @@ class UnityVecEnv(VecEnv):
             if np.any(done): ## one env has multi-agents hence done has multiple values
                 info['episodic_return'] = env.total_reward / len(brain_info.agents)
                 env.total_reward = 0
-                # brain_info = env.reset(train_mode=self.train_mode)[self.brain_name]
-                # observation, _, _ = get_return_from_brain_info(brain_info, self.brain_name)
             else:
                 info['episodic_return'] = None
             data.append([observation, reward, done, info])
@@ -318,11 +316,12 @@ class UnityVecEnv(VecEnv):
 
 
 
-def unity_worker(remote, parent_remote, env_fn_wrapper, train_mode):
+def unity_worker(remote, parent_remote, env_fn_wrapper):
     parent_remote.close()
     env = env_fn_wrapper.x()
     brain_name = env.brain_names[0]
     ## add total_reward attribute, refer to class OriginalReturnWrapper(gym.Wrapper)
+    ## 'UnityEnvironment' object has no attribute 'num_agents'
     env.total_reward = 0
     try:
         while True:
@@ -338,8 +337,6 @@ def unity_worker(remote, parent_remote, env_fn_wrapper, train_mode):
                     ## in "deeprl.agent.BaseAgent", ret = info[0]['episodic_return']
                     info['episodic_return'] = env.total_reward / len(brain_info.agents)
                     env.total_reward = 0
-                    # brain_info = env.reset(train_mode=train_mode)[brain_name] 
-                    # observation, _, _ = get_return_from_brain_info(brain_info, brain_name)
                 else:
                     info['episodic_return'] = None
                 remote.send((observation, reward, done, info))
@@ -389,7 +386,7 @@ class UnitySubprocVecEnv(VecEnv):
         self.num_envs = len(env_fns)
         ctx = mp.get_context(context)
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(self.num_envs)])
-        self.ps = [ctx.Process(target=unity_worker, args=(work_remote, remote, CloudpickleWrapper(env_fn), self.train_mode)) 
+        self.ps = [ctx.Process(target=unity_worker, args=(work_remote, remote, CloudpickleWrapper(env_fn))) 
                    for (work_remote, remote, env_fn) in zip(self.work_remotes, self.remotes, env_fns)]
         for p in self.ps:
             p.daemon = True  # if the main process crashes, we should not cause things to hang

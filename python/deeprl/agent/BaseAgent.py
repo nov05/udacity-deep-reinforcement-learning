@@ -21,10 +21,16 @@ class BaseAgent:
         self.config = config
         self.logger = get_logger(tag=config.tag, log_level=config.log_level)
         self.task_ind = 0
-        self.env_type = get_env_type(game=self.config.game)  ## added by nov05
         self.total_steps = 0
-        self.total_episodes = 0  ## added by nov05
-        self.episode_done = False   ## all envs have done an episode, added by nov05
+
+        ## the following attrs are added by nov05 in April 2024
+        self.env_type = get_env_type(game=self.config.game)   ## for unity envs
+        ## If the task has only one environment, or multiple identical environments with
+        ## a fixed number of steps per episode, then total_episodes and episode_done could be in use.
+        self.total_episodes = 0  ## how many episodes have been executed
+        self.episode_done_all_envs = False   ## all envs have done an episode
+        self.episodic_returns_all_envs = []
+
 
     def close(self):
         try:
@@ -32,8 +38,11 @@ class BaseAgent:
             print(f"🟢 Eval task {self.eval_task} has been closed.")
         except:
             pass
-        close_obj(self.task)
-        print(f"🟢 Task {self.task} has been closed.")
+        try:
+            close_obj(self.task)
+            print(f"🟢 Task {self.task} has been closed.")
+        except:
+            pass
 
 
     def save(self, filename):
@@ -55,16 +64,19 @@ class BaseAgent:
 
 
     def eval_episode(self):
-        episodic_returns = []
+        episodic_returns_all_envs = []
         while True:
             actions = self.eval_step(self.eval_states)
             self.eval_states, _, dones, infos = self.eval_task.step(actions) ## observations, rewards, dones, infos
             for done,info in zip(dones,infos):
                 if np.any(done):  ## there are multiple agents in one Unity env, hence multiple values in "done"
-                    episodic_returns.append(info['episodic_return'])
-            if len(episodic_returns)==self.eval_task.num_envs:  ## all envs are done
+                    episodic_returns_all_envs.append(info['episodic_return'])
+            ## If the task has only one environment, or multiple identical environments with a fixed number of episodes,
+            ## then this means all environments are done an episode. Otherwise, it works like the eval task will run a total
+            ## of (config.eval_episodes * self.eval_task.num_envs) episodes. 
+            if len(episodic_returns_all_envs)>=self.eval_task.num_envs:  ## all envs are done
                 break 
-        return episodic_returns
+        return episodic_returns_all_envs
 
 
     def eval_episodes(self, by_episode=False):
@@ -77,8 +89,8 @@ class BaseAgent:
         total_episodic_returns = []
         for i in range(self.config.eval_episodes):
             print(f"Evaluating episode {i}...")
-            episodic_returns = self.eval_episode()
-            total_episodic_returns.append(np.mean(episodic_returns))
+            episodic_returns_all_envs = self.eval_episode()
+            total_episodic_returns.append(np.mean(episodic_returns_all_envs))
         log_info = f"Step {self.total_steps}, " + \
                    f"episodic_return_test {np.mean(total_episodic_returns):.2f}" + \
                    f"({np.std(total_episodic_returns)/np.sqrt(len(total_episodic_returns)):.2f})"
@@ -92,22 +104,27 @@ class BaseAgent:
 
 
     def record_online_return(self, info, offset=0, by_episode=False):
-        if isinstance(info, dict):
+        ## for non-Unity, info is a tuple that includes a dict with key 'episodic_return'
+        if isinstance(info, dict):  ## final call 
             ret = info['episodic_return']
             if ret is not None:
                 self.logger.add_scalar('episodic_return_train', ret, self.total_steps+offset)
                 self.logger.info(f"Step {self.total_steps+offset}, episodic_return_train {ret}")
         elif isinstance(info, tuple):
             for i, info_ in enumerate(info):
-                self.record_online_return(info_, i)   ## recursive
-        elif isinstance(info, list) and isinstance(info[0], float): ## for Unity, added by nov05
+                self.record_online_return(info_, i)   ## recursive calls
+
+        ## for Unity, the input is a list of numerics, added by nov05
+        ## don't use type(), or it doesn't recognize numpy.float64 as float.
+        elif isinstance(info, list) and (isinstance(info[0], float) or isinstance(info[0], int)): 
             ret = np.mean(info)
-            self.logger.add_scalar('episodic_return_train', ret, self.total_steps)
-            log_info = f"Step {self.total_steps}, episodic_return_train {ret}"
+            self.logger.add_scalar('episodic_return_train', ret, self.total_steps+offset)
+            log_info = f"Step {self.total_steps+offset}, episodic_return_train {ret}"
             if by_episode: log_info = f"Episode {self.total_episodes}, " + log_info
             self.logger.info(log_info)
         else:
             raise NotImplementedError
+        
         return {'episodic_return_train': ret}
 
 
