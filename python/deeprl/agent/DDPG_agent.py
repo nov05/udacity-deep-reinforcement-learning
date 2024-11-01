@@ -3,7 +3,10 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
-## refactored for multi-envs and multi-agents (in one env) by nov05 in 2024-04
+## refactored for multi-envs and multi-agents (in one env however 
+## controlled by one network, the local actor) by nov05 in 2024-04
+
+
 
 import torch.nn.functional as F
 ## local imports
@@ -107,8 +110,10 @@ class DDPGAgent(BaseAgent):
             self.network.actor_opt.step()  ## optimizer step
 
             ## update target network
-            self.soft_update_network(self.target_network, self.network)
+            soft_update_network(self.target_network, self.network, self.config.target_network_mix)
 
+        ## Some environments have a fixed number of steps per episode, like Unity’s Reacher V2, 
+        ## while others don’t, such as Unity Tennis. Still, this setup helps with monitoring the training process.
         ## check whether the episode is done
         for done,info in zip(dones,infos):
             if np.any(done):
@@ -132,23 +137,4 @@ class DDPGAgent(BaseAgent):
             actions = to_np(self.network(states))  ## get actions from the local network
         self.config.state_normalizer.unset_read_only()
         actions = self._reshape_for_task(self.eval_task, actions)
-        return actions
-    
-
-    def soft_update_network(self, target, source):
-        ## trg = trg*(1-τ) + src*τ
-        tau = self.config.target_network_mix
-        for target_param, source_param in zip(target.parameters(), source.parameters()):
-            target_param.data.copy_(target_param.data*(1.-tau) + source_param.data*tau)
-            
-
-    def _sample_actions(self):
-        if self.env_type in ['unity']: ## one env has multiple agents
-            actions = []
-            for _ in range(self.task.num_envs):
-                actions += [self.task.action_space.sample()
-                            for _ in range(self.task.envs_wrapper.num_agents)]
-        else: ## one env has one agent
-            actions = [self.task.action_space.sample()
-                       for _ in range(self.task.num_envs)]
         return actions

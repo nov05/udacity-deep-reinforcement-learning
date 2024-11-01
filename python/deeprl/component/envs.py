@@ -244,7 +244,7 @@ def get_unity_spaces(brain_params: BrainParameters):
 
 
 def get_return_from_brain_info(brain_info: BrainInfo, brain_name):
-    if brain_name in ['ReacherBrain']:
+    if brain_name in ['ReacherBrain', 'TennisBrain']:
         observation = brain_info.vector_observations 
     else:
         raise NotImplementedError

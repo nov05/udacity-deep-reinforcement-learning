@@ -3,23 +3,148 @@
 
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
 * [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)
- 
+
+<br><br><br>  
+
 ---  
 
-## **👉 Unity enviroment `Tennis` vector game (Project Submission)**  
+## **👉 Unity enviroment `Tennis` vector game (P3 Project Submission)**  
+
+
+✅ **entry points**   
+
+* working directory: `$ cd python`   
+* [python/experiments/**deeprl_maddpg_continuous.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_continuous.py): train  
+  `$ python -m experiments.deeprl_maddpg_continuous --is_training True` (training)      
+  `$ python -m experiments.deeprl_maddpg_continuous`  (evaluation)  
+* [python/experiments/**deeprl_maddpg_plot.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_plot.py): plot train and eval scores  
+  `$ python -m experiments.deeprl_maddpg_plot`
+* launch tensorboard in VSCode: `$ tensorboard --logdir=./data/tf_log` 
+
+
+✅ **Project description**  
+
+* Check the [project information](https://github.com/Nov05/udacity-deep-reinforcement-learning/tree/master/p3_collab-compet) (multi-agent reinforcement learning (MARL))   
+
+* Check the [course notes](https://www.evernote.com/shard/s139/sh/3207cf3f-bcca-a008-c221-45bbd101af72/qBMCR47uxmw1ied7hOLgWCxDfJFWUgoKErH3sbCLoIOTVUIw0x_YVyPiBw)    
+
+  In this environment, two agents control rackets to bounce a ball over a net. If an agent hits the ball over the net, it receives a reward of +0.1.  If an agent lets a ball hit the ground or hits the ball out of bounds, it receives a reward of -0.01.  Thus, the goal of each agent is to keep the ball in play.
+
+  The observation space consists of 8 variables corresponding to the position and velocity of the ball and racket. Each agent receives its own, local observation.  Two continuous actions are available, corresponding to movement toward (or away from) the net, and jumping. 
+
+  The task is episodic, and in order to solve the environment, your agents must get an average score of +0.5 (over 100 consecutive episodes, after taking the maximum over both agents). Specifically,
+
+  - After each episode, we add up the rewards that each agent received (without discounting), to get a score for each agent. This yields 2 (potentially different) scores. We then take the maximum of these 2 scores.
+  - This yields a single **score** for each episode.
+
+  The environment is considered solved, when **the average (over 100 episodes) of those scores is at least +0.5**.
+ 
+
+✅ **Multi-Agent Deep Deterministic Policy Gradient (MADDPG) solution**  
+
+* [**MADDPG**, or **Multi-agent DDPG**](https://paperswithcode.com/method/maddpg), extends DDPG into a multi-agent policy gradient algorithm where decentralized agents learn a centralized critic based on the observations and actions of all agents. It leads to learned policies that only use local information (i.e. their own observations) at execution time, does not assume a differentiable model of the environment dynamics or any particular structure on the communication method between agents, and is applicable not only to cooperative interaction but to competitive or mixed interaction involving both physical and communicative behavior. The critic is augmented with extra information about the policies of other agents, while the actor only has access to local information. After training is completed, only the local actors are used at execution phase, acting in a decentralized manner.  
+<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/Screen_Shot_2020-06-04_at_10.11.20_PM.png" width=300>    
+
+* Multi-environments, implemented using the `multiprocessing` library (check the file `..\python\baselines\baselines\common\vec_env\subproc_vec_env.py`), can be used for parallel training here, which can add diversity to the experiences. Additionally, asynchronous stepping may help speed up the training and evalation processes.  
+
+* I'm borrowing the "brain" concept from Unity environments, so I refer to the control unit of an agent as a "brain". This includes components like neural networks and replay buffers. For example, if there are 3 environments with 2 agents per environment, a total of 2 agent brains will be created. Each brain consists of **4 networks** (a local actor, local critic, target actor, and target critic) and **1 replay buffer**. It controls 1 agent, processes the agent's observations, and generates actions in each environment, while independently updating its 4 neural networks. This means that an agent brain receives observations from all 3 environments and generates corresponding actions for each. The "state, reward, action, next state" (x, r, a, x') sequences from all environments are stored in the agent's own replay buffer. However, during training, an agent brain can access the observations and actions of other agent brains.  
+
+* **Prioritized replay buffers** are used to improve the speed of convergence.
+
 
 ✅ **setup Python environment**   
+
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
-* [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)
+
+* [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583) 
+
+
+✅ **reference**  
+
+* [Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments (2020)](https://proceedings.neurips.cc/paper_files/paper/2017/file/68a9750337a418a86fe06c1991a1d64c-Paper.pdf)    
+https://arxiv.org/pdf/1706.02275   
+<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-18%2023_11_36-Multi-Agent%20Deep%20Deterministic%20Policy%20Gradient%20for%20N%20agents.jpg" width=500>   
+
+* Prioritized Experience Replay (2015)   
+  http://arxiv.org/abs/1511.05952
+
+
+✅ **Implementation**    
+
+* Reuse the `DDPG` framework (multi-envs, many resuable functions and components, etc.)
+* Instantiate the `DeterministicActorCriticNet` class to create 4 Networks (2 objects) per agent:   
+    actor, critic, target actor, target critic
+* Soft updates for target networks, Adam on actor/critic networks
+* Priority replay buffer for each agent:  
+    Storing new memories, priority sampling, updating priorities using critic Q-values
+* The `MADDPGAgent` class to choose actions, do soft updates, save models
+* The `Task` class to handle list of agents and train/eval functions
+* Utility functions to reshape the observations and actions, etc.
+* Human readable logs and tensorboard logs  
+    - Train task creates both readable and tensorboard logs  
+    - Eval task creates only readable logs
+    - The plot functionality uses tensorboard log data  
+
+
+✅ **Coding**
+
+* An env has 2 agents playing with each other. Refer to [this notebook](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/p3_collab-compet/Tennis.ipynb).  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_28_41-udacity-deep-reinforcement-learning_p3_collab-compet_Tennis.ipynb%20at%20master%20%C2%B7%20No.jpg" width=600>
+
+* Create `class MADDPGAgent(BaseAgent)` in the file [`..\python\deeprl\agent\MADDPG_agent.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/agent/MADDPG_agent.py).
+
+* Create train and eval functions in the file [`..\python\experiments\deeprl_maddpg_continuous.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_continuous.py).  
+
+* Add the brain name **'TennisBrain'** and the episodic return logic in the function `get_return_from_brain_info()` in the file [`..\python\deeprl\component\envs.py`'](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py).   
+  *In the `get_env_fn()` function, for `Gym` games, the environment class is wrapped using `OriginalReturnWrapper()`. Inside the wrapper class's `step()` and `reset()` method, `info['episodic_return'] = self.total_rewards` is defined. However, for `Unity` games, the environment is already instantiated at the same location, so it can't be wrapped with an wrapper class. Instead, we define `info['episodic_return']` within classes `UnityVecEnv` and `UnitySubprocVecEnv`, which call the `get_return_from_brain_info()` function where `info` is actually populated. And for the `Tennis` game, we add up the rewards that each agent received (without discounting), to get a score for each agent, which yields 2 (potentially different) scores, and we **take the maximum of these 2 scores** as the episodic return.*    
+  ```
+    if phase=='step':
+        if np.any(done): ## one env has multi-agents hence done has multiple values
+            ...
+            elif mode=='max':
+                info['episodic_return'] = np.max(env.total_reward)  ## single value
+    ...
+  ```
+
+* The class `PrioritizedReplay` implementation is in the file [`..\deeprl\component\replay.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py)  
+
+✅ **Training**  
+
+* Local and target actor-critic netowrks architecture (It can be found in each human readable log file.) 
+  <image src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_20_09-unity-tennis-remark_maddpg_continuous-run-0-241030-145721.log%20-%20Untitled%20(Worksp.jpg" width=600>
+
+* Some of the hyperparameter settings (compared to [this model](https://github.com/tomtung/drlnd/blob/main/tennis-maddpg.ipynb) which uses mostly the same settings, is trained for about 10 hours and reaches an average score of around 2.0.)     
+  ```
+    config.min_memory_size = int(1e6)
+    config.mini_batch_size = 256
+    config.replay_fn = lambda: PrioritizedReplay(memory_size=config.min_memory_size, 
+                                                 batch_size=config.mini_batch_size)
+    config.discount = 0.99  ## λ lambda, Q-value discount rate
+    config.random_process_fn = lambda: GaussianProcess(
+        size=(config.action_dim,), std=LinearSchedule(0.3))  ## noise to add
+    ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
+    config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
+    config.replay_interval = 1  ## replay-policy update every n steps
+    config.actor_update_freq = 2  ## update the actor once for every n updates to the critic
+    config.target_network_mix = 5e-3  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
+  ```
+  For this experiment, the model solved the environment, aka. average testing score being above 0.5, when it was trained for 50K steps.  
+
+
+
+<br><br><br>  
 
 ---  
 
 ## **👉 AlphaZero**  
 
 * [Tic-Tac-Toe notebook](https://nbviewer.org/github/Nov05/udacity-deep-reinforcement-learning/blob/master/alphazero/alphazero-TicTacToe.ipynb)  
-  [Tic-Tac-Toe-advanced notebook](https://nbviewer.org/github/Nov05/udacity-deep-reinforcement-learning/blob/master/alphazero/alphazero-TicTacToe.ipynb)  
+  [Tic-Tac-Toe-advanced notebook](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/alphazero/alphazero-TicTacToe-advanced.ipynb)  
   &nbsp;  
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/20240416_alphazero.jpg" width=400>  
+
+
+<br><br><br>  
 
 ---  
 
@@ -32,8 +157,9 @@
 
 ✅ **entry points**  
 * working directory: `$ cd python`   
-* [python/experiments/**deeprl_ddpg_continuous.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_continuous.py): train and eval  
-  `$ python -m experiments.deeprl_ddpg_continuous`  
+* [python/experiments/**deeprl_ddpg_continuous.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_continuous.py): train  
+  `$ python -m experiments.deeprl_ddpg_continuous --is_training True` (training)      
+  `$ python -m experiments.deeprl_ddpg_continuous`  (evaluation)  
 * [python/experiments/**deeprl_ddpg_plot.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_ddpg_plot.py): plot train and eval scores  
   `$ python -m experiments.deeprl_ddpg_plot`
 * launch tensorboard in VSCode: `$ tensorboard --logdir=./data/tf_log`  
@@ -106,7 +232,8 @@
 * https://arxiv.org/abs/1509.02971  
   <img src="https://raw.githubusercontent.com/Nov05/pictures/master/Udacity/20231221_reinforcement%20learning/20240410_ddpg_arxiv1509.02971.jpg" width=500>  
   
-<br>  
+
+<br><br><br>   
 
 ---
 
@@ -118,7 +245,7 @@
   * PPO without clipping: [Colab](https://drive.google.com/file/d/17-HyqTB121RjHvJ03GzY81eGxmmpjY3t), [GitHub](https://github.com/Nov05/Google-Colaboratory/blob/master/20240217_pong_REINFORCE.ipynb)   
   * PPO with clipping, [Colab](https://drive.google.com/file/d/1lAvn0_pPyFBnWJ4HPyXfVBhh7qjPo2gP), [GitHub](https://github.com/Nov05/Google-Colaboratory/blob/master/20240218_pong_PPO.ipynb)    
 
-<br>  
+<br><br><br>   
 
 ---  
 
@@ -180,7 +307,7 @@
 	* [Video recording](https://youtu.be/SwAwWLsa9f0?t=35) (which demonstrates how trained models are run on the local machine)  
     * [Project submission repo](https://github.com/Nov05/udacity-drlnd-p1_navigation-submission)  
 
-<br>  
+<br><br><br>  
 
 ---
 
@@ -193,7 +320,7 @@
 2024-02-11 Unity MLAgent [Banana env set up](https://gist.github.com/Nov05/bf63ac7e0a2d0f94a635fb3858894cca)  
 2024-02-10 repo cloned  
 
-<br>  
+<br><br><br>  
 
 ---
 

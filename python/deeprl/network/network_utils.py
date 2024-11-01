@@ -22,26 +22,6 @@ class BaseNet:
 
 
 
-## add uniform methods etc., by nov05
-def layer_init(layer, w_scale=1.0, 
-               method='orthogonal', fr=0, to=1):
-    if method=='orthogonal':
-        nn.init.orthogonal_(layer.weight.data)
-        layer.weight.data.mul_(w_scale)
-        nn.init.constant_(layer.bias.data, 0)
-    elif method=='uniform':
-        layer.weight.data.uniform_(fr, to)  ## default (0,1)
-    elif method=='uniform_fan_in':
-        fan_in = layer.weight.data.size()[0]
-        to = 1./np.sqrt(fan_in)
-        fr = -to 
-        layer.weight.data.uniform_(fr, to)
-    else:
-        raise NotImplementedError
-    return layer
-
-
-
 # Adapted from https://github.com/saj1919/RL-Adventure/blob/master/5.noisy%20dqn.ipynb
 class NoisyLinear(nn.Module):
     def __init__(self, in_features, out_features, std_init=0.4):
@@ -96,3 +76,32 @@ class NoisyLinear(nn.Module):
 
     def transform_noise(self, x):
         return x.sign().mul(x.abs().sqrt())
+
+
+
+
+## add uniform methods etc., by nov05
+def layer_init(layer, w_scale=1.0, 
+               method='orthogonal', fr=0, to=1):
+    if method=='orthogonal':
+        nn.init.orthogonal_(layer.weight.data)
+        layer.weight.data.mul_(w_scale)
+        nn.init.constant_(layer.bias.data, 0)
+    elif method=='uniform':
+        layer.weight.data.uniform_(fr, to)  ## default (0,1)
+    elif method=='uniform_fan_in':
+        fan_in = layer.weight.data.size()[0]
+        to = 1./np.sqrt(fan_in)
+        fr = -to 
+        layer.weight.data.uniform_(fr, to)
+    else:
+        raise NotImplementedError
+    return layer
+
+
+
+## added by nov05
+def soft_update_network(target, source, tau):
+    ## trg = trg*(1-τ) + src*τ
+    for target_param, source_param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(target_param.data*(1.-tau) + source_param.data*tau)

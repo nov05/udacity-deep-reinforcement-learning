@@ -85,7 +85,7 @@ class Plotter:
         for dir in leaf_dirs:
             if p.match(dir) and not np.match(dir):
                 names.append(dir)
-                print('👉', dir)
+                print(f'👉 Found file {dir}')
         return sorted(names)
 
 

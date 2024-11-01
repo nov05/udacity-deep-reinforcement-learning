@@ -1,3 +1,11 @@
+#######################################################################
+## This experiment solved the Unity Reacher V2 env and was committed 
+## in April 2024 by nov05. Don't change the code. Create new files to 
+## expirement new training settings.  
+#######################################################################
+
+
+
 from torch import nn
 import torch.nn.functional as F
 
@@ -20,20 +28,24 @@ def ddpg_continuous(**kwargs):
     config.merge(kwargs)
 
     ## train
-    config.task = Task(config.game, 
-                       num_envs=config.num_workers,
-                       env_fn_kwargs=config.env_fn_kwargs, 
-                       train_mode=True,
-                       single_process=False)
+    if config.num_workers>0:
+        config.task = Task(config.game, 
+                            num_envs=config.num_workers,
+                            env_fn_kwargs=config.env_fn_kwargs, 
+                            train_mode=True,
+                            single_process=False)
     config.by_episode = True  ## control by episode; if false, by step
     config.max_episodes = 161
 
     ## eval
-    config.eval_env = Task(config.game, 
-                           num_envs=config.num_workers_eval,
-                           env_fn_kwargs=config.env_fn_kwargs_eval, 
-                           train_mode=False,
-                           single_process=False)
+    if config.num_workers_eval>0:
+        config.eval_env = Task(config.game, 
+                            num_envs=config.num_workers_eval,
+                            env_fn_kwargs=config.env_fn_kwargs_eval, 
+                            train_mode=False,
+                            single_process=False)
+    if config.num_workers<=0:
+        config.task = config.eval_env  ## some funcs get env info from the config.task object
     config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
     config.eval_episode_interval = 10
     config.eval_after_episodes = 10
@@ -81,12 +93,26 @@ def ddpg_continuous(**kwargs):
 
 if __name__ == '__main__':
 
-    is_training = False
-    ## saved torch model file name
-    save_filename = '.\experiments\ddpg_unity-reacher-v2\DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-155'  
 
-    env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
-    # env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--is_training', required=False, help='whether it is a training task')
+    args = parser.parse_args()
+    
+    if args.is_training is None or args.is_training.lower()=='false':
+        is_training = False
+    elif args.is_training.lower()=='true':
+        is_training = True
+    else:
+        raise ValueError("⚠️ Argument '--is_training' has wrong value. Enter True or False.")
+   
+    if is_training:
+        env_file_name = '..\data\Reacher_Windows_x86_64_1\Reacher.exe'
+        # env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
+    else:
+        env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
+        ## saved torch model file name
+        save_filename = '.\experiments\ddpg_unity-reacher-v2\DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-155'  
+
     set_one_thread() 
     random_seed()
 
@@ -101,14 +127,15 @@ if __name__ == '__main__':
         mkdir('data\\tf_log')  ## tensorflow logs
         mkdir('data\\models')  ## trained models
         select_device(0) ## 0: GPU, an non-negative integer is the index of GPU
-        num_envs = 1
+        num_envs = 1   ## it has to be 1 for this experiment 
         num_envs_eval = 3
         offset = 0
         eval_no_graphics = True
         num_eval_episodes = 2
     else:
+        mkdir('data\\log')
         select_device(0)  ## -1: CPU
-        num_envs = 1
+        num_envs = 0
         num_envs_eval = 4
         ## if run train and test at the same time
         ## e.g. for training num_envs=1, num_envs_eval=3, hence Unity env port offset=4
@@ -129,11 +156,12 @@ if __name__ == '__main__':
     
 
 
-## $ python -m experiments.deeprl_ddpg_continuous    <- run this file, train or eval unity reacher
-## $ python -m experiments.deeprl_ddpg_plot          <- plot tensorflow log data (tf_log)
-## $ python -m deeprl_files.examples                 <- train mujoco reacher
-## $ python -m tests2.test_deeprl_envs               <- test unity envs
-## $ python -m tests2.test_rmdir                     <- delete logs, models, plots. run with caution
+## $ python -m experiments.deeprl_ddpg_continuous                       <- run this file, eval unity reacher
+## $ python -m experiments.deeprl_ddpg_continuous --is_training True    <- run this file, eval unity reacher
+## $ python -m experiments.deeprl_ddpg_plot                             <- plot tensorflow log data (tf_log)
+## $ python -m deeprl_files.examples                                    <- train mujoco reacher
+## $ python -m tests2.test_deeprl_envs                                  <- test unity envs
+## $ python -m tests2.test_rmdir                                        <- delete logs, models, plots. run with caution
 
 ## example network architecture for "unity-reacher-v2"
 ## check the example log file

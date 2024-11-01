@@ -38,13 +38,13 @@ class Config:
         self.log_level = 0
         self.iteration_log_interval = 30
         ## save models
-        self.save_interval = 0  ## save every n steps; 0 = no save
+        self.save_interval = 0  ## save every n steps; 0=no save
         self.save_after_steps = -1  ## save after training n steps
         self.save_episode_interval = 0 ## save every n episodes
         self.save_after_episodes = -1 ## save after training n episodes
         self.save_filename = None  ## saved torch model file name
         ## eval models
-        self.eval_interval = 0  ## eval every n steps; 0 = no eval
+        self.eval_interval = 0  ## eval every n steps; 0=no eval
         self.eval_episodes = 10  ## eval n episodes 
         self.eval_episode_interval = 0  ## eval every n episodes
         self.eval_after_episodes = -1  ## eval after training n episodes

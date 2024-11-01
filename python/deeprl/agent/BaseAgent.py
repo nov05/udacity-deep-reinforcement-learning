@@ -179,6 +179,19 @@ class BaseAgent:
         return states
 
 
+    def _sample_actions(self):
+        if self.env_type in ['unity']: ## one env has multiple agents
+            actions = []
+            for _ in range(self.task.num_envs):
+                actions += [self.task.action_space.sample()
+                            for _ in range(self.task.envs_wrapper.num_agents)]
+        else: ## one env has one agent
+            actions = [self.task.action_space.sample()
+                       for _ in range(self.task.num_envs)]
+        return actions
+
+
+
 class BaseActor(mp.Process):
     STEP = 0
     RESET = 1
