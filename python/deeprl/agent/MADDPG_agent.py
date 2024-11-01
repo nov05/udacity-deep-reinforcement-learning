@@ -43,13 +43,13 @@ class MADDPGAgent(BaseAgent):
         self.replays = [config.replay_fn() for _ in range(self.num_agents)]  ## replay buffers 
         self.random_process = config.random_process_fn()  ## random states aka. noise
         self.states = None  ## if None, reset task to states
-        self.last_reset_at_step = 0
+        ## some envs have to be reset after certain steps, e.g. unity tennis 5000 (self.config.task_name=='unity-tennis')
+        self.last_reset_at_step = 0  ## use with config.reset_interval
         self.actor_update_counter = [0] * self.num_agents
-
+        
         ## initialize target networks with local networks
         for local_network, target_network in zip(self.networks, self.target_networks):
             target_network.load_state_dict(local_network.state_dict()) 
-
 
 
     def step(self):
@@ -61,8 +61,9 @@ class MADDPGAgent(BaseAgent):
             shapes for the replay buffer (3, 2, 24) (3, 2, 2) (3, 2) (3, 2, 24) (3, 2)
         '''
         ## reset the task (envs)
-        if (self.config.task_name=='unity-tennis' and self.total_steps-self.last_reset_at_step >= 4999) \
-        or self.states is None:
+        if ((self.config.reset_interval is not None) 
+                and (self.total_steps-self.last_reset_at_step>=self.config.reset_interval)
+            or self.states is None):
             self.random_process.reset_states() ## denoted as 𝒩 in the paper
             self.states = self._reset_task(self.task) ## [num_envs, num_agents, state dims]
             self.last_reset_at_step = self.total_steps
@@ -82,7 +83,7 @@ class MADDPGAgent(BaseAgent):
                     action_i = to_np(self.networks[i](tensor(states_).transpose(0, 1)[i])) 
                     # if np.isnan(action_i).any(): raise RuntimeError(f"⚠️ Actor[{i}] created NaN action.")
                     ## add noise with decay, denoted by 𝒩_t in the paper
-                    action_i += self.random_process.sample() * (1/(self.total_episodes+1)**0.3)
+                    action_i += self.random_process.sample() * (1/(self.total_episodes+1)**self.config.noise_decay_rate)
                     actions_.append(action_i[:,np.newaxis,:])
                 self.networks[i].train()
             actions_ = np.concatenate(actions_, axis=1)  ## [num_envs, num_agents, action dims]
@@ -136,7 +137,8 @@ class MADDPGAgent(BaseAgent):
                     a_target = tensor([])
                     for k in range(self.num_agents):
                         a_target_k = self.target_networks[k].actor(next_states_[k])
-                        # a_target_k += tensor(self.random_process.sample() * (1/(self.total_episodes+1)**0.5))  ## add noise
+                        a_target_k += tensor(self.random_process.sample() 
+                            * (1/(self.total_episodes+1)**self.config.noise_decay_rate))  ## add noise with decay
                         a_target_k = torch.clamp(a_target_k,  
                             self.task.action_space.low[k], self.task.action_space.high[k])
                         a_target = torch.cat([a_target, a_target_k], dim=1)
@@ -209,7 +211,7 @@ class MADDPGAgent(BaseAgent):
             if np.any(done):
                 self.episodic_returns_all_envs.append(info['episodic_return'])
         if len(self.episodic_returns_all_envs)>=self.task.num_envs:
-            self.episode_done = True
+            self.episode_done_all_envs = True  ## used in func 'run_episodes()' in misc.py
             self.record_online_return(self.episodic_returns_all_envs, 
                                       by_episode=self.config.by_episode)  ## log train returns
             self.episodic_returns_all_envs = []

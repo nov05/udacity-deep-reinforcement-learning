@@ -19,8 +19,8 @@ def plot_maddpg():
     labels = [
         'MADDPG',
     ]
-    for log_type in ['train', 'test']:
-    # for log_type in ['train']:
+    # for log_type in ['train', 'test']:
+    for log_type in ['train']:
         tag = plotter.RETURN_TRAIN if log_type=='train' else plotter.RETURN_TEST
         moving_average = 100 if log_type=='train' else 5
         plotter.plot_games(games=games,

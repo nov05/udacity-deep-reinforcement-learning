@@ -3,6 +3,9 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
+## 2024-11-01 refactor the control by step code, add the control by episode, by nov05
+
+
 
 import numpy as np
 import datetime
@@ -22,7 +25,7 @@ from .torch_utils import *
 
 ## changed by nov05
 def run_steps(agent):
-
+    
     config = agent.config
     ## log config info 
     log_info = f"\n{config.__repr__()}\n"
@@ -36,14 +39,18 @@ def run_steps(agent):
     for _ in tqdm(range(config.max_steps), desc='Max steps', position=0, leave=True): 
 
         ## save trained model at intervals
-        if config.save_interval and agent.total_steps>config.save_after_steps \
-            and (not agent.total_steps%config.save_interval):
+        if ((config.save_interval is not None) 
+            and (agent.total_steps>=config.save_after_steps) 
+            and (agent.total_steps%config.save_interval==0)
+           ):
             agent.save('data/models/%s-%s-%d' % (agent_name, config.tag, agent.total_steps))
             log_info = f"Step {agent.total_steps}, Model saved as 'data/{agent_name}-{config.tag}-{agent.total_steps}'"
             agent.logger.info(log_info)
 
         ## log steps/s at intervals
-        if config.log_interval and (not agent.total_steps%config.log_interval):
+        if ((config.log_interval is not None) 
+            and (agent.total_steps%config.log_interval==0)
+           ):
             time_interval = time.time() - t0
             if time_interval:  ## no divide by 0
                 log_info = f'Step {agent.total_steps}, {config.log_interval/time_interval:.2f} steps/s'
@@ -51,7 +58,9 @@ def run_steps(agent):
             t0 = time.time()
 
         ## log eval result at intervals (including Step 0)
-        if config.eval_interval and (agent.total_steps==0 or (not agent.total_steps%config.eval_interval)):
+        if ((config.eval_interval is not None)
+            and ((agent.total_steps%config.eval_interval==0))
+           ):
             agent.network.eval()
             agent.eval_episodes()
             agent.network.train()
@@ -65,7 +74,7 @@ def run_steps(agent):
 
 ## added by nov05
 ## If the task has only one environment, or multiple identical environments with a fixed number of episodes,
-## then it can be run by episodes, otherwise by steps only.
+## then the flow can be controlled precisely by episodes, otherwise it works with the average episode number of all envs.
 def run_episodes(agent):
 
     config = agent.config
@@ -81,8 +90,10 @@ def run_episodes(agent):
     for _ in tqdm(range(config.max_episodes), desc='Max episodes', position=0, leave=True): 
 
         ## save trained model
-        if config.save_episode_interval and agent.total_episodes>config.save_after_episodes \
-        and (not agent.total_episodes%config.save_episode_interval):
+        if ((config.save_episode_interval is not None)
+            and (agent.total_episodes>=config.save_after_episodes) 
+            and (agent.total_episodes%config.save_episode_interval==0)
+           ):
             agent.save(f"data/models/{agent_name}-{config.tag}-{agent.total_episodes}")
             log_info = f"Episode {agent.total_episodes}, Step {agent.total_steps}, model saved as 'data/{agent_name}-{config.tag}-{agent.total_episodes}'"
             agent.logger.info(log_info)
@@ -92,9 +103,11 @@ def run_episodes(agent):
         agent.logger.info(log_info)
         t0 = time.time()
 
-        ## log eval result (including episode 0)
-        if config.eval_episode_interval and agent.total_episodes>=config.eval_after_episodes \
-        and (not agent.total_episodes%config.eval_episode_interval):
+        ## eval result and log
+        if ((config.eval_episode_interval is not None) 
+            and (agent.total_episodes>=config.eval_after_episodes) 
+            and (agent.total_episodes%config.eval_episode_interval==0)
+           ):
             agent.network.eval()
             agent.eval_episodes(by_episode=config.by_episode)
             agent.network.train()
@@ -109,6 +122,7 @@ def run_episodes(agent):
     agent.close()
 
 
+
 ## eval and/or visualize trained model, added by nov05
 def eval_episodes(agent):
     config = agent.config
@@ -118,25 +132,31 @@ def eval_episodes(agent):
     agent.close()
 
 
+
 def get_time_str():
     return datetime.datetime.now().strftime("%y%m%d-%H%M%S")
+
 
 
 def get_default_log_dir(name):
     return './log/%s-%s' % (name, get_time_str())
 
 
+
 def mkdir(path):
     Path(path).mkdir(parents=True, exist_ok=True)
+
 
 
 def rmdir(path): ## added by nov05
     rmtree(path)
     
     
+
 def close_obj(obj):
     if hasattr(obj, 'close'):
         obj.close()
+
 
 
 def random_sample(indices, batch_size):
@@ -149,11 +169,13 @@ def random_sample(indices, batch_size):
         yield indices[-r:]
 
 
+
 def is_plain_type(x):
     for t in [str, int, float, bool]:
         if isinstance(x, t):
             return True
     return False
+
 
 
 def generate_tag(params):
@@ -168,10 +190,12 @@ def generate_tag(params):
     ## e.g. tag is "Reacher-v2-remark_ddpg_continuous-run-0"
 
 
+
 def translate(pattern):
     groups = pattern.split('.')
     pattern = (r'\.').join(groups)
     return pattern
+
 
 
 def split(a, n):

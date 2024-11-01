@@ -24,32 +24,33 @@ def maddpg_continuous(**kwargs):
     config.merge(kwargs)
 
     config.by_episode = True  ## control by episode; if false, by step
-    config.max_episodes = int(5e4)
+    config.max_episodes = int(1e4)  ## usually 2000 is sufficient for Unity Tennis
     # config.by_episode = False
     # config.max_steps = int(1e6)
+    config.reset_interval = 4999  ## unity tennis env has to be reset after 5000 steps
 
     ## train
-    if config.num_workers > 0:
+    if config.num_workers>0:
         config.task = Task(config.game, 
                            num_envs=config.num_workers,
                            env_fn_kwargs=config.env_fn_kwargs, 
                            train_mode=True,
                            single_process=False)
     ## eval
-    if config.num_workers_eval > 0:
+    if config.num_workers_eval>0:
         config.eval_env = Task(config.game, 
                                num_envs=config.num_workers_eval,
                                env_fn_kwargs=config.env_fn_kwargs_eval, 
                                train_mode=False,
                                single_process=False)
-    if config.num_workers <= 0:
+    if config.num_workers<=0:
         config.task = config.eval_env  ## some functions get info from the task object
     config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
+    config.eval_after_episodes = 1200
     config.eval_episode_interval = 100
-    config.eval_after_episodes = 2000
 
     ## save
-    config.save_after_episodes = 2000 ## save model
+    config.save_after_episodes = 1200 ## save model
     config.save_episode_interval = 100 ## save model
 
     ## neural network
@@ -82,7 +83,8 @@ def maddpg_continuous(**kwargs):
     # config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
     #     size=(config.action_dim,), std=LinearSchedule(0.2))
     config.random_process_fn = lambda: GaussianProcess(
-        size=(config.action_dim,), std=LinearSchedule(0.3))
+        size=(config.action_dim,), std=LinearSchedule(0.2))
+    config.noise_decay_rate = 0.5
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
     config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
@@ -121,11 +123,10 @@ if __name__ == '__main__':
     set_one_thread() 
     random_seed()
 
-    if is_training == True:
-        # $ python -m tests2.test_rmdir
+    if is_training==True:
         ## remove all log and saved files
         try:
-            rmdir('data') ## remove dir ..\python\data (included in the gitignored file) 
+            rmdir('data') ## remove dir ..\python\data (included in the gitignored file?) 
         except:
             pass
         mkdir('data\\log')  ## human readable logs ..\python\data\log
@@ -142,7 +143,7 @@ if __name__ == '__main__':
         select_device(0)  ## 0: GPU, -1: CPU
         num_envs = 0
         num_envs_eval = 4
-        num_eval_episodes = 150  ## the env in eval mode has to be reset after 180 episodes or it will throw error
+        num_eval_episodes = 150  ## the Tennis env has to be reset after 5000 steps or it will throw error
         eval_no_graphics = True
         ## if run train then test in the same terminal session, skip the training port range to avoid potential conflict.
         ## e.g. for training num_envs=1, num_envs_eval=2, Unity test env port offset>=3
@@ -163,7 +164,8 @@ if __name__ == '__main__':
 
 ## make sure you are using the "drlnd_py310" kernel.
 ## $ cd python                                                            <- set the current working directory
-## $ python -m experiments.deeprl_maddpg_continuous --is_training True    <- run this file, train or eval unity tennis
+## $ python -m experiments.deeprl_maddpg_continuous --is_training True    <- run this file, train unity tennis
+## $ python -m experiments.deeprl_maddpg_continuous                       <- run this file, test unity tennis
 ## $ python -m experiments.deeprl_maddpg_plot                             <- plot tensorflow log data (tf_log)
 ## $ python -m deeprl_files.examples                                      <- train mujoco reacher
 ## $ python -m tests2.test_deeprl_envs                                    <- test unity envs

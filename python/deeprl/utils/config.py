@@ -31,6 +31,7 @@ class Config:
         self.num_workers_eval = 1
         self.env_fn_kwargs_eval = dict()  ## eval env func kwargs
         self.tasks = None
+        self.reset_interval = None  ## reset the task (envs) every n steps
         ## log
         self.tag = 'vanilla'  ## for logs
         self.by_episode = False  ## control by step/interval; True: by episode
@@ -38,16 +39,16 @@ class Config:
         self.log_level = 0
         self.iteration_log_interval = 30
         ## save models
-        self.save_interval = 0  ## save every n steps; 0=no save
-        self.save_after_steps = -1  ## save after training n steps
-        self.save_episode_interval = 0 ## save every n episodes
-        self.save_after_episodes = -1 ## save after training n episodes
+        self.save_interval = None  ## save every n steps; 0=no save
+        self.save_after_steps = None  ## save after training n steps
+        self.save_episode_interval = None ## save every n episodes
+        self.save_after_episodes = None ## save after training n episodes
         self.save_filename = None  ## saved torch model file name
         ## eval models
-        self.eval_interval = 0  ## eval every n steps; 0=no eval
-        self.eval_episodes = 10  ## eval n episodes 
-        self.eval_episode_interval = 0  ## eval every n episodes
-        self.eval_after_episodes = -1  ## eval after training n episodes
+        self.eval_interval = None  ## eval every n steps; 0=no eval
+        self.eval_episodes = None  ## eval n episodes 
+        self.eval_episode_interval = None  ## eval every n episodes
+        self.eval_after_episodes = None  ## eval after training n episodes
         ## neural networks
         self.network_fn = None
         self.actor_network_fn = None
@@ -68,6 +69,7 @@ class Config:
         self.max_episodes = 0 ## task maximum episodes
         self.n_step = 1
         self.random_process_fn = None  ## noise function
+        self.noise_decay_rate = 0.5
         self.state_normalizer = RescaleNormalizer()
         self.reward_normalizer = RescaleNormalizer()
         self.discount = None  ## λ lambda, Q-value dicount rate

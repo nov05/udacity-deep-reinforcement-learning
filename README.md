@@ -68,23 +68,26 @@ https://arxiv.org/pdf/1706.02275
 * Prioritized Experience Replay (2015)   
   http://arxiv.org/abs/1511.05952
 
+* Competitive Multi-Agent Reinforcement Learning (DDPG) with TorchRL Tutorial (2022)      
+  https://pytorch.org/rl/0.4/tutorials/multiagent_competitive_ddpg.html  
+
 
 ✅ **Implementation**    
 
 * Reuse the `DDPG` framework (multi-envs, many resuable functions and components, etc.)
   - All the code is integrated with [ShangtongZhang's deeprl framework](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) which uses some OpenAI Baselines functionalities.
   - One task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be stepped synchronously.
-* Instantiate the `DeterministicActorCriticNet` class to create 4 Networks (2 objects) per agent:   
+* Instantiate [the `DeterministicActorCriticNet` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/network/network_heads.py) to create 4 Networks (2 objects) per agent:   
     actor, critic, target actor, target critic
 * Soft updates for target networks, Adam on actor/critic networks
-* Priority replay buffer for each agent:  
+* [Priority replay buffer](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py) for each agent:  
     Storing new memories, priority sampling, updating priorities using critic Q-values
-* The `MADDPGAgent` class to choose actions, do soft updates, save models
-* The `Task` class to handle list of agents and train/eval functions
+* [The `MADDPGAgent` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/agent/MADDPG_agent.py) to choose actions, do soft updates, save models
+* [The `Task` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py) to handle list of agents and train/eval functions
 * Utility functions to reshape the observations and actions, etc.
 * Human readable logs and tensorboard logs  
     - Train and eval tasks create both readable and tensorboard logs  
-    - The plot functionality uses tensorboard log data  
+    - [The plot functionality](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_plot.py) uses tensorboard log data  
 
 
 ✅ **Coding**
@@ -110,7 +113,8 @@ https://arxiv.org/pdf/1706.02275
 * Local and target actor-critic netowrks architecture (It can be found in each human readable log file.) 
   <image src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_20_09-unity-tennis-remark_maddpg_continuous-run-0-241030-145721.log%20-%20Untitled%20(Worksp.jpg" width=600>
 
-* Some of the hyperparameter settings (compared to [this model](https://github.com/tomtung/drlnd/blob/main/tennis-maddpg.ipynb) which uses mostly the same settings, is trained for about 10 hours and reaches an average score of around 2.0~2.5. Its critic network has one more ReLU layer as the output layer, and the MSE loss is calculated in a different way - it gets one MSE value per agent and uses the smallest.)     
+* Some of the hyperparameter settings  
+  (compared to [this model](https://github.com/tomtung/drlnd/blob/main/tennis-maddpg.ipynb), which uses mostly the same settings, was trained for about 10 hours, and achieved an average score of around 2.0–2.5, its critic network has one additional ReLU layer at the output. It also introduces constant factors as noise, and calculates MSE loss differently — getting one MSE value per agent and using the smallest value.)     
   ```
     config.min_memory_size = int(1e6)
     config.mini_batch_size = 256
@@ -119,14 +123,15 @@ https://arxiv.org/pdf/1706.02275
     config.discount = 0.99  ## λ lambda, Q-value discount rate
     config.random_process_fn = lambda: GaussianProcess(
         size=(config.action_dim,), std=LinearSchedule(0.3))  ## noise to add
+    config.noise_decay_rate = 0.3  ## config.random_process.sample() * (1/(self.total_episodes+1)**config.noise_decay_rate)
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
     config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
     config.actor_update_freq = 2  ## update the actor once for every n updates to the critic
     config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
   ```
-  * With these settings, the model successfully solved the environment, achieving an average score above 0.5 after **60,000 training steps** (around 1200 episodes).
-
+  * With these settings, the model successfully solved the environment, achieving an average score **above 0.5** after **60,000 training steps** (around 1,200 episodes). However, progress slowed afterward (slower to reach higher scores), likely due to excessive noise and an insufficient decay rate."  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/20241101_imgonline-com-ua-twotoone-uty9fO98pZoX.jpg" width=600>  
 
 
 <br><br><br>  

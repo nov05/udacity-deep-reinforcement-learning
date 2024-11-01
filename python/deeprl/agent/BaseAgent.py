@@ -31,6 +31,9 @@ class BaseAgent:
         self.episode_done_all_envs = False   ## all envs have done an episode
         self.episodic_returns_all_envs = []
 
+        self.states = None
+        self.eval_states = None
+
 
     def close(self):
         try:
@@ -63,11 +66,21 @@ class BaseAgent:
         raise NotImplementedError
 
 
-    def eval_episode(self):
-        episodic_returns_all_envs = []
+    def eval_episode(self, 
+                     eval_total_steps, 
+                     eval_last_reset_at_step,
+                     episodic_returns_all_envs):
         while True:
+            if (((self.config.reset_interval is not None) 
+                    and (eval_total_steps-eval_last_reset_at_step>=self.config.reset_interval))
+                or self.eval_states is None
+               ):
+                self.eval_states = self._reset_task(self.eval_task, train_mode=False)  ## reset eval envs
+                eval_last_reset_at_step = eval_total_steps
             actions = self.eval_step(self.eval_states)
             self.eval_states, _, dones, infos = self.eval_task.step(actions) ## observations, rewards, dones, infos
+
+            eval_total_steps += 1
             for done,info in zip(dones,infos):
                 if np.any(done):  ## there are multiple agents in one Unity env, hence multiple values in "done"
                     episodic_returns_all_envs.append(info['episodic_return'])
@@ -75,31 +88,41 @@ class BaseAgent:
             ## then this means all environments are done an episode. Otherwise, it works like the eval task will run a total
             ## of (config.eval_episodes * self.eval_task.num_envs) episodes. 
             if len(episodic_returns_all_envs)>=self.eval_task.num_envs:  ## all envs are done
+                episodic_returns_all_envs = []
                 break 
-        return episodic_returns_all_envs
+        return episodic_returns_all_envs, eval_total_steps, eval_last_reset_at_step
 
 
     def eval_episodes(self, by_episode=False):
         ## self.config.eval_env is a Task instance with a wrapper instance of a list of env instances
         self.eval_task = self.config.eval_env 
-        self.eval_states = self._reset_task(self.eval_task, train_mode=False)
         log_info = f"Step {self.total_steps}, evaluating {self.config.eval_episodes} episodes " + \
                    f"in {self.config.num_workers_eval} environments"
         self.logger.info(log_info)
-        total_episodic_returns = []
+
+        eval_total_episodic_returns = []  ## a list of envs average scores
+        episodic_returns_all_envs = []
+        eval_total_steps, eval_last_reset_at_step = 0, 0  ## local variables for flow control
+
+        ## start evaluating
         for i in range(self.config.eval_episodes):
             print(f"Evaluating episode {i}...")
-            episodic_returns_all_envs = self.eval_episode()
-            total_episodic_returns.append(np.mean(episodic_returns_all_envs))
+            ## run one evaluating episode
+            eval_episodic_returns_all_envs, eval_total_steps, eval_last_reset_at = \
+                self.eval_episode(eval_total_steps, eval_last_reset_at_step,
+                                  episodic_returns_all_envs)
+            eval_total_episodic_returns.append(np.mean(eval_episodic_returns_all_envs))
+
         log_info = f"Step {self.total_steps}, " + \
-                   f"episodic_return_test {np.mean(total_episodic_returns):.2f}" + \
-                   f"({np.std(total_episodic_returns)/np.sqrt(len(total_episodic_returns)):.2f})"
+                   f"episodic_return_test {np.mean(eval_total_episodic_returns):.2f}" + \
+                   f"({np.std(eval_total_episodic_returns)/np.sqrt(len(eval_total_episodic_returns)):.2f})"
         if by_episode:
             log_info = f"Episode {self.total_episodes}, " + log_info
-        self.logger.info(log_info)
-        self.logger.add_scalar('episodic_return_test', np.mean(total_episodic_returns), self.total_steps)
+        self.logger.info(log_info)  ## readable logs
+        self.logger.add_scalar('episodic_return_test', 
+                               np.mean(eval_total_episodic_returns), self.total_steps)  ## tf logs
         return {
-            'episodic_return_test': np.mean(total_episodic_returns),
+            'episodic_return_test': np.mean(eval_total_episodic_returns),
         }
 
 
