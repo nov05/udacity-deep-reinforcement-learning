@@ -49,7 +49,7 @@
 
 * I'm borrowing the "brain" concept from Unity environments, so I refer to the control unit of an agent as a "brain". This includes components like neural networks and replay buffers. For example, if there are 3 environments with 2 agents per environment, a total of 2 agent brains will be created. Each brain consists of **4 networks** (a local actor, local critic, target actor, and target critic) and **1 replay buffer**. It controls 1 agent, processes the agent's observations, and generates actions in each environment, while independently updating its 4 neural networks. This means that an agent brain receives observations from all 3 environments and generates corresponding actions for each. The "state, reward, action, next state" (x, r, a, x') sequences from all environments are stored in the agent's own replay buffer. However, during training, an agent brain can access the observations and actions of other agent brains.  
 
-* **Prioritized replay buffers** are used to improve the speed of convergence.
+* **Prioritized replay buffers** are used to improve the speed of convergence, since the rewards are very sparse.
 
 
 ✅ **setup Python environment**   
@@ -72,6 +72,8 @@ https://arxiv.org/pdf/1706.02275
 ✅ **Implementation**    
 
 * Reuse the `DDPG` framework (multi-envs, many resuable functions and components, etc.)
+  - All the code is integrated with [ShangtongZhang's deeprl framework](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) which uses some OpenAI Baselines functionalities.
+  - One task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be stepped synchronously.
 * Instantiate the `DeterministicActorCriticNet` class to create 4 Networks (2 objects) per agent:   
     actor, critic, target actor, target critic
 * Soft updates for target networks, Adam on actor/critic networks
@@ -81,8 +83,7 @@ https://arxiv.org/pdf/1706.02275
 * The `Task` class to handle list of agents and train/eval functions
 * Utility functions to reshape the observations and actions, etc.
 * Human readable logs and tensorboard logs  
-    - Train task creates both readable and tensorboard logs  
-    - Eval task creates only readable logs
+    - Train and eval tasks create both readable and tensorboard logs  
     - The plot functionality uses tensorboard log data  
 
 
@@ -96,7 +97,11 @@ https://arxiv.org/pdf/1706.02275
 * Create train and eval functions in the file [`..\python\experiments\deeprl_maddpg_continuous.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_continuous.py).  
 
 * Add the brain name **'TennisBrain'** and the episodic return logic in the function `get_return_from_brain_info()` in the file [`..\python\deeprl\component\envs.py`'](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py).   
-  *In the `get_env_fn()` function, for `Gym` games, the environment class is wrapped using `OriginalReturnWrapper()`. Inside the wrapper class's `step()` and `reset()` method, `info['episodic_return'] = self.total_rewards` is defined. However, for `Unity` games, the environment is already instantiated at the same location, so it can't be wrapped with an wrapper class. Instead, we define `info['episodic_return']` within classes `UnityVecEnv` and `UnitySubprocVecEnv`, which call the `get_return_from_brain_info()` function where `info` is actually populated. And for the `Tennis` game, we add up the rewards that each agent received (without discounting), to get a score for each agent, which yields 2 (potentially different) scores, and we **take the maximum of these 2 scores** as the episodic return.*    
+
+  In the `get_env_fn()` function, for `Gym` games, the environment class is wrapped using `OriginalReturnWrapper()`. Inside the wrapper class's `step()` and `reset()` method, `info['episodic_return'] = self.total_rewards` is defined. However, for `Unity` games, the environment is already instantiated at the same location, so it can't be wrapped with an wrapper class. Instead, we define `info['episodic_return']` within classes `UnityVecEnv` and `UnitySubprocVecEnv`, which call the `get_return_from_brain_info()` function where `info` is actually populated.  
+
+  For the Tennis game, we sum the rewards each agent receives (without discounting) to get individual scores for both agents, resulting in two potentially different scores. We then take the higher score as the episodic return. However, since the two agents are always competing, one score eventually becomes consistently higher by about 0.11. To simplify, we can use the average of the scores as the episodic return without changing any related code. This means if the target score is 0.5, an average score above 0.445 would indicate the environment is solved.
+
 
 * The class `PrioritizedReplay` implementation is in the file [`..\deeprl\component\replay.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py)  
 
@@ -105,7 +110,7 @@ https://arxiv.org/pdf/1706.02275
 * Local and target actor-critic netowrks architecture (It can be found in each human readable log file.) 
   <image src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_20_09-unity-tennis-remark_maddpg_continuous-run-0-241030-145721.log%20-%20Untitled%20(Worksp.jpg" width=600>
 
-* Some of the hyperparameter settings (compared to [this model](https://github.com/tomtung/drlnd/blob/main/tennis-maddpg.ipynb) which uses mostly the same settings, is trained for about 10 hours and reaches an average score of around 2.0.)     
+* Some of the hyperparameter settings (compared to [this model](https://github.com/tomtung/drlnd/blob/main/tennis-maddpg.ipynb) which uses mostly the same settings, is trained for about 10 hours and reaches an average score of around 2.0~2.5. Its critic network has one more ReLU layer as the output layer, and the MSE loss is calculated in a different way - it gets one MSE value per agent and uses the smallest.)     
   ```
     config.min_memory_size = int(1e6)
     config.mini_batch_size = 256
@@ -118,9 +123,9 @@ https://arxiv.org/pdf/1706.02275
     config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
     config.actor_update_freq = 2  ## update the actor once for every n updates to the critic
-    config.target_network_mix = 5e-3  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
+    config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
   ```
-  For this experiment, the model solved the environment, aka. average testing score being above 0.5, when it was trained for 50K steps.  
+  * With these settings, the model successfully solved the environment, achieving an average score above 0.5 after **60,000 training steps** (around 1200 episodes).
 
 
 
