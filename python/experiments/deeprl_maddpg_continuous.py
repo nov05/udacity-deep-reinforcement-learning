@@ -58,21 +58,24 @@ def maddpg_continuous(**kwargs):
         config.state_dim,    ## dummy input length, not in use in this case
         config.action_dim,   ## actor output length
         actor_body=FCBody(config.state_dim, 
-                          (256,256), gate=nn.LeakyReLU, 
+                          (256,256), 
+                          gate=nn.LeakyReLU, 
                         #   noisy_linear=True,
                           init_method='uniform_fan_in', 
                           batch_norm=nn.BatchNorm1d,  ## attach to the 1st fully connected layer
                           ),
-        critic_body=FCBody((config.state_dim+config.action_dim)*config.task.envs_wrapper.num_agents,  ## (x, a_1, ..., a_n)
-                           (256,256), gate=nn.LeakyReLU,
+        # critic_body=FCBody(
+        critic_body_fn=lambda: FCBody(
+                           (config.state_dim+config.action_dim)*config.task.envs_wrapper.num_agents,  ## (x, a_1, ..., a_n)
+                           (256,256), 
+                           gate=nn.LeakyReLU,
                         #    noisy_linear=True, 
                            init_method='uniform_fan_in', 
                            batch_norm=nn.BatchNorm1d ## after the 1st fully connected layer
                           ),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        ## for the critic optimizer, it seems that 1e-3 won't converge
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),  
-        # batch_norm=nn.BatchNorm1d,  ## before the actor's 1st fully connected layer
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),  ## it seems that 1e-3 won't converge
+        num_critics=2,  ## TD3
         )
     
     ## replay settings

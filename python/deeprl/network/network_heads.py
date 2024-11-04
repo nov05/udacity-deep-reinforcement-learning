@@ -133,7 +133,7 @@ class OptionCriticNet(nn.Module, BaseNet):
 
 
 
-## so far it is only used in DDPG
+## so far it is only used in DDPG, MADDPG
 class DeterministicActorCriticNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
@@ -143,8 +143,9 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
                  phi_body=None,
                  actor_body=None,
                  critic_body=None,
-                 batch_norm=None,
-                 critic_ensemble=1):
+                 num_critics=1,  ## critic ensemble, e.g. TD3
+                 critic_body_fn=None, ## critic ensemble
+                 ):
         super(DeterministicActorCriticNet, self).__init__()
         ## networks
         if phi_body is None: phi_body = DummyBody(state_dim)  ## state, aka. obs, observations
@@ -153,13 +154,18 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         self.phi_body = phi_body
         self.actor_body = actor_body
         self.critic_body = critic_body
-        if batch_norm:  ## add batch normalization layer as the first layer
-            self.actor_body.layers.insert(0, batch_norm(phi_body.feature_dim))
+        if num_critics>1:
+            self.critic_bodies = [critic_body_fn() for _ in range(num_critics)]
+            self.critic_body = self.critic_bodies[0]
+        else:
+            self.critic_bodies = [self.critic_body]
+
         self.actor_body.layers.append(layer_init(nn.Linear(actor_body.feature_dim, action_dim), 
                                                  method='uniform', fr=-3e-3, to=3e-3))
         self.actor_body.layers.append(nn.Tanh())
-        self.critic_body.layers.append(layer_init(nn.Linear(critic_body.feature_dim, 1), 
-                                                  method='uniform', fr=-3e-3, to=3e-3))
+        for i in range(num_critics):
+            self.critic_bodies[i].layers.append(layer_init(nn.Linear(critic_body.feature_dim, 1), 
+                                                           method='uniform', fr=-3e-3, to=3e-3))
         # # ## MADDPG-Unity-Tennis
         # self.critic_body.layers.append(nn.LeakyReLU()) 
         # with torch.no_grad():
@@ -184,9 +190,12 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
 
     def critic(self, phi, a):
         x = torch.cat([phi, a], dim=1)
-        for layer in self.critic_body.layers:
-            x = layer(x)
-        return x
+        xs = []
+        for critic_body in self.critic_bodies:
+            for layer in critic_body.layers:
+                x = layer(x)
+            xs.append(x)
+        return xs[0] if len(xs)==1 else xs
 
     def feature(self, obs):
         obs = tensor(obs)
