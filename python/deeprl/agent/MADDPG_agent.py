@@ -151,24 +151,21 @@ class MADDPGAgent(BaseAgent):
                     )
                     ## get target Q-value; target critic forward
                     ## input (x′_j, a′1, ..., a′n), output shape [mini_batch_size, 1]            
-                    q_target = reduce(lambda x, y: torch.minimum(x, y), [
-                        rewards_[i] + masks_[i]*self.config.discount*
+                    q_target_i = reduce(lambda x, y: torch.minimum(x, y), [
+                        rewards_[i] + masks_[i]*self.config.discount*q.detach() for q in
                         self.target_networks[i].critic(
                             next_states_.transpose(0, 1).reshape(self.config.mini_batch_size, -1), 
-                            a_target).detach()
-                        for i in range(self.num_agents)
+                            a_target)
                     ])
 
                 ## get local Q-value; local critic forward
                 ## input (x_j, a1_j, ..., an_j), output shape [mini_batch_size, 1]
-                q_critic = [self.networks[i].critic(
+                q_critic_i = self.networks[i].critic(
                     states_.transpose(0, 1).reshape(self.config.mini_batch_size, -1), 
                     actions_.transpose(0, 1).reshape(self.config.mini_batch_size, -1))
-                    for i in range(self.num_agents)
-                ]
                 ## get squared TD-error, for replay priority updating 
                 se_loss_i = reduce(lambda x, y: torch.add(x, y), 
-                    [F.mse_loss(q_target, q_critic[i], reduction='none') for i in range(self.num_agents)]
+                    [F.mse_loss(q_target_i, q, reduction='none') for q in q_critic_i]
                 ) 
                 ## get local critic loss
                 ## MSE, both input shapes [mini_batch_size, 1], output shape (1,)
@@ -205,7 +202,7 @@ class MADDPGAgent(BaseAgent):
                     ## input (x_j, a1_j, ..., a_i, ..., an_j), output shape (1,)
                     actor_loss_i = -self.networks[agent_index].critic(
                         states_.transpose(0,1).reshape(self.config.mini_batch_size, -1), 
-                        a).mean(dim=0) 
+                        a)[0].mean(dim=0) 
                     # check_tensor('actor_loss', actor_loss_i)  ## check NaNs and Infs  
                     ## local actor backpropagation
                     self.networks[agent_index].actor_opt.zero_grad()  

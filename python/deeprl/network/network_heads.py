@@ -147,40 +147,50 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
                  critic_body_fn=None, ## critic ensemble
                  ):
         super(DeterministicActorCriticNet, self).__init__()
+        self.critic_ensemble = True if num_critics>1 else False
+
         ## networks
         if phi_body is None: phi_body = DummyBody(state_dim)  ## state, aka. obs, observations
         if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
-        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
         self.phi_body = phi_body
         self.actor_body = actor_body
-        self.critic_body = critic_body
-        if num_critics>1:
-            self.critic_bodies = [critic_body_fn() for _ in range(num_critics)]
-            self.critic_body = self.critic_bodies[0]
+        if self.critic_ensemble:
+            self.critic_bodies = torch.nn.ModuleList([critic_body_fn() for _ in range(num_critics)])
         else:
-            self.critic_bodies = [self.critic_body]
+            if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+            self.critic_body = critic_body
 
+        ## attach final layers
         self.actor_body.layers.append(layer_init(nn.Linear(actor_body.feature_dim, action_dim), 
                                                  method='uniform', fr=-3e-3, to=3e-3))
         self.actor_body.layers.append(nn.Tanh())
-        for i in range(num_critics):
-            self.critic_bodies[i].layers.append(layer_init(nn.Linear(critic_body.feature_dim, 1), 
+        if self.critic_ensemble:
+            for network in self.critic_bodies:
+                network.layers.append(layer_init(nn.Linear(network.feature_dim, 1), 
                                                            method='uniform', fr=-3e-3, to=3e-3))
-        # # ## MADDPG-Unity-Tennis
-        # self.critic_body.layers.append(nn.LeakyReLU()) 
+            network.layers.append(nn.LeakyReLU()) 
+        else:
+            self.critic_body.layers.append(layer_init(nn.Linear(self.critic_body.feature_dim, 1), 
+                                                      method='uniform', fr=-3e-3, to=3e-3))
         # with torch.no_grad():
         #     ## scale down the last fully connected layer
         #     self.actor_body.layers[-2].weight.divide_(100.) 
         #     self.critic_body.layers[-2].weight.divide_(100.) 
         ## optimizers
         self.actor_opt = actor_opt_fn(list(self.actor_body.parameters()))
-        self.critic_opt = critic_opt_fn(list(self.critic_body.parameters()))
+        if self.critic_ensemble:
+            self.critic_opt = critic_opt_fn(list(self.critic_bodies.parameters()))
+        else:
+            self.critic_opt = critic_opt_fn(list(self.critic_body.parameters()))
+
         self.to(Config.DEVICE)
+
 
     def forward(self, obs):
         phi = self.feature(obs)
         action = self.actor(phi)
         return action
+
 
     def actor(self, phi):
         x = phi
@@ -188,14 +198,17 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
             x = layer(x)
         return x
 
+
     def critic(self, phi, a):
-        x = torch.cat([phi, a], dim=1)
+        networks = self.critic_bodies if self.critic_ensemble else [self.critic_body]
         xs = []
-        for critic_body in self.critic_bodies:
-            for layer in critic_body.layers:
+        for network in networks:
+            x = torch.cat([phi, a], dim=1)
+            for layer in network.layers:
                 x = layer(x)
             xs.append(x)
         return xs[0] if len(xs)==1 else xs
+
 
     def feature(self, obs):
         obs = tensor(obs)
