@@ -20,6 +20,7 @@
 
 
 import torch.nn.functional as F
+from functools import reduce
 
 ## local imports
 from ..network import *
@@ -40,7 +41,7 @@ class MADDPGAgent(BaseAgent):
         self.networks = [config.network_fn() for _ in range(self.num_agents)]  ## local neural network (actor and critic)
         self.network = self.networks[0]  ## for logging logic in misc.py
         self.target_networks = [config.network_fn() for _ in range(self.num_agents)] ## target neural network (actor and critic)
-        self.replays = [config.replay_fn() for _ in range(self.num_agents)]  ## replay buffers 
+        self.replays = [config.replay_fn() for _ in range(self.num_agents)] ## a central replay buffer for all agents
         self.random_process = config.random_process_fn()  ## random states aka. noise
         self.states = None  ## if None, reset task to states
         ## some envs have to be reset after certain steps, e.g. unity tennis 5000 (self.config.task_name=='unity-tennis')
@@ -81,9 +82,13 @@ class MADDPGAgent(BaseAgent):
                 with torch.no_grad():
                     ## get action from local actor; action_i shape [num_envs, action dims]
                     action_i = to_np(self.networks[i](tensor(states_).transpose(0, 1)[i])) 
-                    # if np.isnan(action_i).any(): raise RuntimeError(f"⚠️ Actor[{i}] created NaN action.")
-                    ## add noise with decay, denoted by 𝒩_t in the paper
-                    action_i += self.random_process.sample() * (1/(self.total_episodes+1)**self.config.noise_decay_rate)
+                    # check_tensor('action_i', self.networks[i](tensor(states_).transpose(0, 1)[i]))
+                    ## add noise, denoted by 𝒩_t in the paper
+                    action_i += (
+                        self.random_process.sample()                                      ## add noise
+                        # * (1/((self.total_episodes+1)**self.config.noise_decay_factor))   ## with decay
+                        * 0.22                                                             ## constant
+                       )  ## add noise
                     actions_.append(action_i[:,np.newaxis,:])
                 self.networks[i].train()
             actions_ = np.concatenate(actions_, axis=1)  ## [num_envs, num_agents, action dims]
@@ -94,7 +99,7 @@ class MADDPGAgent(BaseAgent):
         ## tidy up trajectory data for the replay buffer
         actions_ = np.clip(actions_, self.task.action_space.low, self.task.action_space.high)
         next_states_ = self._reshape_for_network(next_states, keep_dim=3) ## no change in dims in this case 
-        next_states_ = self.config.state_normalizer(next_states_) ## no change in dims in this case
+        next_states_ = self.config.state_normalizer(next_states_) ## do nothing in this case
         rewards_ = self._reshape_for_network(rewards, keep_dim=2) ## no change in dims in this case
         rewards_ = self.config.reward_normalizer(rewards_) ## do nothing in this case
         dones_ = self._reshape_for_network(dones, keep_dim=2) ## no change in dims in this case
@@ -111,98 +116,110 @@ class MADDPGAgent(BaseAgent):
         self.states = next_states
 
         ## sample config.mini_batch_size (denoted as S) of transition sequences from the replay buffer
-        ## to update neural networks for each agent
-        if self.replays[0].size() >= self.config.warm_up \
-        and self.total_steps%self.config.replay_interval == 0:  ## replay every interval steps
-            
-            for i in range(self.num_agents):
+        ## to update neural networks for each agent; mini_batch_size is set in config.py
+        if (self.replays[0].size() >= self.config.warm_up 
+        and self.total_steps%self.config.replay_interval == 0):  ## replay every interval steps
 
-                ## mini_batch_size is set in config.py
-                transitions = self.replays[i].sample()  
+            for agent_index in range(self.num_agents):
+                transitions = self.replays[agent_index].sample()
                 ## convert to tensor and move to the device, change shape to [num_agents, mini_batch_size, *dims]
                 states_ = tensor(transitions.state).transpose(0, 1) 
-                actions_ = tensor(transitions.action).transpose(0, 1)
-                rewards_ = tensor(transitions.reward).unsqueeze(-1).transpose(0, 1)
+                actions_ = tensor(transitions.action).transpose(0, 1) 
+                rewards_ = tensor(transitions.reward).unsqueeze(-1).transpose(0, 1) 
                 next_states_ = tensor(transitions.next_state).transpose(0, 1)
-                masks_ = tensor(transitions.mask).unsqueeze(-1).transpose(0, 1)
-                sampling_probs_ = tensor(transitions.sampling_prob).unsqueeze(-1).transpose(0, 1)
-                sample_weights_ = 1.0 / (sampling_probs_ * self.replays[i].size())  ## make sure it is not Inf
-                
-                ## the networks can process data with dimension [mini_batch_size, *network_input_dim]
+                masks_ = tensor(transitions.mask).unsqueeze(-1).transpose(0, 1) 
+                sampling_probs_ = tensor(transitions.sampling_prob).unsqueeze(-1)  ## [mini_batch_size, 1]
+                sample_weights_ = 1.0 / (sampling_probs_ * self.replays[agent_index].size())  ## [mini_batch_size, 1]
+
+                ## the networks can process data with dimension [mini_batch_size, *network_input_dims]
                 ## no backprobagation for the target network; it will be updated from local later
                 with torch.no_grad():
-                    ## target actor forward
-                    ## input (ok_j), output a′k with shape [mini_batch_size, *action_dims]
-                    ## a_target is a list of actions; change shape to [mini_batch_size, num_agents*action_vector_length]
-                    a_target = tensor([])
-                    for k in range(self.num_agents):
-                        a_target_k = self.target_networks[k].actor(next_states_[k])
-                        # a_target_k += tensor(self.random_process.sample() 
-                        #     * (1/(self.total_episodes+1)**self.config.noise_decay_rate))  ## add noise with decay
-                        a_target_k = torch.clamp(a_target_k,  
-                            self.task.action_space.low[k], self.task.action_space.high[k])
-                        a_target = torch.cat([a_target, a_target_k], dim=1)
-                    
-                    ## target critic forward
-                    ## input (x′_j, a′1, ..., a′n), output shape [mini_batch_size, 1]
-                    q_target = self.target_networks[i].critic(
-                        next_states_.transpose(0, 1).reshape(self.config.mini_batch_size, -1), 
-                        a_target)
-                    ## multiply λ-discount rate, add reward
-                    y = rewards_[i] + masks_[i]*self.config.discount*q_target  
-                    y = y.detach() 
-                
-                ## local critic forward
+                    ## target actors forward
+                    ## input x′n_j, output a′n with shape [mini_batch_size, action_length]; 'j' denotes 'replay sample'
+                    ## a_target (a′) is a list of actions (a′n) with shape of [mini_batch_size, num_agents*action_length]
+                    ## add noise to smooth the critic fit
+                    a_target = (
+                        torch.cat([
+                            torch.clamp(
+                                (self.target_networks[i].actor(next_states_[i])
+                                + tensor(self.random_process.sample())                           ## add noise
+                                # * (1/((self.total_episodes+1)**self.config.noise_decay_factor))  ## with decay
+                                * 0.25                                                            ## constant factor
+                                ), self.task.action_space.low[i], self.task.action_space.high[i]
+                            ) for i in range(self.num_agents)], dim=1
+                        )
+                    )
+                    ## get target Q-value; target critic forward
+                    ## input (x′_j, a′1, ..., a′n), output shape [mini_batch_size, 1]            
+                    q_target = reduce(lambda x, y: torch.minimum(x, y), [
+                        rewards_[i] + masks_[i]*self.config.discount*
+                        self.target_networks[i].critic(
+                            next_states_.transpose(0, 1).reshape(self.config.mini_batch_size, -1), 
+                            a_target).detach()
+                        for i in range(self.num_agents)
+                    ])
+
+                ## get local Q-value; local critic forward
                 ## input (x_j, a1_j, ..., an_j), output shape [mini_batch_size, 1]
-                q_critic = self.networks[i].critic(
+                q_critic = [self.networks[i].critic(
                     states_.transpose(0, 1).reshape(self.config.mini_batch_size, -1), 
                     actions_.transpose(0, 1).reshape(self.config.mini_batch_size, -1))
-                ## local critic loss
-                se_loss = F.mse_loss(y, q_critic, reduction='none')  
-                critic_loss = torch.mean(torch.sum(se_loss*sample_weights_))  ## MSE
-                # if torch.isnan(critic_loss): raise RuntimeError("⚠️ Critic loss is NaN.")
-                # if torch.isinf(critic_loss): raise RuntimeError("⚠️ Critic loss is Inf.")
+                    for i in range(self.num_agents)
+                ]
+                ## get squared TD-error, for replay priority updating 
+                se_loss_i = reduce(lambda x, y: torch.add(x, y), 
+                    [F.mse_loss(q_target, q_critic[i], reduction='none') for i in range(self.num_agents)]
+                ) 
+                ## get local critic loss
+                ## MSE, both input shapes [mini_batch_size, 1], output shape (1,)
+                critic_loss_i = torch.mean(se_loss_i*sample_weights_, dim=0) 
+                # check_tensor('critic_loss_i', critic_loss_i)  ## check NaNs, Infs
                 ## local critic backpropagation
-                self.networks[i].critic_opt.zero_grad() 
-                critic_loss.backward()
-                # torch.nn.utils.clip_grad_norm_(self.networks[i].critic_body.parameters(), max_norm=1.0)
-                self.networks[i].critic_opt.step()  ## optimizer step
-                # check_network_params(f'critic[{i}]', self.networks[i].critic_body)
+                self.networks[agent_index].critic_opt.zero_grad() 
+                critic_loss_i.backward()
+                # torch.nn.utils.clip_grad_norm_(self.networks[i].critic_body.parameters(), max_norm=10.0)
+                self.networks[agent_index].critic_opt.step()  ## optimizer step
+                # check_network_params(f'critic[{agent_index}]', self.networks[agent_index].critic_body)
 
                 ## update sampling priorities
-                priorities = se_loss.detach().sqrt().squeeze().cpu().numpy()
-                self.replays[i].update_priorities(list(zip(*[transitions.idx, priorities])))
-            
+                with torch.no_grad():
+                    priorities_i = se_loss_i.sqrt().squeeze().cpu().numpy()  ## (mini_batch_size,)
+                self.replays[agent_index].update_priorities(
+                    list(zip(*[transitions.idx, priorities_i])))
+                
                 ## update local actor
-                self.actor_update_counter[i] += 1
-                if self.actor_update_counter[i] >= self.config.actor_network_update_freq:
+                self.actor_update_counter[agent_index] += 1
+                if self.actor_update_counter[agent_index] >= self.config.actor_network_update_freq:
 
                     ## local actor forward
-                    ## input ok_j, output shape [mini_batch_size, action_vector_length]
-                    a_i = self.networks[i].actor(states_[i])  
-                    a_i = torch.clamp(a_i, self.task.action_space.low[i], self.task.action_space.high[i])  ## clip action
-                    ## (a1_j, ..., a_i, ..., an_j), shape [mini_batch_size, num_agents*action_vector_length]
-                    a = torch.cat([actions_[j] if j!=i else a_i for j in range(self.num_agents)], dim=1) 
+                    ## input ok_j, output shape [mini_batch_size, action_length]
+                    ## 'k' denotes 'policy emsemble', which is not in use here
+                    a_i = self.networks[agent_index].actor(states_[agent_index])  
+                    a_i = torch.clamp(a_i, 
+                                      self.task.action_space.low[agent_index], 
+                                      self.task.action_space.high[agent_index])  ## clip action
+                    ## (a1_j, ..., a_i, ..., an_j), shape [mini_batch_size, num_agents*action_length]
+                    a = torch.cat([actions_[j] if j!=agent_index else a_i 
+                                   for j in range(self.num_agents)], dim=1) 
                     ## local actor loss
-                    ## input (x_j, a1_j, ..., a_i, ..., an_j)
-                    actor_loss = -self.networks[i].critic(
+                    ## input (x_j, a1_j, ..., a_i, ..., an_j), output shape (1,)
+                    actor_loss_i = -self.networks[agent_index].critic(
                         states_.transpose(0,1).reshape(self.config.mini_batch_size, -1), 
                         a).mean(dim=0) 
-                    # if torch.isnan(actor_loss): raise RuntimeError("⚠️ Actor loss is NaN.")
-                    # if torch.isinf(actor_loss): raise RuntimeError("⚠️ Actor loss is Inf.")
+                    # check_tensor('actor_loss', actor_loss_i)  ## check NaNs and Infs  
                     ## local actor backpropagation
-                    self.networks[i].actor_opt.zero_grad()  
-                    actor_loss.backward()
-                    # torch.nn.utils.clip_grad_norm_(self.networks[i].actor_body.parameters(), max_norm=1.0)
-                    self.networks[i].actor_opt.step()  ## optimizer step
-                    # check_network_params(f'actor[{i}]', self.networks[i].actor_body)
+                    self.networks[agent_index].actor_opt.zero_grad()  
+                    actor_loss_i.backward()
+                    # torch.nn.utils.clip_grad_norm_(self.networks[i].actor_body.parameters(), max_norm=10.0)
+                    self.networks[agent_index].actor_opt.step()  ## optimizer step
+                    # check_network_params(f'actor[{agent_index}]', self.networks[agent_index].actor_body)
 
-                    self.actor_update_counter[i] = 0  ## reset
+                    self.actor_update_counter[agent_index] = 0  ## reset
 
                 ## update target network from local
-                soft_update_network(self.target_networks[i], self.networks[i], 
+                soft_update_network(self.target_networks[agent_index], self.networks[agent_index], 
                                     self.config.target_network_mix)
-                # check_network_params(f'target_networks[{i}]', self.target_networks[i])
+                # check_network_params(f'target_networks[{agent_index}]', self.target_networks[agent_index])
 
         ## Some environments have a fixed number of steps per episode, like Unity’s Reacher V2, 
         ## while others don’t, such as Unity Tennis. Still, this setup helps with monitoring the training process.
@@ -233,6 +250,8 @@ class MADDPGAgent(BaseAgent):
             with torch.no_grad():
                 action_i = to_np(self.networks[i](states_[i]))  
                 actions_.append(action_i[:,np.newaxis,:])
+            self.networks[i].train()
         self.config.state_normalizer.unset_read_only()
         actions = self._reshape_for_task(self.eval_task, actions_)  ## ## [num_agents, num_envs, action dims]
+    
         return actions

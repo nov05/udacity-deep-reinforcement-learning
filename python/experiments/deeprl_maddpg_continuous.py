@@ -24,7 +24,7 @@ def maddpg_continuous(**kwargs):
     config.merge(kwargs)
 
     config.by_episode = True  ## control by episode; if false, by step
-    config.max_episodes = int(1e4)  ## usually 2000 is sufficient for Unity Tennis
+    config.max_episodes = int(1e5)  ## usually 2000 is sufficient for Unity Tennis
     # config.by_episode = False
     # config.max_steps = int(1e6)
     config.reset_interval = 4999  ## unity tennis env has to be reset after 5000 steps
@@ -59,20 +59,24 @@ def maddpg_continuous(**kwargs):
         config.action_dim,   ## actor output length
         actor_body=FCBody(config.state_dim, 
                           (256,256), gate=nn.LeakyReLU, 
+                        #   noisy_linear=True,
                           init_method='uniform_fan_in', 
-                          batch_norm=nn.BatchNorm1d,),
+                          batch_norm=nn.BatchNorm1d,  ## attach to the 1st fully connected layer
+                          ),
         critic_body=FCBody((config.state_dim+config.action_dim)*config.task.envs_wrapper.num_agents,  ## (x, a_1, ..., a_n)
-                           (256,256), gate=nn.LeakyReLU, 
+                           (256,256), gate=nn.LeakyReLU,
+                        #    noisy_linear=True, 
                            init_method='uniform_fan_in', 
-                           batch_norm=nn.BatchNorm1d),
+                           batch_norm=nn.BatchNorm1d ## after the 1st fully connected layer
+                          ),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         ## for the critic optimizer, it seems that 1e-3 won't converge
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),  
-        # batch_norm=nn.BatchNorm1d,
+        # batch_norm=nn.BatchNorm1d,  ## before the actor's 1st fully connected layer
         )
     
     ## replay settings
-    config.min_memory_size = int(1e6)
+    config.min_memory_size = int(1e5)
     config.mini_batch_size = 256
     # config.replay_fn = lambda: UniformReplay(memory_size=config.min_memory_size, 
     #                                          batch_size=config.mini_batch_size)
@@ -83,10 +87,11 @@ def maddpg_continuous(**kwargs):
     # config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
     #     size=(config.action_dim,), std=LinearSchedule(0.2))
     config.random_process_fn = lambda: GaussianProcess(
-        size=(config.action_dim,), std=LinearSchedule(0.2))
-    config.noise_decay_rate = 0.1 ## config.random_process.sample() * (1/(self.total_episodes+1)**config.noise_decay_rate)
+        size=(config.action_dim,), std=LinearSchedule(0.25))
+    ## e.g. config.random_process.sample()*(1/(self.total_episodes+1)**config.noise_decay_factor)
+    # config.noise_decay_factor = 0.3   
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
-    config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
+    config.warm_up = int(1e4) ## can't be 0, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
     config.actor_network_update_freq = 2  ## update the actor once for every n updates to the critic
     config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
@@ -174,19 +179,18 @@ if __name__ == '__main__':
 ## example network architecture for "unity-tennis"
 ## check the example log file
 '''
-2024-10-30 14:57:22,958 - root - INFO: 
+2024-11-02 02:25:51,864 - root - INFO: 
 DeterministicActorCriticNet(
   (phi_body): DummyBody()
   (actor_body): FCBody(
     (layers): ModuleList(
-      (0): BatchNorm1d(24, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (1): Linear(in_features=24, out_features=256, bias=True)
-      (2): LeakyReLU(negative_slope=0.01)
-      (3): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (4): Linear(in_features=256, out_features=256, bias=True)
-      (5): LeakyReLU(negative_slope=0.01)
-      (6): Linear(in_features=256, out_features=2, bias=True)
-      (7): Tanh()
+      (0): Linear(in_features=24, out_features=256, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): Linear(in_features=256, out_features=256, bias=True)
+      (4): LeakyReLU(negative_slope=0.01)
+      (5): Linear(in_features=256, out_features=2, bias=True)
+      (6): Tanh()
     )
   )
   (critic_body): FCBody(

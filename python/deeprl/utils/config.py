@@ -69,7 +69,7 @@ class Config:
         self.max_episodes = 0 ## task maximum episodes
         self.n_step = 1
         self.random_process_fn = None  ## noise function
-        self.noise_decay_rate = 0.5
+        self.noise_decay_factor = 0.5
         self.state_normalizer = RescaleNormalizer()
         self.reward_normalizer = RescaleNormalizer()
         self.discount = None  ## λ lambda, Q-value dicount rate

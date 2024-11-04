@@ -105,3 +105,30 @@ def soft_update_network(target, source, tau):
     ## trg = trg*(1-τ) + src*τ
     for target_param, source_param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(target_param.data*(1.-tau) + source_param.data*tau)
+
+
+
+## added by nov05
+def check_network_params(network_name, network, raise_error=False):
+    has_error = False
+    for name, param in network.named_parameters():
+        if torch.isnan(param).any():
+            has_error = True
+            print(f"⚠️ NaN detected in {network_name}.{name}")
+        if torch.isinf(param).any():
+            has_error = True
+            print(f"⚠️ Inf detected in {network_name}.{name}")
+    if raise_error and has_error:
+        raise
+
+
+
+## added by nov05
+def check_tensor(tensor_name, tensor, raise_error=False):
+    has_error = False
+    if torch.isnan(tensor).any(): 
+        print(f"⚠️ {tensor_name} is NaN.")
+    if torch.isinf(tensor).any():
+        print(f"⚠️ {tensor_name} is Inf.")
+    if raise_error and has_error:
+        raise

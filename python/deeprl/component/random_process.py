@@ -15,7 +15,7 @@ class RandomProcess(object):
 class GaussianProcess(RandomProcess):
     def __init__(self, size, std):
         self.size = size
-        self.std = std
+        self.std = std  ## function name
 
     def sample(self):
         return np.random.randn(*self.size) * self.std()

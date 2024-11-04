@@ -80,14 +80,14 @@ https://arxiv.org/pdf/1706.02275
 * Instantiate [the `DeterministicActorCriticNet` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/network/network_heads.py) to create 4 Networks (2 objects) per agent:   
     actor, critic, target actor, target critic
 * Soft updates for target networks, Adam on actor/critic networks
-* [Priority replay buffer](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py) for each agent:  
-    Storing new memories, priority sampling, updating priorities using critic Q-values
+* A central [Prioritized Experience Replay (PER) buffer](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py):  
+  - Storing new memories, priority sampling, updating priorities using critic Q-values
 * [The `MADDPGAgent` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/agent/MADDPG_agent.py) to choose actions, do soft updates, save models
 * [The `Task` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py) to handle list of agents and train/eval functions
 * Utility functions to reshape the observations and actions, etc.
 * Human readable logs and tensorboard logs  
-    - Train and eval tasks create both readable and tensorboard logs  
-    - [The plot functionality](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_plot.py) uses tensorboard log data  
+  - Train and eval tasks create both readable and tensorboard logs  
+  - [The plot functionality](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_plot.py) uses tensorboard log data  
 
 
 ✅ **Coding**

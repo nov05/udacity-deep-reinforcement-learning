@@ -143,7 +143,8 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
                  phi_body=None,
                  actor_body=None,
                  critic_body=None,
-                 batch_norm=None):
+                 batch_norm=None,
+                 critic_ensemble=1):
         super(DeterministicActorCriticNet, self).__init__()
         ## networks
         if phi_body is None: phi_body = DummyBody(state_dim)  ## state, aka. obs, observations
@@ -152,13 +153,19 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         self.phi_body = phi_body
         self.actor_body = actor_body
         self.critic_body = critic_body
-        if batch_norm:
+        if batch_norm:  ## add batch normalization layer as the first layer
             self.actor_body.layers.insert(0, batch_norm(phi_body.feature_dim))
         self.actor_body.layers.append(layer_init(nn.Linear(actor_body.feature_dim, action_dim), 
                                                  method='uniform', fr=-3e-3, to=3e-3))
         self.actor_body.layers.append(nn.Tanh())
         self.critic_body.layers.append(layer_init(nn.Linear(critic_body.feature_dim, 1), 
                                                   method='uniform', fr=-3e-3, to=3e-3))
+        # # ## MADDPG-Unity-Tennis
+        # self.critic_body.layers.append(nn.LeakyReLU()) 
+        # with torch.no_grad():
+        #     ## scale down the last fully connected layer
+        #     self.actor_body.layers[-2].weight.divide_(100.) 
+        #     self.critic_body.layers[-2].weight.divide_(100.) 
         ## optimizers
         self.actor_opt = actor_opt_fn(list(self.actor_body.parameters()))
         self.critic_opt = critic_opt_fn(list(self.critic_body.parameters()))

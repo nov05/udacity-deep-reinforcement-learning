@@ -4,12 +4,15 @@
 # declaration at the top                                              #
 #######################################################################
 
+
+
 class ConstantSchedule:
     def __init__(self, val):
         self.val = val
 
     def __call__(self, steps=1):
         return self.val
+
 
 
 class LinearSchedule:

@@ -128,10 +128,10 @@ if __name__ == '__main__':
         mkdir('data\\models')  ## trained models
         select_device(0) ## 0: GPU, an non-negative integer is the index of GPU
         num_envs = 1   ## it has to be 1 for this experiment 
-        num_envs_eval = 3
+        num_envs_eval = 5
         offset = 0
         eval_no_graphics = True
-        num_eval_episodes = 2
+        num_eval_episodes = 1
     else:
         mkdir('data\\log')
         select_device(0)  ## -1: CPU
@@ -141,7 +141,7 @@ if __name__ == '__main__':
         ## e.g. for training num_envs=1, num_envs_eval=3, hence Unity env port offset=4
         offset = 4  
         eval_no_graphics = False
-        num_eval_episodes = 2
+        num_eval_episodes = 150
 
     env_fn_kwargs = {'file_name': env_file_name, 'no_graphics': True, 'base_port':5005+offset}
     env_fn_kwargs_eval = {'file_name': env_file_name, 'no_graphics': eval_no_graphics, 

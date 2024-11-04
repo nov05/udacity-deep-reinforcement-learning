@@ -53,6 +53,7 @@ class DDPGConvBody(nn.Module):
 
 
 class FCBody(nn.Module):
+    '''Fully connected layers'''
     def __init__(self, state_dim, hidden_units=(64, 64), gate=nn.ReLU, noisy_linear=False,
                  init_method='orthogonal', batch_norm=None):
         super(FCBody, self).__init__()
