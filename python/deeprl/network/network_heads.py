@@ -168,14 +168,10 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
             for network in self.critic_bodies:
                 network.layers.append(layer_init(nn.Linear(network.feature_dim, 1), 
                                                            method='uniform', fr=-3e-3, to=3e-3))
-            network.layers.append(nn.LeakyReLU()) 
         else:
             self.critic_body.layers.append(layer_init(nn.Linear(self.critic_body.feature_dim, 1), 
                                                       method='uniform', fr=-3e-3, to=3e-3))
-        # with torch.no_grad():
-        #     ## scale down the last fully connected layer
-        #     self.actor_body.layers[-2].weight.divide_(100.) 
-        #     self.critic_body.layers[-2].weight.divide_(100.) 
+            
         ## optimizers
         self.actor_opt = actor_opt_fn(list(self.actor_body.parameters()))
         if self.critic_ensemble:
@@ -200,15 +196,24 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
 
 
     def critic(self, phi, a):
-        networks = self.critic_bodies if self.critic_ensemble else [self.critic_body]
+        x = torch.cat([phi, a], dim=1)
+        network = self.critic_bodies[0] if self.critic_ensemble else self.critic_body
+        for layer in network.layers:
+            x = layer(x)
+        return x
+    
+
+    ## added by nov05
+    def critics(self, phi, a):
+        '''critic ensemble'''
         xs = []
-        for network in networks:
+        for network in self.critic_bodies:
             x = torch.cat([phi, a], dim=1)
             for layer in network.layers:
                 x = layer(x)
             xs.append(x)
-        return xs[0] if len(xs)==1 else xs
-
+        return xs
+    
 
     def feature(self, obs):
         obs = tensor(obs)

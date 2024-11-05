@@ -72,7 +72,8 @@ https://arxiv.org/pdf/1706.02275
   https://pytorch.org/rl/0.4/tutorials/multiagent_competitive_ddpg.html   
 
 * OpenAI Spinning Up: Twin Delayed DDPG (TD3)  
-  https://spinningup.openai.com/en/latest/algorithms/td3.html
+  https://spinningup.openai.com/en/latest/algorithms/td3.html  
+  https://github.com/sfujim/TD3/blob/master/TD3.py  
 
 
 ✅ **Implementation**    

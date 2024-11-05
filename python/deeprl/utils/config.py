@@ -56,7 +56,7 @@ class Config:
         self.optimizer_fn = None
         self.actor_optimizer_fn = None
         self.critic_optimizer_fn = None
-        self.actor_network_update_freq = 1
+        self.actor_network_update_freq = 1  ## deplayed policy
         self.target_network_update_freq = None
         self.target_network_mix = 0.001  ## τ (tau), soft update rate
         self.gradient_clip = None
@@ -69,7 +69,6 @@ class Config:
         self.max_episodes = 0 ## task maximum episodes
         self.n_step = 1
         self.random_process_fn = None  ## noise function
-        self.noise_decay_factor = 0.5
         self.state_normalizer = RescaleNormalizer()
         self.reward_normalizer = RescaleNormalizer()
         self.discount = None  ## λ lambda, Q-value dicount rate

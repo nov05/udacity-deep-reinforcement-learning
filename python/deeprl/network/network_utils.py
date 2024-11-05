@@ -109,7 +109,7 @@ def soft_update_network(target, source, tau):
 
 
 ## added by nov05
-def check_network_params(network_name, network, raise_error=False):
+def check_network_params(network_name, network, raise_error=True):
     has_error = False
     for name, param in network.named_parameters():
         if torch.isnan(param).any():
@@ -124,7 +124,7 @@ def check_network_params(network_name, network, raise_error=False):
 
 
 ## added by nov05
-def check_tensor(tensor_name, tensor, raise_error=False):
+def check_tensor(tensor_name, tensor, raise_error=True):
     has_error = False
     if torch.isnan(tensor).any(): 
         print(f"⚠️ {tensor_name} is NaN.")

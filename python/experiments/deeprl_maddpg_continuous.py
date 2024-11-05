@@ -74,7 +74,7 @@ def maddpg_continuous(**kwargs):
                            batch_norm=nn.BatchNorm1d ## after the 1st fully connected layer
                           ),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),  ## it seems that 1e-3 won't converge
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=3e-4, weight_decay=1e-5),  ## it seems that 1e-3 won't converge
         num_critics=2,  ## TD3
         )
     
@@ -90,9 +90,9 @@ def maddpg_continuous(**kwargs):
     # config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
     #     size=(config.action_dim,), std=LinearSchedule(0.2))
     config.random_process_fn = lambda: GaussianProcess(
-        size=(config.action_dim,), std=LinearSchedule(0.25))
-    ## e.g. config.random_process.sample()*(1/(self.total_episodes+1)**config.noise_decay_factor)
-    # config.noise_decay_factor = 0.3   
+        size=(config.action_dim,), std=LinearSchedule(1))
+    config.policy_noise_factor = 0.2
+    config.noise_clip = 0.5
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
     config.warm_up = int(1e4) ## can't be 0, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
