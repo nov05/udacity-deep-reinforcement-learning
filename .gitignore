@@ -106,4 +106,4 @@ ENV/
 ## unity mlagents builds
 data/
 python/data/
-python/wandb
+python/wandb/
