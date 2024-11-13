@@ -143,11 +143,12 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
                  phi_body=None,
                  actor_body=None,
                  critic_body=None,
+                 critic_ensemble=False,
                  num_critics=1,  ## critic ensemble, e.g. TD3
                  critic_body_fn=None, ## critic ensemble
                  ):
         super(DeterministicActorCriticNet, self).__init__()
-        self.critic_ensemble = True if num_critics>1 else False
+        self.critic_ensemble = critic_ensemble
 
         ## networks
         if phi_body is None: phi_body = DummyBody(state_dim)  ## state, aka. obs, observations
@@ -157,8 +158,14 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         if self.critic_ensemble:
             self.critic_bodies = torch.nn.ModuleList([critic_body_fn() for _ in range(num_critics)])
         else:
-            if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+            if critic_body is not None:
+                self.critic_body = critic_body
+            elif critic_body_fn is not None: 
+                self.critic_body = critic_body_fn()
+            else:
+                critic_body = DummyBody(phi_body.feature_dim)
             self.critic_body = critic_body
+            self.critic_bodies = torch.nn.ModuleList([critic_body])
 
         ## attach final layers
         self.actor_body.layers.append(layer_init(nn.Linear(actor_body.feature_dim, action_dim), 

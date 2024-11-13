@@ -9,11 +9,16 @@
 
 from torch import nn
 import torch.nn.functional as F
+import wandb
+import os
 
 ## local imports
 from deeprl import *
 from deeprl.utils.misc import rmdir, run_episodes, eval_episodes
 from deeprl.agent.MADDPG_agent import MADDPGAgent
+
+## log training process with W&B if uncommented
+# os.environ['WANDB_MODE'] = 'disabled'
 
 
 
@@ -73,9 +78,10 @@ def maddpg_continuous(**kwargs):
                            init_method='uniform_fan_in', 
                            batch_norm=nn.BatchNorm1d ## after the 1st fully connected layer
                           ),
-        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=3e-4, weight_decay=1e-5),  ## it seems that 1e-3 won't converge
-        num_critics=2,  ## TD3
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=2e-4, weight_decay=1e-5),
+        critic_ensemble=True,
+        num_critics=2,  ## DDPG, TD3, etc.
         )
     
     ## replay settings
@@ -91,6 +97,7 @@ def maddpg_continuous(**kwargs):
     #     size=(config.action_dim,), std=LinearSchedule(0.2))
     config.random_process_fn = lambda: GaussianProcess(
         size=(config.action_dim,), std=LinearSchedule(1))
+    config.action_noise_factor = 0.1
     config.policy_noise_factor = 0.2
     config.noise_clip = 0.5
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
@@ -98,9 +105,16 @@ def maddpg_continuous(**kwargs):
     config.replay_interval = 1  ## replay-policy update every n steps
     config.actor_network_update_freq = 2  ## update the actor once for every n updates to the critic
     config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
-
     # config.state_normalizer = MeanStdNormalizer()  ## value bound in range [-10, 10]
-    
+    # config.reward_normalizer = RescaleNormalizer(0.1)
+
+    config.wandb = True
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="udacity-drlnd-matd3-unity-tennis",
+        config=config
+    )
+
     if is_training:
         # run_steps(MADDPGAgent(config))  ## log by steps
         run_episodes(MADDPGAgent(config))  ## log by episodes
@@ -108,9 +122,12 @@ def maddpg_continuous(**kwargs):
         config.save_filename = save_filename
         eval_episodes(MADDPGAgent(config))
 
+    wandb.finish()
+
 
 
 if __name__ == '__main__':
+
 
 
     parser = argparse.ArgumentParser()
@@ -125,6 +142,7 @@ if __name__ == '__main__':
 
     ## game file path
     env_file_name = '..\data\Tennis_Windows_x86_64\Tennis.exe'
+    # env_file_name = '..\data\Soccer_Windows_x86_64\Soccer.exe'
     ## path to the saved torch model
     save_filename = '.\data\models\MADDPGAgent-unity-tennis-remark_maddpg_continuous-run-0-2200'
 
@@ -135,6 +153,7 @@ if __name__ == '__main__':
         ## remove all log and saved files
         try:
             rmdir('data') ## remove dir ..\python\data (included in the gitignored file?) 
+            rmdir('wandb')  ## remove ..\python\wandb
         except:
             pass
         mkdir('data\\log')  ## human readable logs ..\python\data\log
@@ -142,8 +161,8 @@ if __name__ == '__main__':
         mkdir('data\\models')  ## trained models ..\python\data\models
         select_device(0) ## 0: GPU, an non-negative integer is the index of GPU
         num_envs = 1
-        num_envs_eval = 10
-        num_eval_episodes = 10
+        num_envs_eval = 5
+        num_eval_episodes = 20
         eval_no_graphics = True
         offset = 0
     else:
@@ -151,7 +170,7 @@ if __name__ == '__main__':
         select_device(0)  ## 0: GPU, -1: CPU
         num_envs = 0
         num_envs_eval = 4
-        num_eval_episodes = 150  ## the Tennis env has to be reset after 5000 steps or it will throw error
+        num_eval_episodes = 150  
         eval_no_graphics = True
         ## if run train then test in the same terminal session, skip the training port range to avoid potential conflict.
         ## e.g. for training num_envs=1, num_envs_eval=2, Unity test env port offset>=3

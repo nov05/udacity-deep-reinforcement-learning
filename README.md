@@ -73,7 +73,9 @@ https://arxiv.org/pdf/1706.02275
 
 * OpenAI Spinning Up: Twin Delayed DDPG (TD3)  
   https://spinningup.openai.com/en/latest/algorithms/td3.html  
-  https://github.com/sfujim/TD3/blob/master/TD3.py  
+  https://github.com/sfujim/TD3/blob/master/TD3.py   
+  https://spinningup.openai.com/en/latest/_modules/spinup/algos/pytorch/td3/td3.html  
+  
 
 
 ✅ **Implementation**    

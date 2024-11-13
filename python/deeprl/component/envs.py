@@ -236,21 +236,57 @@ def get_unity_spaces(brain_params: BrainParameters):
             (brain_params.vector_observation_space_size, brain_params.num_stacked_vector_observations), np.float64)
     else:
         raise NotImplementedError
+
     if brain_params.vector_action_space_type=='continuous':
         action_space = Box(-1.0, 1.0, (brain_params.vector_action_space_size,), np.float32)
+    elif brain_params.vector_action_space_type=='discrete':
+        action_space = Discrete(brain_params.vector_action_space_size)
     else:
         raise NotImplementedError
     return observation_space, action_space
 
 
 
-def get_return_from_brain_info(brain_info: BrainInfo, brain_name):
-    if brain_name in ['ReacherBrain', 'TennisBrain']:
+## added by nov05 in April 2024
+def get_return_from_brain_info(env,
+                               phase,
+                               brain_name,
+                               brain_info: BrainInfo):
+    if brain_name in ['ReacherBrain', 'TennisBrain', 'GoalieBrain', 'StrikerBrain']:
         observation = brain_info.vector_observations 
     else:
         raise NotImplementedError
+    if brain_name in ['ReacherBrain']:
+        mode = 'avg'  ## calculate the average of the total scores for each agent
+    elif brain_name in ['TennisBrain']:
+        mode = 'max'  ## take the maximum of the total scores of each agent
+    
     reward, done = brain_info.rewards, brain_info.local_done
-    return observation, reward, done
+    info = {'brain_info': brain_info, 'episodic_return': None}
+    num_agents = len(brain_info.agents)
+    ## env.total_reward: accumulated reward for each agent till the end of an episode
+    if env.total_reward is None:
+        env.total_reward = [0.]*num_agents  ## a list
+
+    ## Note: in "deeprl.agent.BaseAgent.record_episode()", ret = info[0]['episodic_return'],
+    ## which means info is a tuple that includes a dict with a key 'episodic_return'.
+    ## However, for Unity envs, info is constructed as a dict.
+    if phase=='step':
+        env.total_reward = np.add(env.total_reward, reward)
+        if np.any(done): ## one env has multi-agents hence done has multiple values
+            if mode=='avg':
+                info['episodic_return'] = np.mean(env.total_reward)  
+            elif mode=='max':
+                info['episodic_return'] = np.max(env.total_reward) 
+            else:
+                raise NotImplementedError
+            env.total_reward = [0.]*num_agents  ## reset episode total reward for each agent
+    elif phase=='reset':
+        info['episodic_return'] = None
+    else:
+        raise NotImplementedError
+    
+    return observation, reward, done, info
 
 
 
@@ -262,9 +298,6 @@ class UnityVecEnv(VecEnv):
     def __init__(self, env_fns=None, train_mode=False):
         self.envs = [fn() for fn in env_fns]
         self.train_mode = train_mode
-        ## add total_reward attribute, refer to class OriginalReturnWrapper(gym.Wrapper)
-        for env in self.envs:
-            env.total_reward = 0
         
         env = self.envs[0]
         self.brain_name = env.brain_names[0]
@@ -275,6 +308,9 @@ class UnityVecEnv(VecEnv):
         _, _, _, infos = self.reset(train_mode=train_mode)
         self.num_agents = len(infos[0]['brain_info'].agents)
         self.actions = None
+        ## add total_reward attribute, refer to class OriginalReturnWrapper(gym.Wrapper)
+        for env in self.envs:
+            env.total_reward = [0]*self.num_agents
 
         self.num_envs = len(self.envs)
         observation_space, action_space = get_unity_spaces(brain_params)
@@ -287,14 +323,7 @@ class UnityVecEnv(VecEnv):
         data = []
         for env,action in zip(self.envs, self.actions):
             brain_info = env.step(action)[self.brain_name]
-            observation, reward, done = get_return_from_brain_info(brain_info, self.brain_name)  
-            info = {'brain_info': brain_info}
-            env.total_reward += np.sum(reward)
-            if np.any(done): ## one env has multi-agents hence done has multiple values
-                info['episodic_return'] = env.total_reward / len(brain_info.agents)
-                env.total_reward = 0
-            else:
-                info['episodic_return'] = None
+            observation, reward, done, info = get_return_from_brain_info(env, 'step', self.brain_name, brain_info)  
             data.append([observation, reward, done, info])
         observations, rewards, dones, infos = zip(*data)
         return observations, np.asarray(rewards), np.asarray(dones), infos
@@ -304,9 +333,7 @@ class UnityVecEnv(VecEnv):
         data = []
         for env in self.envs:
             brain_info = env.reset(train_mode=train_mode)[self.brain_name]
-            observation, reward, done = get_return_from_brain_info(brain_info, self.brain_name)
-            info = {'brain_info': brain_info}
-            info['episodic_return'] = None
+            observation, reward, done, info = get_return_from_brain_info(env, 'reset', self.brain_name, brain_info)
             data.append([observation, reward, done, info])
             print('🟢 Unity environment has been resetted.')
         observations, rewards, dones, infos = zip(*data)
@@ -323,7 +350,7 @@ def unity_worker(remote, parent_remote, env_fn_wrapper):
     brain_name = env.brain_names[0]
     ## add total_reward attribute, refer to class OriginalReturnWrapper(gym.Wrapper)
     ## 'UnityEnvironment' object has no attribute 'num_agents'
-    env.total_reward = 0
+    env.total_reward = None
     try:
         while True:
             cmd, data = remote.recv()
@@ -331,21 +358,11 @@ def unity_worker(remote, parent_remote, env_fn_wrapper):
                 ## type AllBrainInfo, a dict
                 ## e.g. {'ReacherBrain': <unityagents.brain.BrainInfo object at 0x0000022605F2D8A0>}
                 brain_info = env.step(data)[brain_name] ## info type ".unityagents.brain.BrainInfo"
-                observation, reward, done = get_return_from_brain_info(brain_info, brain_name)
-                env.total_reward += np.sum(reward)
-                info = {'brain_info': brain_info}
-                if np.any(done): ## one env has multi-agents hence done has multiple values
-                    ## in "deeprl.agent.BaseAgent", ret = info[0]['episodic_return']
-                    info['episodic_return'] = env.total_reward / len(brain_info.agents)
-                    env.total_reward = 0
-                else:
-                    info['episodic_return'] = None
+                observation, reward, done, info = get_return_from_brain_info(env, 'step', brain_name, brain_info)
                 remote.send((observation, reward, done, info))
             elif cmd=='reset':
                 brain_info = env.reset(data)[brain_name]
-                observation, reward, done = get_return_from_brain_info(brain_info, brain_name)
-                info = {'brain_info': brain_info}
-                info['episodic_return'] = None
+                observation, reward, done, info = get_return_from_brain_info(env, 'reset', brain_name, brain_info)
                 remote.send((observation, reward, done, info))
                 print('🟢 Unity environment has been resetted.')
             elif cmd=='close':

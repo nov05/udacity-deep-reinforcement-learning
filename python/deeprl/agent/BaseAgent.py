@@ -9,6 +9,7 @@ import torch.multiprocessing as mp
 from collections import deque
 from skimage.io import imsave
 import pickle
+import wandb  ## training tracking
 
 ## local imports
 from ..utils import *
@@ -21,23 +22,26 @@ class BaseAgent:
         self.config = config
         self.logger = get_logger(tag=config.tag, log_level=config.log_level)
         self.task_ind = 0
-        self.total_steps = 0
 
         ## the following attrs are added by nov05 in April 2024
         self.env_type = get_env_type(game=self.config.game)   ## for unity envs
         self.states = None
-        self.eval_states = None
-        ## If the task has only one environment, or multiple identical environments with
-        ## a fixed number of steps per episode, then the following attrs could be in use.
+        self.total_steps = 0
+        ## some envs have to be reset after certain steps, 
+        ## e.g. unity tennis 5000 (self.config.task_name=='unity-tennis')
+        self.last_reset_at_step = 0  ## use with config.reset_interval
         self.total_episodes = 0  ## how many episodes have been executed
+        ## a task could have multiple environments
         self.episode_done_all_envs = False   ## all envs have done an episode
         self.episodic_returns_all_envs = []
+
         ## eval control
+        self.eval_states = None
+        self.eval_total_steps = 0
+        self.eval_last_reset_at_step = 0  ## for reset control
         self.eval_total_episodes = 0  ## how many eval episodes have been executed
         # self.eval_episode_done_all_envs = False   ## all eval envs have done an episode
-        self.eval_total_episodic_returns = []  ## a list of envs average scores
         self.eval_episodic_returns_all_envs = []  ## one episodic returns of all envs
-        self.eval_total_steps, self.eval_last_reset_at_step = 0, 0  ## local variables for reset control
 
 
     def close(self):
@@ -106,8 +110,8 @@ class BaseAgent:
         self.logger.info(log_info)
 
         self.eval_states = None
-        self.eval_total_episodic_returns = []  ## a list of envs average scores
         self.eval_episodic_returns_all_envs = []  ## one episode returns of all envs
+        rets = []  ## a list of scores
 
         ## start evaluating
         for i in range(self.config.eval_episodes):
@@ -118,22 +122,22 @@ class BaseAgent:
                 ## then this means all environments are done an episode. Otherwise, it works like the eval task will run a total
                 ## of (config.eval_episodes * self.eval_task.num_envs) episodes approximately. 
                 if len(self.eval_episodic_returns_all_envs)>=self.eval_task.num_envs:  ## all envs are done
-                    self.eval_total_episodic_returns.append(np.mean(self.eval_episodic_returns_all_envs))
+                    rets += self.eval_episodic_returns_all_envs
                     self.eval_episodic_returns_all_envs = []
                     break 
             self.eval_total_episodes += 1  ## simply a counter, not in use so far
 
+        ret = np.mean(rets)
         log_info = f"Step {self.total_steps}, " + \
-                   f"episodic_return_test {np.mean(self.eval_total_episodic_returns):.2f}" + \
-                   f"({np.std(self.eval_total_episodic_returns)/np.sqrt(len(self.eval_total_episodic_returns)):.2f})"
+                   f"episodic_return_test {ret:.2f}" + \
+                   f"({np.std(rets)/np.sqrt(len(rets)):.2f})"
         if by_episode:
             log_info = f"Episode {self.total_episodes}, " + log_info
         self.logger.info(log_info)  ## readable logs
-        self.logger.add_scalar('episodic_return_test', 
-            np.mean(self.eval_total_episodic_returns), self.total_steps)  ## tf logs
-        return {
-            'episodic_return_test': np.mean(self.eval_total_episodic_returns),
-        }
+        self.logger.add_scalar('episodic_return_test', ret, self.total_steps)  ## tf logs
+        if self.config.wandb: wandb.log({'episodic_return_test': ret})  ## w&b logs
+
+        return {'episodic_return_test': ret,}
 
 
     def record_online_return(self, info, offset=0, by_episode=False):
@@ -148,13 +152,14 @@ class BaseAgent:
                 self.record_online_return(info_, i)   ## recursive calls
 
         ## for Unity, the input is a list of numerics, added by nov05
-        ## don't use type(), or it doesn't recognize numpy.float64 as float.
+        ## don't use type() which doesn't recognize numpy.float64 as float.
         elif isinstance(info, list) and (isinstance(info[0], float) or isinstance(info[0], int)): 
             ret = np.mean(info)
-            self.logger.add_scalar('episodic_return_train', ret, self.total_steps+offset)
+            self.logger.add_scalar('episodic_return_train', ret, self.total_steps+offset)  ## tf logs
             log_info = f"Step {self.total_steps+offset}, episodic_return_train {ret}"
             if by_episode: log_info = f"Episode {self.total_episodes}, " + log_info
             self.logger.info(log_info)
+            if self.config.wandb: wandb.log({'episodic_return_train': ret})  ## w&b logs
         else:
             raise NotImplementedError
         
@@ -201,13 +206,13 @@ class BaseAgent:
     ## added by nov05
     def _reshape_for_network(self, data, keep_dim=2):
         data = np.array(data)
-        if len(data.shape)>keep_dim:
+        num_dims = len(data.shape)
+        if num_dims>keep_dim:
             if keep_dim>1:
-                data = data.reshape(-1, *data.shape[-keep_dim+1:]).tolist()
+                data = data.reshape(-1, *data.shape[-keep_dim+1:])
             else:
-                data = data.reshape(-1).tolist()
-        elif len(data.shape)<=keep_dim:
-            data = data.tolist()
+                data = data.reshape(-1)
+        # data = data.tolist()
         return data
     
 

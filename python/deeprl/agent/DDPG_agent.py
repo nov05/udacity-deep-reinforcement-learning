@@ -19,14 +19,12 @@ from .BaseAgent import *
 class DDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
-        self.config = config
         self.task = config.task if config.task is not None else config.task_fn()  ## task (with envs)
         self.network = config.network_fn()  ## local neural network (actor and critic)
         self.target_network = config.network_fn()  ## target neural network (actor and critic)
         self.target_network.load_state_dict(self.network.state_dict()) ## initialize target with local
         self.replay = config.replay_fn()  ## replay buffer 
         self.random_process = config.random_process_fn()  ## random states or noise
-        self.states = None
 
 
     def step(self):

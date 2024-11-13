@@ -38,6 +38,7 @@ class Config:
         self.log_interval = int(1e3)  ## steps
         self.log_level = 0
         self.iteration_log_interval = 30
+        self.wandb = False
         ## save models
         self.save_interval = None  ## save every n steps; 0=no save
         self.save_after_steps = None  ## save after training n steps
