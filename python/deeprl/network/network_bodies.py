@@ -54,23 +54,27 @@ class DDPGConvBody(nn.Module):
 
 class FCBody(nn.Module):
     '''Fully connected layers'''
-    def __init__(self, state_dim, hidden_units=(64, 64), gate=nn.ReLU, noisy_linear=False,
-                 init_method='orthogonal', batch_norm=None):
+    def __init__(self, state_dim, 
+                 hidden_units=(64, 64), 
+                 gate=nn.ReLU, 
+                 init_method='orthogonal', 
+                 noisy_linear=False,
+                 noisy_linear_layers=[0],
+                 batch_norm_fn=None,
+                 batch_norm_layers=[0]):
         super(FCBody, self).__init__()
-        self.gate = gate
-        self.noisy_linear = noisy_linear
         dims = (state_dim,) + hidden_units
         self.feature_dim = dims[-1]
 
         self.layers = nn.ModuleList()
         for i,(dim_in,dim_out) in enumerate(zip(dims[:-1], dims[1:])):
-            if noisy_linear:
+            if noisy_linear and (i in noisy_linear_layers):
                 self.layers.append(NoisyLinear(dim_in, dim_out))
             else:
                 self.layers.append(layer_init(nn.Linear(dim_in, dim_out), method=init_method))
             self.layers.append(gate())  ## activation
-            if i==0 and batch_norm is not None:  ## normalize the output of the 1st layer
-                self.layers.append(batch_norm(dim_out))
+            if (batch_norm_fn is not None) and (i in batch_norm_layers):  
+                self.layers.append(batch_norm_fn(dim_out))
         
 
     def reset_noise(self):

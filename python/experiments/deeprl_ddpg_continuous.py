@@ -58,11 +58,14 @@ def ddpg_continuous(**kwargs):
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim,  
         config.action_dim,  
-        actor_body=FCBody(config.state_dim, (128,128), gate=nn.LeakyReLU, 
+        actor_body=FCBody(config.state_dim, (128,128), 
+                          gate=nn.LeakyReLU, 
                           init_method='uniform_fan_in', 
-                          batch_norm=nn.BatchNorm1d,),
-        critic_body=FCBody(config.state_dim+config.action_dim, (128,128), gate=nn.LeakyReLU, 
-                           init_method='uniform_fan_in', batch_norm=nn.BatchNorm1d),
+                          batch_norm_fn=nn.BatchNorm1d,),
+        critic_body=FCBody(config.state_dim+config.action_dim, (128,128), 
+                           gate=nn.LeakyReLU, 
+                           init_method='uniform_fan_in', 
+                           batch_norm_fn=nn.BatchNorm1d),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         ## for the critic optimizer, it seems that 1e-3 won't converge
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),  

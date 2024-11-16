@@ -31,7 +31,7 @@ class MADDPGAgent(BaseAgent):
         self.task = config.task if config.task is not None else config.task_fn()  ## task (with envs)
         self.num_agents = self.task.envs_wrapper.num_agents  ## for convenience
         self.networks = [config.network_fn() for _ in range(self.num_agents)]  ## local neural network (actor and critic)
-        self.network = self.networks[0]  ## for logging logics in misc.py
+        self.network = self.networks[0]  ## for the logging logics in misc.py
         self.target_networks = [config.network_fn() for _ in range(self.num_agents)] ## target neural network (actor and critic)
         self.replays = [config.replay_fn() for _ in range(self.num_agents)] ## a central replay buffer for all agents
         self.random_process = config.random_process_fn()  ## random states aka. noise
@@ -55,14 +55,14 @@ class MADDPGAgent(BaseAgent):
                 and (self.total_steps-self.last_reset_at_step>=self.config.reset_interval)
             or self.states is None):
             self.random_process.reset_states() ## denoted as 𝒩 in the paper
-            self.states = self._reset_task(self.task) ## [num_envs, num_agents, state dims]
+            self.states = self._reset_task(self.task) ## [num_envs, num_agents, *state dims]
             self.last_reset_at_step = self.total_steps
         states_ = self._reshape_for_network(self.states, keep_dim=3) ## no change in dims in this case
         states_ = self.config.state_normalizer(states_) ## do nothing in this case
 
         ## step
         if self.total_steps < self.config.warm_up: ## generate random actions
-            actions = self._sample_actions()  ## [num_envs, num_agents, action dims]
+            actions = self._sample_actions()  ## [num_envs, num_agents, *action dims]
             actions_ = self._reshape_for_network(actions, keep_dim=3)  ## no change in dims in this case
         else:  ## get actions from the local network
             actions_ = []
@@ -75,11 +75,11 @@ class MADDPGAgent(BaseAgent):
                     ## add noise (w/o decay), denoted by 𝒩_t in the paper
                     action_i += (
                         self.random_process.sample()*self.config.action_noise_factor
-                        *(1/(self.total_episodes+1)**0.09)  ## decay
+                        # *(1/(self.total_episodes+1)**0.09)  ## decay
                     ) 
                     actions_.append(action_i[:,np.newaxis,:])
                 self.networks[agent_index].train()  
-            actions_ = np.concatenate(actions_, axis=1)  ## [num_envs, num_agents, action dims]
+            actions_ = np.concatenate(actions_, axis=1)  ## [num_envs, num_agents, *action dims]
             actions = self._reshape_for_task(self.task, actions_)  ## no dim change in this case
         ## task will clip actions when step
         next_states, rewards, dones, infos = self.task.step(actions)
@@ -88,9 +88,9 @@ class MADDPGAgent(BaseAgent):
         actions_ = np.clip(actions_, self.task.action_space.low, self.task.action_space.high)
         next_states_ = self._reshape_for_network(next_states, keep_dim=3) ## no change in dims in this case 
         next_states_ = self.config.state_normalizer(next_states_) ## do nothing in this case
-        rewards_ = self._reshape_for_network(rewards, keep_dim=2) ## no change in dims in this case
+        rewards_ = self._reshape_for_network(rewards, keep_dim=3) ## no change in dims in this case
         rewards_ = self.config.reward_normalizer(rewards_) ## do nothing in this case
-        dones_ = self._reshape_for_network(dones, keep_dim=2) ## no change in dims in this case
+        dones_ = self._reshape_for_network(dones, keep_dim=3) ## no change in dims in this case
         
         ## update replay buffers with new (s, a, r, s_prim) trajectories
         for agent_index in range(self.num_agents):
@@ -117,23 +117,23 @@ class MADDPGAgent(BaseAgent):
                 next_states_ = tensor(transitions.next_state).transpose(0, 1)
                 masks_ = tensor(transitions.mask).unsqueeze(-1).transpose(0, 1) 
                 sampling_probs_ = tensor(transitions.sampling_prob).unsqueeze(-1)  ## [mini_batch_size, 1]
-                sample_weights_ = 1.0 / (sampling_probs_ * self.replays[agent_index].size())  ## [mini_batch_size, 1]
+                sample_weights_ = 1. / (sampling_probs_ * self.replays[agent_index].size())  ## [mini_batch_size, 1]
 
                 ## the networks can process data with dimension [mini_batch_size, *network_input_dims]
                 ## no backprobagation for the target network; it will be updated from local later
                 with torch.no_grad():
-                    ## target actors forward
+                    ## get target action; target actors forward
                     ## input x′n_j, output a′n with shape [mini_batch_size, action_length]; 'j' denotes 'replay sample'
                     ## a_target (a′) is a list of actions (a′n) with shape of [mini_batch_size, num_agents*action_length]
                     ## add noise to smooth the critic fit
                     a_target = (
                         torch.cat([
-                            torch.clamp(  ## clip action
+                            # torch.clamp(  ## clip action
                                 (self.target_networks[i].actor(next_states_[i])
                                 + (tensor(self.random_process.sample())*self.config.policy_noise_factor  ## add noise
-                                   *(1/(self.total_episodes+1)**0.09)  ## decay
-                                   ).clip(-self.config.noise_clip, self.config.noise_clip)  ## clip noise
-                                ), self.task.action_space.low[i], self.task.action_space.high[i]
+                                #    *(1/(self.total_episodes+1)**0.09)  ## decay
+                                   ).clip(*self.config.noise_clip)  ## clip noise
+                                # ), self.task.action_space.low[i], self.task.action_space.high[i]
                             ) for i in range(self.num_agents)
                         ], dim=1)
                     )
@@ -163,7 +163,7 @@ class MADDPGAgent(BaseAgent):
                 ## get local critic loss
                 ## MSE, both input shapes [mini_batch_size, 1], output shape (1,)
                 critic_loss_i = se_loss_i.mul_(sample_weights_).mean(dim=0)
-                wandb.log({f'critic_loss_{agent_index}': critic_loss_i})
+                wandb.log({f'critic_loss_{agent_index}': critic_loss_i}, step=self.total_steps)
                 # check_tensor('critic_loss_i', critic_loss_i)  ## check NaNs, Infs
                 ## local critic backpropagation
                 self.networks[agent_index].critic_opt.zero_grad() 
@@ -178,10 +178,10 @@ class MADDPGAgent(BaseAgent):
                     ## local actor forward
                     ## input ok_j, output shape [mini_batch_size, action_length]
                     ## 'k' denotes 'policy emsemble', which is not in use here
-                    a_i = self.networks[agent_index].actor(states_[agent_index])  
-                    a_i = torch.clamp(a_i, 
-                                      self.task.action_space.low[agent_index], 
-                                      self.task.action_space.high[agent_index])  ## clip action
+                    # a_i = torch.clamp(self.networks[agent_index].actor(states_[agent_index]), 
+                    #                   self.task.action_space.low[agent_index], 
+                    #                   self.task.action_space.high[agent_index])  ## action with clipping
+                    a_i = self.networks[agent_index].actor(states_[agent_index])  ## action no clipping
                     ## (a1_j, ..., a_i, ..., an_j), shape [mini_batch_size, num_agents*action_length]
                     a = torch.cat([actions_[i] if i!=agent_index else a_i 
                                    for i in range(self.num_agents)], dim=1) 
@@ -190,7 +190,7 @@ class MADDPGAgent(BaseAgent):
                     actor_loss_i = -self.networks[agent_index].critic(
                         states_.transpose(0,1).reshape(self.config.mini_batch_size, -1), 
                         a).mean(dim=0)  
-                    wandb.log({f'actor_loss_{agent_index}': actor_loss_i})
+                    wandb.log({f'actor_loss_{agent_index}': actor_loss_i}, step=self.total_steps)
                     # check_tensor('actor_loss_i', actor_loss_i)  ## check NaNs and Infs  
                     ## freeze local critics
                     for param in self.networks[agent_index].critic_bodies.parameters():
@@ -209,7 +209,6 @@ class MADDPGAgent(BaseAgent):
                     ## update target network from local
                     soft_update_network(self.target_networks[agent_index], self.networks[agent_index], 
                                         self.config.target_network_mix)
-                    # check_network_params(f'target_networks[{agent_index}]', self.target_networks[agent_index])
                     # wandb.watch(self.networks[agent_index].actor_body, log="gradients", log_freq=10)``
 
         ## Some environments have a fixed number of steps per episode, like Unity’s Reacher V2, 

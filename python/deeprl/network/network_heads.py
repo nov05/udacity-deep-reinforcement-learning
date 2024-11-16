@@ -165,16 +165,20 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
             else:
                 critic_body = DummyBody(phi_body.feature_dim)
             self.critic_body = critic_body
-            self.critic_bodies = torch.nn.ModuleList([critic_body])
 
-        ## attach final layers
+        ## attach actor final layers
         self.actor_body.layers.append(layer_init(nn.Linear(actor_body.feature_dim, action_dim), 
                                                  method='uniform', fr=-3e-3, to=3e-3))
         self.actor_body.layers.append(nn.Tanh())
+
+        ## attach crtic(s) final layers
         if self.critic_ensemble:
             for network in self.critic_bodies:
                 network.layers.append(layer_init(nn.Linear(network.feature_dim, 1), 
                                                            method='uniform', fr=-3e-3, to=3e-3))
+                # network.layers.append(nn.LeakyReLU())
+                # with torch.no_grad():
+                #     network.layers[-2].weight.divide_(100.)
         else:
             self.critic_body.layers.append(layer_init(nn.Linear(self.critic_body.feature_dim, 1), 
                                                       method='uniform', fr=-3e-3, to=3e-3))

@@ -29,7 +29,7 @@ def maddpg_continuous(**kwargs):
     config.merge(kwargs)
 
     config.by_episode = True  ## control by episode; if false, by step
-    config.max_episodes = int(1e5)  ## usually 2000 is sufficient for Unity Tennis
+    config.max_episodes = int(1e6)  ## if lucky 2000 is sufficient for Unity Tennis
     # config.by_episode = False
     # config.max_steps = int(1e6)
     config.reset_interval = 4999  ## unity tennis env has to be reset after 5000 steps
@@ -51,12 +51,12 @@ def maddpg_continuous(**kwargs):
     if config.num_workers<=0:
         config.task = config.eval_env  ## some functions get info from the task object
     config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
-    config.eval_after_episodes = 1200
-    config.eval_episode_interval = 100
+    config.eval_after_episodes = 21000
+    config.eval_episode_interval = 1000
 
     ## save
-    config.save_after_episodes = 1200 ## save model
-    config.save_episode_interval = 100 ## save model
+    config.save_after_episodes = 21000 ## save model
+    config.save_episode_interval = 1000 ## save model
 
     ## neural network
     config.network_fn = lambda: DeterministicActorCriticNet(
@@ -67,19 +67,18 @@ def maddpg_continuous(**kwargs):
                           gate=nn.LeakyReLU, 
                         #   noisy_linear=True,
                           init_method='uniform_fan_in', 
-                          batch_norm=nn.BatchNorm1d,  ## attach to the 1st fully connected layer
+                          batch_norm_fn=nn.BatchNorm1d,  ## after the 1st fully connected layer
                           ),
-        # critic_body=FCBody(
-        critic_body_fn=lambda: FCBody(
-                           (config.state_dim+config.action_dim)*config.task.envs_wrapper.num_agents,  ## (x, a_1, ..., a_n)
+        critic_body_fn=lambda: FCBody(  ## (x, a_1, ..., a_n)
+                           (config.state_dim+config.action_dim)*config.task.envs_wrapper.num_agents,  
                            (256,256), 
                            gate=nn.LeakyReLU,
                         #    noisy_linear=True, 
                            init_method='uniform_fan_in', 
-                           batch_norm=nn.BatchNorm1d ## after the 1st fully connected layer
+                           batch_norm_fn=nn.BatchNorm1d ## after the 1st fully connected layer
                           ),
-        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4, weight_decay=1e-5),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=2e-4, weight_decay=1e-5),
+        actor_opt_fn=lambda params: torch.optim.AdamW(params, lr=1e-4, weight_decay=1e-5),
+        critic_opt_fn=lambda params: torch.optim.AdamW(params, lr=5e-4, weight_decay=1e-5),
         critic_ensemble=True,
         num_critics=2,  ## DDPG, TD3, etc.
         )
@@ -99,7 +98,7 @@ def maddpg_continuous(**kwargs):
         size=(config.action_dim,), std=LinearSchedule(1))
     config.action_noise_factor = 0.1
     config.policy_noise_factor = 0.2
-    config.noise_clip = 0.5
+    config.noise_clip = (-0.5, 0.5)
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
     config.warm_up = int(1e4) ## can't be 0, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
@@ -114,14 +113,12 @@ def maddpg_continuous(**kwargs):
         project="udacity-drlnd-matd3-unity-tennis",
         config=config
     )
-
     if is_training:
         # run_steps(MADDPGAgent(config))  ## log by steps
         run_episodes(MADDPGAgent(config))  ## log by episodes
     else:
         config.save_filename = save_filename
         eval_episodes(MADDPGAgent(config))
-
     wandb.finish()
 
 
@@ -164,7 +161,7 @@ if __name__ == '__main__':
         num_envs_eval = 5
         num_eval_episodes = 20
         eval_no_graphics = True
-        offset = 0
+        offset = 10
     else:
         mkdir('data\\log')
         select_device(0)  ## 0: GPU, -1: CPU
@@ -201,28 +198,28 @@ if __name__ == '__main__':
 ## example network architecture for "unity-tennis"
 ## check the example log file
 '''
-2024-11-02 02:25:51,864 - root - INFO: 
+2024-11-15 21:39:17,187 - root - INFO: 
 DeterministicActorCriticNet(
   (phi_body): DummyBody()
   (actor_body): FCBody(
     (layers): ModuleList(
       (0): Linear(in_features=24, out_features=256, bias=True)
-      (1): LeakyReLU(negative_slope=0.01)
-      (2): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (3): Linear(in_features=256, out_features=256, bias=True)
-      (4): LeakyReLU(negative_slope=0.01)
-      (5): Linear(in_features=256, out_features=2, bias=True)
-      (6): Tanh()
+      (1): ReLU()
+      (2): Linear(in_features=256, out_features=256, bias=True)
+      (3): ReLU()
+      (4): Linear(in_features=256, out_features=2, bias=True)
+      (5): Tanh()
     )
   )
-  (critic_body): FCBody(
-    (layers): ModuleList(
-      (0): Linear(in_features=52, out_features=256, bias=True)
-      (1): LeakyReLU(negative_slope=0.01)
-      (2): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (3): Linear(in_features=256, out_features=256, bias=True)
-      (4): LeakyReLU(negative_slope=0.01)
-      (5): Linear(in_features=256, out_features=1, bias=True)
+  (critic_bodies): ModuleList(
+    (0-1): 2 x FCBody(
+      (layers): ModuleList(
+        (0): Linear(in_features=52, out_features=256, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=256, out_features=256, bias=True)
+        (3): ReLU()
+        (4): Linear(in_features=256, out_features=1, bias=True)
+      )
     )
   )
 )

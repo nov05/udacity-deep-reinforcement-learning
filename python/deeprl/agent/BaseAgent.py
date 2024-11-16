@@ -135,7 +135,7 @@ class BaseAgent:
             log_info = f"Episode {self.total_episodes}, " + log_info
         self.logger.info(log_info)  ## readable logs
         self.logger.add_scalar('episodic_return_test', ret, self.total_steps)  ## tf logs
-        if self.config.wandb: wandb.log({'episodic_return_test': ret})  ## w&b logs
+        if self.config.wandb: wandb.log({'episodic_return_test': ret}, step=self.total_steps)  ## w&b logs
 
         return {'episodic_return_test': ret,}
 
@@ -159,7 +159,8 @@ class BaseAgent:
             log_info = f"Step {self.total_steps+offset}, episodic_return_train {ret}"
             if by_episode: log_info = f"Episode {self.total_episodes}, " + log_info
             self.logger.info(log_info)
-            if self.config.wandb: wandb.log({'episodic_return_train': ret})  ## w&b logs
+            if self.config.wandb: wandb.log({'episodic_return_train': ret}, 
+                                            step=self.total_steps+offset)  ## w&b logs
         else:
             raise NotImplementedError
         
