@@ -72,9 +72,9 @@ class FCBody(nn.Module):
                 self.layers.append(NoisyLinear(dim_in, dim_out))
             else:
                 self.layers.append(layer_init(nn.Linear(dim_in, dim_out), method=init_method))
-            self.layers.append(gate())  ## activation
             if (batch_norm_fn is not None) and (i in batch_norm_layers):  
                 self.layers.append(batch_norm_fn(dim_out))
+            self.layers.append(gate())  ## activation
         
 
     def reset_noise(self):

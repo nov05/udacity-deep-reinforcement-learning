@@ -115,7 +115,7 @@ if __name__ == '__main__':
         env_file_name = '..\data\Reacher_Windows_x86_64_20\Reacher.exe'
         ## saved torch model file name
         save_filename = '.\experiments\ddpg_unity-reacher-v2\DDPGAgent-unity-reacher-v2-remark_ddpg_continuous-run-0-155'  
-
+   
     set_one_thread() 
     random_seed()
 
@@ -131,18 +131,18 @@ if __name__ == '__main__':
         mkdir('data\\models')  ## trained models
         select_device(0) ## 0: GPU, an non-negative integer is the index of GPU
         num_envs = 1   ## it has to be 1 for this experiment 
-        num_envs_eval = 5
+        num_envs_eval = 3
         offset = 0
         eval_no_graphics = True
-        num_eval_episodes = 1
+        num_eval_episodes = 0
     else:
         mkdir('data\\log')
         select_device(0)  ## -1: CPU
         num_envs = 0
         num_envs_eval = 4
         ## if run train and test at the same time
-        ## e.g. for training num_envs=1, num_envs_eval=3, hence Unity env port offset=4
-        offset = 4  
+        ## e.g. for training num_envs=1, num_envs_eval=5, hence Unity env port offset>=6
+        offset = 4
         eval_no_graphics = False
         num_eval_episodes = 150
 
@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
 
 ## $ python -m experiments.deeprl_ddpg_continuous                       <- run this file, eval unity reacher
-## $ python -m experiments.deeprl_ddpg_continuous --is_training True    <- run this file, eval unity reacher
+## $ python -m experiments.deeprl_ddpg_continuous --is_training True    <- run this file, train unity reacher
 ## $ python -m experiments.deeprl_ddpg_plot                             <- plot tensorflow log data (tf_log)
 ## $ python -m deeprl_files.examples                                    <- train mujoco reacher
 ## $ python -m tests2.test_deeprl_envs                                  <- test unity envs
@@ -174,8 +174,8 @@ DeterministicActorCriticNet(
   (actor_body): FCBody(
     (layers): ModuleList(
       (0): Linear(in_features=33, out_features=128, bias=True)
-      (1): LeakyReLU(negative_slope=0.01)
-      (2): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.01)
       (3): Linear(in_features=128, out_features=128, bias=True)
       (4): LeakyReLU(negative_slope=0.01)
       (5): Linear(in_features=128, out_features=4, bias=True)
@@ -185,8 +185,8 @@ DeterministicActorCriticNet(
   (critic_body): FCBody(
     (layers): ModuleList(
       (0): Linear(in_features=37, out_features=128, bias=True)
-      (1): LeakyReLU(negative_slope=0.01)
-      (2): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.01)
       (3): Linear(in_features=128, out_features=128, bias=True)
       (4): LeakyReLU(negative_slope=0.01)
       (5): Linear(in_features=128, out_features=1, bias=True)

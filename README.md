@@ -10,16 +10,8 @@
 
 ## **👉 Unity enviroment `Tennis` vector game (P3 Project Submission)**  
 
+[<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-11-17%2003-46-42_unity%20tennis%20maddpg.gif" width=800>](https://www.youtube.com/watch?v=7NoSFz7HSW4)    
 
-✅ **entry points**   
-
-* working directory: `$ cd python`   
-* [python/experiments/**deeprl_maddpg_continuous.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_continuous.py): train  
-  `$ python -m experiments.deeprl_maddpg_continuous --is_training True` (training)      
-  `$ python -m experiments.deeprl_maddpg_continuous`  (evaluation)  
-* [python/experiments/**deeprl_maddpg_plot.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_plot.py): plot train and eval scores  
-  `$ python -m experiments.deeprl_maddpg_plot`
-* launch tensorboard in VSCode: `$ tensorboard --logdir=./data/tf_log` 
 
 
 ✅ **Project description**  
@@ -40,16 +32,20 @@
   The environment is considered solved, when **the average (over 100 episodes) of those scores is at least +0.5**.
  
 
+
 ✅ **Multi-Agent Deep Deterministic Policy Gradient (MADDPG) solution**  
 
 * [**MADDPG**, or **Multi-agent DDPG**](https://paperswithcode.com/method/maddpg), extends DDPG into a multi-agent policy gradient algorithm where decentralized agents learn a centralized critic based on the observations and actions of all agents. It leads to learned policies that only use local information (i.e. their own observations) at execution time, does not assume a differentiable model of the environment dynamics or any particular structure on the communication method between agents, and is applicable not only to cooperative interaction but to competitive or mixed interaction involving both physical and communicative behavior. The critic is augmented with extra information about the policies of other agents, while the actor only has access to local information. After training is completed, only the local actors are used at execution phase, acting in a decentralized manner.  
-<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/Screen_Shot_2020-06-04_at_10.11.20_PM.png" width=300>    
+<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/Screen_Shot_2020-06-04_at_10.11.20_PM.png" width=300>     
+
+* DDPG relies on a single Q-network to estimate action values, which can lead to overestimation and make it harder to converge, especially in multi-agent environments. In contrast, [TD3](https://spinningup.openai.com/en/latest/algorithms/td3.html) uses two Q-networks (typically taking the smaller Q-value) to minimize overestimation. It also adds clipped noise to the target actor’s outputs when calculating target Q-values, which helps smooth out the critic’s losses, thereby improving the overall stability during training.   
+
+* For each agent, **6 networks** (1 local actor, 2 local critics, 1 target actor, and 2 target critics) and **1 replay buffer** will be created. During training, an agent can access the observations and actions of other agents. During execution, however, each agent relies on its own observations and receives actions from its own local actor.  
+
+* **Prioritized replay buffers** are used to improve the speed of convergence, since the rewards are very sparse.
 
 * Multi-environments, implemented using the `multiprocessing` library (check the file `..\python\baselines\baselines\common\vec_env\subproc_vec_env.py`), can be used for parallel training here, which can add diversity to the experiences. Additionally, asynchronous stepping may help speed up the training and evalation processes.  
 
-* I'm borrowing the "brain" concept from Unity environments, so I refer to the control unit of an agent as a "brain". This includes components like neural networks and replay buffers. For example, if there are 3 environments with 2 agents per environment, a total of 2 agent brains will be created. Each brain consists of **4 networks** (a local actor, local critic, target actor, and target critic) and **1 replay buffer**. It controls 1 agent, processes the agent's observations, and generates actions in each environment, while independently updating its 4 neural networks. This means that an agent brain receives observations from all 3 environments and generates corresponding actions for each. The "state, reward, action, next state" (x, r, a, x') sequences from all environments are stored in the agent's own replay buffer. However, during training, an agent brain can access the observations and actions of other agent brains.  
-
-* **Prioritized replay buffers** are used to improve the speed of convergence, since the rewards are very sparse.
 
 
 ✅ **setup Python environment**   
@@ -57,6 +53,124 @@
 * [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
 
 * [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583) 
+
+
+
+
+✅ **entry points**   
+
+* working directory: `$ cd python`     
+
+* [python/experiments/**deeprl_maddpg_continuous.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_continuous.py): train  
+  `$ python -m experiments.deeprl_maddpg_continuous --is_training True` (training)      
+  `$ python -m experiments.deeprl_maddpg_continuous`  (evaluation)    
+
+* [python/experiments/**deeprl_maddpg_plot.py**](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_plot.py): plot train and eval scores  
+  `$ python -m experiments.deeprl_maddpg_plot`  
+
+* launch tensorboard in VSCode: `$ tensorboard --logdir=./data/tf_log` 
+  
+
+
+✅ **Implementation**    
+
+* Reuse the `DDPG` framework from P2-Unity Reacher (multi-envs, many resuable functions and components, etc.)
+  - All the code is integrated with [ShangtongZhang's deeprl framework](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) which uses some OpenAI Baselines functionalities.
+  - One task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be stepped synchronously.  
+
+* Instantiate [the `DeterministicActorCriticNet` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/network/network_heads.py) to create 4-6 Networks (2 objects) per agent:   
+    actor-critic(s), target actor-critic(s)  
+
+* Soft updates for target networks, AdamW optimizer on actor-critic(s) networks  
+
+* A central [Prioritized Experience Replay (PER) buffer](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py):  
+  - Storing new memories, priority sampling, updating priorities using critic Q-values  
+
+* [The `MADDPGAgent` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/agent/MADDPG_agent.py) to choose actions, do soft updates, save models  
+
+* [The `Task` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py) to handle list of agents and train/eval functions  
+
+* Utility functions to reshape the observations and actions, etc.
+
+* Human readable logs and tensorboard logs  
+  - Train and eval tasks create both readable and tensorboard logs  
+  - [The plot functionality](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_plot.py) uses tensorboard log data 
+
+* [Weights & Biases](https://wandb.ai/site/) 
+  - training logs and sweeping  
+
+
+
+✅ **Coding**
+
+* An env has 2 agents playing with each other. Refer to [this notebook](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/p3_collab-compet/Tennis.ipynb).  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_28_41-udacity-deep-reinforcement-learning_p3_collab-compet_Tennis.ipynb%20at%20master%20%C2%B7%20No.jpg" width=600>
+
+* Create `class MADDPGAgent(BaseAgent)` in the file [`..\python\deeprl\agent\MADDPG_agent.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/agent/MADDPG_agent.py).
+
+* Create train and eval functions in the file [`..\python\experiments\deeprl_maddpg_continuous.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_continuous.py).  
+
+* Add the brain name **'TennisBrain'** and the episodic return logic in the function `get_return_from_brain_info()` in the file [`..\python\deeprl\component\envs.py`'](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py).   
+
+  In the `get_env_fn()` function, for `Gym` games, the environment class is wrapped using `OriginalReturnWrapper()`. Inside the wrapper class's `step()` and `reset()` method, `info['episodic_return'] = self.total_rewards` is defined. However, for `Unity` games, the environment is already instantiated at the same location, so it can't be wrapped with an wrapper class. Instead, we define `info['episodic_return']` within classes `UnityVecEnv` and `UnitySubprocVecEnv`, which call the `get_return_from_brain_info()` function where `info` is actually populated.  
+
+  For the Tennis game, we sum the rewards each agent receives (without discounting) to get individual scores for both agents, resulting in two potentially different scores. We then take the higher score as the episodic return. However, since the two agents are always competing, one score eventually becomes consistently higher by about 0.11. To simplify, we can use the average of the scores as the episodic return without changing any related code. This means if the target score is 0.5, an average score above 0.445 would indicate the environment is solved.
+
+* The class `PrioritizedReplay` implementation is in the file [`..\deeprl\component\replay.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py)  
+
+* Local and target actor-critic netowrks architecture (It can be found in each human readable log file.) 
+
+  * DDPG  
+  <image src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_20_09-unity-tennis-remark_maddpg_continuous-run-0-241030-145721.log%20-%20Untitled%20(Worksp.jpg" width=600>  
+
+  * TD3  
+  <image src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-11-17%2005_32_32-unity-tennis-remark_maddpg_continuous-run-0-241117-023723.log%20-%20Untitled%20(Worksp.jpg" width=400>
+
+
+
+✅ **Training**  
+
+* **DDPG + uniform replay**    
+
+  * Some of the hyperparameters   
+    ```Python  
+    config.min_memory_size = int(1e6)
+    config.mini_batch_size = 256
+    config.replay_fn = lambda: PrioritizedReplay(memory_size=config.min_memory_size, 
+                                                 batch_size=config.mini_batch_size)
+    config.discount = 0.99  ## λ lambda, Q-value discount rate
+    config.random_process_fn = lambda: GaussianProcess(
+        size=(config.action_dim,), std=LinearSchedule(0.3))  ## noise to add
+    config.noise_decay_rate = 0.3  ## config.random_process.sample() * (1/(self.total_episodes+1)**config.noise_decay_rate)
+    ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
+    config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
+    config.replay_interval = 1  ## replay-policy update every n steps
+    config.actor_update_freq = 2  ## update the actor once for every n updates to the critic
+    config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
+    ```
+
+  * With this setting, the model successfully solved the environment, achieving an average score **above 0.5** after **60,000 training steps** (around 1,200 episodes). The progress slowed afterward (slower to reach higher scores), likely due to excessive noise and an insufficient decay rate. However if add too little noise at the start, the model easily gets stuck and hard to move on, if add too much moise latter, the training score climbs slowly.     
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/20241101_imgonline-com-ua-twotoone-uty9fO98pZoX.jpg" width=600>  
+
+* **TD3 + prioritized replay**  
+
+  * Some of the hyperparameters  
+    ```Python
+    config.min_memory_size = int(1e5)
+    torch.optim.AdamW(params, lr=1e-4) for all the networks
+    config.random_process_fn = lambda: GaussianProcess(
+        size=(config.action_dim,), std=LinearSchedule(1))
+    config.action_noise_factor = 0.1
+    config.policy_noise_factor = 0.2
+    config.noise_clip = (-0.5, 0.5)
+    ```
+
+  * With this setup, the model achieved **an average score of 0.50** between episodes 4336 and 4435 (step 157,506), and **peaked at 2.6** around step 200,000.   
+  Check [the training logs on W&B](https://wandb.ai/nov05/udacity-drlnd-matd3-unity-tennis/runs/ehq0fw4a).  
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-11-17%2003_32_18-Streamlabs%20Desktop.jpg" width=800>  
+
+  * One of the main challenges in this environment is the sparse reward structure, which can easily cause training to stall, particularly during the early stages. For example, [check some of the training metrics in the early stages.](https://wandb.ai/nov05/udacity-drlnd-matd3-unity-tennis/runs/d6vd5lbz?nw=nwusernov05) The training score might level off around 0.06 for approximately 400,000 steps before it begins to improve. Additionally, the training process is highly sensitive to hyperparameter settings, making it difficult to find a configuration that leads to convergence. I've come across research areas like 'sparse rewards' and 'reward reshaping,' which could potentially help improve performance.  
+
 
 
 ✅ **reference**  
@@ -75,70 +189,6 @@ https://arxiv.org/pdf/1706.02275
   https://spinningup.openai.com/en/latest/algorithms/td3.html  
   https://github.com/sfujim/TD3/blob/master/TD3.py   
   https://spinningup.openai.com/en/latest/_modules/spinup/algos/pytorch/td3/td3.html  
-  
-
-
-✅ **Implementation**    
-
-* Reuse the `DDPG` framework (multi-envs, many resuable functions and components, etc.)
-  - All the code is integrated with [ShangtongZhang's deeprl framework](https://github.com/ShangtongZhang/DeepRL/tree/master/deep_rl) which uses some OpenAI Baselines functionalities.
-  - One task can step multiple envs, either with a single process, or with multiple processes. multiple tasks can be stepped synchronously.
-* Instantiate [the `DeterministicActorCriticNet` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/network/network_heads.py) to create 4 Networks (2 objects) per agent:   
-    actor, critic, target actor, target critic
-* Soft updates for target networks, Adam on actor/critic networks
-* A central [Prioritized Experience Replay (PER) buffer](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py):  
-  - Storing new memories, priority sampling, updating priorities using critic Q-values
-* [The `MADDPGAgent` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/agent/MADDPG_agent.py) to choose actions, do soft updates, save models
-* [The `Task` class](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py) to handle list of agents and train/eval functions
-* Utility functions to reshape the observations and actions, etc.
-* Human readable logs and tensorboard logs  
-  - Train and eval tasks create both readable and tensorboard logs  
-  - [The plot functionality](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_plot.py) uses tensorboard log data  
-
-
-✅ **Coding**
-
-* An env has 2 agents playing with each other. Refer to [this notebook](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/p3_collab-compet/Tennis.ipynb).  
-  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_28_41-udacity-deep-reinforcement-learning_p3_collab-compet_Tennis.ipynb%20at%20master%20%C2%B7%20No.jpg" width=600>
-
-* Create `class MADDPGAgent(BaseAgent)` in the file [`..\python\deeprl\agent\MADDPG_agent.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/agent/MADDPG_agent.py).
-
-* Create train and eval functions in the file [`..\python\experiments\deeprl_maddpg_continuous.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/experiments/deeprl_maddpg_continuous.py).  
-
-* Add the brain name **'TennisBrain'** and the episodic return logic in the function `get_return_from_brain_info()` in the file [`..\python\deeprl\component\envs.py`'](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/envs.py).   
-
-  In the `get_env_fn()` function, for `Gym` games, the environment class is wrapped using `OriginalReturnWrapper()`. Inside the wrapper class's `step()` and `reset()` method, `info['episodic_return'] = self.total_rewards` is defined. However, for `Unity` games, the environment is already instantiated at the same location, so it can't be wrapped with an wrapper class. Instead, we define `info['episodic_return']` within classes `UnityVecEnv` and `UnitySubprocVecEnv`, which call the `get_return_from_brain_info()` function where `info` is actually populated.  
-
-  For the Tennis game, we sum the rewards each agent receives (without discounting) to get individual scores for both agents, resulting in two potentially different scores. We then take the higher score as the episodic return. However, since the two agents are always competing, one score eventually becomes consistently higher by about 0.11. To simplify, we can use the average of the scores as the episodic return without changing any related code. This means if the target score is 0.5, an average score above 0.445 would indicate the environment is solved.
-
-
-* The class `PrioritizedReplay` implementation is in the file [`..\deeprl\component\replay.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/deeprl/component/replay.py)  
-
-✅ **Training**  
-
-* Local and target actor-critic netowrks architecture (It can be found in each human readable log file.) 
-  <image src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-30%2017_20_09-unity-tennis-remark_maddpg_continuous-run-0-241030-145721.log%20-%20Untitled%20(Worksp.jpg" width=600>
-
-* **1st training run**     
-  * Some of the hyperparameter settings (Compare them to [this model](https://github.com/tomtung/drlnd/blob/main/tennis-maddpg.ipynb), which uses mostly the same settings, was trained for about 10 hours, and achieved an average score of around 2.0–2.5, its critic network has one additional ReLU layer at the output. It also introduces constant factors as noise, and calculates MSE loss differently — getting one MSE value per agent and using the smallest value.)     
-  ```
-    config.min_memory_size = int(1e6)
-    config.mini_batch_size = 256
-    config.replay_fn = lambda: PrioritizedReplay(memory_size=config.min_memory_size, 
-                                                 batch_size=config.mini_batch_size)
-    config.discount = 0.99  ## λ lambda, Q-value discount rate
-    config.random_process_fn = lambda: GaussianProcess(
-        size=(config.action_dim,), std=LinearSchedule(0.3))  ## noise to add
-    config.noise_decay_rate = 0.3  ## config.random_process.sample() * (1/(self.total_episodes+1)**config.noise_decay_rate)
-    ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
-    config.warm_up = int(1e4) ## can't be 0 steps, or it will create a deadloop in buffer
-    config.replay_interval = 1  ## replay-policy update every n steps
-    config.actor_update_freq = 2  ## update the actor once for every n updates to the critic
-    config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
-  ```
-  * With these settings, the model successfully solved the environment, achieving an average score **above 0.5** after **60,000 training steps** (around 1,200 episodes). The progress slowed afterward (slower to reach higher scores), likely due to excessive noise and an insufficient decay rate. However if add too little noise at the start, the model easily gets stuck and hard to move on, if add too much moise latter, the training score climbs slowly.     
-  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/20241101_imgonline-com-ua-twotoone-uty9fO98pZoX.jpg" width=600>  
-
 
 
 <br><br><br>  
