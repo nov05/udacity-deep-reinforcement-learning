@@ -51,12 +51,12 @@ def maddpg_continuous(**kwargs):
     if config.num_workers<=0:
         config.task = config.eval_env  ## some functions get info from the task object
     config.eval_episodes = num_eval_episodes  ## eval n episodes per interval
-    config.eval_after_episodes = 21000
-    config.eval_episode_interval = 1000
+    config.eval_after_episodes = 4000
+    config.eval_episode_interval = 500
 
     ## save
-    config.save_after_episodes = 21000 ## save model
-    config.save_episode_interval = 1000 ## save model
+    config.save_after_episodes = 4000 ## save model
+    config.save_episode_interval = 500 ## save model
 
     ## neural network
     config.network_fn = lambda: DeterministicActorCriticNet(
@@ -64,21 +64,21 @@ def maddpg_continuous(**kwargs):
         config.action_dim,   ## actor output length
         actor_body=FCBody(config.state_dim, 
                           (256,256), 
-                          gate=nn.LeakyReLU, 
+                        #   gate=nn.LeakyReLU, 
                         #   noisy_linear=True,
                           init_method='uniform_fan_in', 
-                          batch_norm_fn=nn.BatchNorm1d,  ## after the 1st fully connected layer
+                        #   batch_norm_fn=nn.BatchNorm1d,  ## after the 1st fully connected layer
                           ),
         critic_body_fn=lambda: FCBody(  ## (x, a_1, ..., a_n)
                            (config.state_dim+config.action_dim)*config.task.envs_wrapper.num_agents,  
                            (256,256), 
-                           gate=nn.LeakyReLU,
+                        #    gate=nn.LeakyReLU,
                         #    noisy_linear=True, 
                            init_method='uniform_fan_in', 
-                           batch_norm_fn=nn.BatchNorm1d ## after the 1st fully connected layer
+                        #    batch_norm_fn=nn.BatchNorm1d ## after the 1st fully connected layer
                           ),
-        actor_opt_fn=lambda params: torch.optim.AdamW(params, lr=1e-4, weight_decay=1e-5),
-        critic_opt_fn=lambda params: torch.optim.AdamW(params, lr=5e-4, weight_decay=1e-5),
+        actor_opt_fn=lambda params: torch.optim.AdamW(params, lr=1e-4), #weight_decay=1e-5),
+        critic_opt_fn=lambda params: torch.optim.AdamW(params, lr=1e-4), #weight_decay=1e-5),
         critic_ensemble=True,
         num_critics=2,  ## DDPG, TD3, etc.
         )
@@ -161,7 +161,7 @@ if __name__ == '__main__':
         num_envs_eval = 5
         num_eval_episodes = 20
         eval_no_graphics = True
-        offset = 10
+        offset = 1
     else:
         mkdir('data\\log')
         select_device(0)  ## 0: GPU, -1: CPU

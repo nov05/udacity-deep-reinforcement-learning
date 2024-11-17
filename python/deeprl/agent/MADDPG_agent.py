@@ -128,12 +128,12 @@ class MADDPGAgent(BaseAgent):
                     ## add noise to smooth the critic fit
                     a_target = (
                         torch.cat([
-                            # torch.clamp(  ## clip action
+                            torch.clamp(  ## clip action
                                 (self.target_networks[i].actor(next_states_[i])
                                 + (tensor(self.random_process.sample())*self.config.policy_noise_factor  ## add noise
-                                #    *(1/(self.total_episodes+1)**0.09)  ## decay
+                                # #    *(1/(self.total_episodes+1)**0.09)  ## decay
                                    ).clip(*self.config.noise_clip)  ## clip noise
-                                # ), self.task.action_space.low[i], self.task.action_space.high[i]
+                                ), self.task.action_space.low[i], self.task.action_space.high[i]
                             ) for i in range(self.num_agents)
                         ], dim=1)
                     )
