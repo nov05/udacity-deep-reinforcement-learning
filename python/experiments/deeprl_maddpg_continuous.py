@@ -64,21 +64,21 @@ def maddpg_continuous(**kwargs):
         config.action_dim,   ## actor output length
         actor_body=FCBody(config.state_dim, 
                           (256,256), 
-                          gate=nn.LeakyReLU, 
+                        #   gate=nn.LeakyReLU, 
                         #   noisy_linear=True,
                           init_method='uniform_fan_in', 
-                          batch_norm_fn=nn.BatchNorm1d,  ## after the 1st fully connected layer
+                        #   batch_norm_fn=nn.BatchNorm1d,  ## after the 1st fully connected layer
                           ),
         critic_body_fn=lambda: FCBody(  ## (x, a_1, ..., a_n)
                            (config.state_dim+config.action_dim)*config.task.envs_wrapper.num_agents,  
                            (256,256), 
-                           gate=nn.LeakyReLU,
+                        #    gate=nn.LeakyReLU,
                         #    noisy_linear=True, 
                            init_method='uniform_fan_in', 
-                           batch_norm_fn=nn.BatchNorm1d ## after the 1st fully connected layer
+                        #    batch_norm_fn=nn.BatchNorm1d ## after the 1st fully connected layer
                           ),
         actor_opt_fn=lambda params: torch.optim.AdamW(params, lr=1e-4, weight_decay=1e-5),
-        critic_opt_fn=lambda params: torch.optim.AdamW(params, lr=1e-4, weight_decay=3e-5),
+        critic_opt_fn=lambda params: torch.optim.AdamW(params, lr=1e-4, weight_decay=1e-5),
         critic_ensemble=True,
         num_critics=2,  ## DDPG, TD3, etc.
         )
@@ -96,9 +96,9 @@ def maddpg_continuous(**kwargs):
     #     size=(config.action_dim,), std=LinearSchedule(0.2))
     config.random_process_fn = lambda: GaussianProcess(
         size=(config.action_dim,), std=LinearSchedule(1))
-    config.action_noise_factor = 0.15
-    config.policy_noise_factor = 0.05
-    config.noise_clip = (-0.2, 0.2)
+    config.action_noise_factor = 0.2
+    config.policy_noise_factor = 0.2
+    config.noise_clip = (-0.5, 0.5)
     ## before it is warmed up, use random actions, do not sample from buffer or update neural networks
     config.warm_up = int(1e4) ## can't be 0, or it will create a deadloop in buffer
     config.replay_interval = 1  ## replay-policy update every n steps
@@ -158,10 +158,10 @@ if __name__ == '__main__':
         mkdir('data\\models')  ## trained models ..\python\data\models
         select_device(0) ## 0: GPU, an non-negative integer is the index of GPU
         num_envs = 1
-        num_envs_eval = 5
-        num_eval_episodes = 20
+        num_envs_eval = 1
+        num_eval_episodes = 100
         eval_no_graphics = True
-        offset = 5
+        offset = 0
     else:
         mkdir('data\\log')
         select_device(0)  ## 0: GPU, -1: CPU

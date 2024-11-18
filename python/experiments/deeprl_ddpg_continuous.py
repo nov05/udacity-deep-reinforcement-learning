@@ -141,7 +141,7 @@ if __name__ == '__main__':
         num_envs = 0
         num_envs_eval = 4
         ## if run train and test at the same time
-        ## e.g. for training num_envs=1, num_envs_eval=5, hence Unity env port offset>=6
+        ## e.g. for training num_envs=1, num_envs_eval=3, hence Unity env port offset>=4
         offset = 4
         eval_no_graphics = False
         num_eval_episodes = 150

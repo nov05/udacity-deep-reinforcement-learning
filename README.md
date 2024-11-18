@@ -10,6 +10,7 @@
 
 ## **👉 Unity enviroment `Tennis` vector game (P3 Project Submission)**  
 
+The model achieved an average score of 0.50 between episodes 4336 and 4435 (step 157,506), and peaked at 2.6 around step 200,000.  
 [<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-11-17%2003-46-42_unity%20tennis%20maddpg.gif" width=800>](https://www.youtube.com/watch?v=7NoSFz7HSW4)    
 
 
@@ -171,6 +172,8 @@
 
   * One of the main challenges in this environment is the sparse reward structure, which can easily cause training to stall, particularly during the early stages. For example, [check some of the training metrics in the early stages.](https://wandb.ai/nov05/udacity-drlnd-matd3-unity-tennis/runs/d6vd5lbz?nw=nwusernov05) The training score might level off around 0.06 for approximately 400,000 steps before it begins to improve. Additionally, the training process is highly sensitive to hyperparameter settings, making it difficult to find a configuration that leads to convergence. I've come across research areas like 'sparse rewards' and 'reward reshaping,' which could potentially help improve performance.  
 
+  * If one or both of the actor losses didn’t decrease (oscillating or even increasing) during the early stages of training, it means the model wasn’t learning and would typically end up with a score close to 0.      
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-11-17%2023_17_43-treasured-music-194%20_%20udacity-drlnd-matd3-unity-tennis%20%E2%80%93%20Weights%20%26%20Biases.jpg" width=800>   
 
 
 ✅ **reference**  

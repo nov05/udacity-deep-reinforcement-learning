@@ -127,8 +127,10 @@ def check_network_params(network_name, network, raise_error=True):
 def check_tensor(tensor_name, tensor, raise_error=True):
     has_error = False
     if torch.isnan(tensor).any(): 
+        has_error = True
         print(f"⚠️ {tensor_name} is NaN.")
     if torch.isinf(tensor).any():
+        has_error = True
         print(f"⚠️ {tensor_name} is Inf.")
     if raise_error and has_error:
         raise

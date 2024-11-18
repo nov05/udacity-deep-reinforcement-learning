@@ -70,19 +70,17 @@ class MADDPGAgent(BaseAgent):
                 self.networks[agent_index].eval()
                 with torch.no_grad():
                     ## get action from local actor; action_i shape [num_envs, action dims]
-                    action_i = to_np(self.networks[agent_index](tensor(states_).transpose(0, 1)[agent_index])) 
+                    action_i = (
+                        to_np(self.networks[agent_index](tensor(states_).transpose(0, 1)[agent_index])) 
+                        + (self.random_process.sample()*self.config.action_noise_factor  ## add exploration noise
+                            *(1/(self.total_steps+1)**0.05)                              ## noise decay
+                    )) 
                     # check_tensor('action_i', action_i)
-                    ## add noise (w/o decay), denoted by 𝒩_t in the paper
-                    action_i += (
-                        self.random_process.sample()*self.config.action_noise_factor
-                        # *(1/(self.total_episodes+1)**0.09)  ## decay
-                    ) 
                     actions_.append(action_i[:,np.newaxis,:])
                 self.networks[agent_index].train()  
             actions_ = np.concatenate(actions_, axis=1)  ## [num_envs, num_agents, *action dims]
             actions = self._reshape_for_task(self.task, actions_)  ## no dim change in this case
-        ## task will clip actions when step
-        next_states, rewards, dones, infos = self.task.step(actions)
+        next_states, rewards, dones, infos = self.task.step(actions)  ## task will clip actions when step
 
         ## tidy up trajectory data for the replay buffer
         actions_ = np.clip(actions_, self.task.action_space.low, self.task.action_space.high)
@@ -128,11 +126,11 @@ class MADDPGAgent(BaseAgent):
                     ## add noise to smooth the critic fit
                     a_target = (
                         torch.cat([
-                            torch.clamp(  ## clip action
+                            torch.clamp(                                                                 ## clip action
                                 (self.target_networks[i].actor(next_states_[i])
                                 + (tensor(self.random_process.sample())*self.config.policy_noise_factor  ## add noise
-                                # #    *(1/(self.total_episodes+1)**0.09)  ## decay
-                                   ).clip(*self.config.noise_clip)  ## clip noise
+                                #    *(1/(self.total_steps+1)**0.05)                                       ## noise decay
+                                   ).clip(*self.config.noise_clip)                                       ## clip noise
                                 ), self.task.action_space.low[i], self.task.action_space.high[i]
                             ) for i in range(self.num_agents)
                         ], dim=1)
@@ -168,8 +166,10 @@ class MADDPGAgent(BaseAgent):
                 ## local critic backpropagation
                 self.networks[agent_index].critic_opt.zero_grad() 
                 critic_loss_i.backward()
+                torch.nn.utils.clip_grad_norm_(self.networks[agent_index].critic_bodies.parameters(), 
+                                               0.1) ## clip gradients
                 self.networks[agent_index].critic_opt.step()  ## optimizer step
-                # check_network_params(f'critic[{agent_index}]', self.networks[agent_index].critic_body)
+                # check_network_params(f'critic[{agent_index}]', self.networks[agent_index].critic_bodies)
 
                 ## update local actor; deplayed policy update
                 self.actor_update_counter[agent_index] += 1
@@ -178,9 +178,11 @@ class MADDPGAgent(BaseAgent):
                     ## local actor forward
                     ## input ok_j, output shape [mini_batch_size, action_length]
                     ## 'k' denotes 'policy emsemble', which is not in use here
-                    # a_i = torch.clamp(self.networks[agent_index].actor(states_[agent_index]), 
-                    #                   self.task.action_space.low[agent_index], 
-                    #                   self.task.action_space.high[agent_index])  ## action with clipping
+                    # a_i = torch.clamp((
+                    #         self.networks[agent_index].actor(states_[agent_index])
+                    #     ), 
+                    #     self.task.action_space.low[agent_index], 
+                    #     self.task.action_space.high[agent_index])  ## action with clipping
                     a_i = self.networks[agent_index].actor(states_[agent_index])  ## action no clipping
                     ## (a1_j, ..., a_i, ..., an_j), shape [mini_batch_size, num_agents*action_length]
                     a = torch.cat([actions_[i] if i!=agent_index else a_i 
@@ -189,7 +191,7 @@ class MADDPGAgent(BaseAgent):
                     ## input (x_j, a1_j, ..., a_i, ..., an_j), output shape (1,)
                     actor_loss_i = -self.networks[agent_index].critic(
                         states_.transpose(0,1).reshape(self.config.mini_batch_size, -1), 
-                        a).mean(dim=0)  
+                        a).mean(dim=0)
                     wandb.log({f'actor_loss_{agent_index}': actor_loss_i}, step=self.total_steps)
                     # check_tensor('actor_loss_i', actor_loss_i)  ## check NaNs and Infs  
                     ## freeze local critics
@@ -198,6 +200,8 @@ class MADDPGAgent(BaseAgent):
                     ## local actor backpropagation
                     self.networks[agent_index].actor_opt.zero_grad()  
                     actor_loss_i.backward()
+                    torch.nn.utils.clip_grad_norm_(self.networks[agent_index].actor_body.parameters(), 
+                                                   0.1) ## clip gradients
                     self.networks[agent_index].actor_opt.step()  ## optimizer step
                     # check_network_params(f'actor[{agent_index}]', self.networks[agent_index].actor_body)
                     ## unfreeze local critics
