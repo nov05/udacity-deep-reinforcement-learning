@@ -175,7 +175,7 @@ Check [the training logs on W&B](https://wandb.ai/nov05/udacity-drlnd-matd3-unit
 
 * [Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments (2020)](https://proceedings.neurips.cc/paper_files/paper/2017/file/68a9750337a418a86fe06c1991a1d64c-Paper.pdf)    
 https://arxiv.org/pdf/1706.02275   
-<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-18%2023_11_36-Multi-Agent%20Deep%20Deterministic%20Policy%20Gradient%20for%20N%20agents.jpg" width=500>   
+  <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-10-18%2023_11_36-Multi-Agent%20Deep%20Deterministic%20Policy%20Gradient%20for%20N%20agents.jpg" width=500>   
 
 * Prioritized Experience Replay (2015)   
   http://arxiv.org/abs/1511.05952

@@ -104,7 +104,7 @@ def maddpg_continuous(**kwargs):
     config.replay_interval = 1  ## replay-policy update every n steps
     config.actor_network_update_freq = 2  ## update the actor once for every n updates to the critic
     config.target_network_mix = int(5e-3)  ## τ: soft update rate = 0.5%, trg = trg*(1-τ) + src*τ
-    # config.state_normalizer = MeanStdNormalizer()  ## value bound in range [-10, 10]
+    # config.state_normalizer = MeanStdNormalizer()  ## defaultly value bound in range [-10, 10]
     # config.reward_normalizer = RescaleNormalizer(0.1)
 
     config.wandb = True
