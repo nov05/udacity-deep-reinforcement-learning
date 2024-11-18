@@ -11,6 +11,7 @@
 ## **👉 Unity enviroment `Tennis` vector game (P3 Project Submission)**  
 
 The model achieved **an average score of 0.50** between episodes 4336 and 4435 (step 157,506), and **peaked at 2.6** around step 200,000.   
+Check [the training logs on W&B](https://wandb.ai/nov05/udacity-drlnd-matd3-unity-tennis/runs/ehq0fw4a).     
 [<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-11-17%2003-46-42_unity%20tennis%20maddpg.gif" width=800>](https://www.youtube.com/watch?v=7NoSFz7HSW4)    
 
 
