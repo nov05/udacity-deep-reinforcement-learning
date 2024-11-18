@@ -10,7 +10,7 @@
 
 ## **👉 Unity enviroment `Tennis` vector game (P3 Project Submission)**  
 
-The model achieved an average score of 0.50 between episodes 4336 and 4435 (step 157,506), and peaked at 2.6 around step 200,000.  
+The model achieved **an average score of 0.50** between episodes 4336 and 4435 (step 157,506), and **peaked at 2.6** around step 200,000.   
 [<img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/2024-11-17%2003-46-42_unity%20tennis%20maddpg.gif" width=800>](https://www.youtube.com/watch?v=7NoSFz7HSW4)    
 
 
@@ -39,9 +39,7 @@ The model achieved an average score of 0.50 between episodes 4336 and 4435 (step
 * [**MADDPG**, or **Multi-agent DDPG**](https://paperswithcode.com/method/maddpg), extends DDPG into a multi-agent policy gradient algorithm where decentralized agents learn a centralized critic based on the observations and actions of all agents. It leads to learned policies that only use local information (i.e. their own observations) at execution time, does not assume a differentiable model of the environment dynamics or any particular structure on the communication method between agents, and is applicable not only to cooperative interaction but to competitive or mixed interaction involving both physical and communicative behavior. The critic is augmented with extra information about the policies of other agents, while the actor only has access to local information. After training is completed, only the local actors are used at execution phase, acting in a decentralized manner.  
 <img src="https://raw.githubusercontent.com/Nov05/pictures/refs/heads/master/Udacity/20231221_reinforcement%20learning/Screen_Shot_2020-06-04_at_10.11.20_PM.png" width=300>     
 
-* DDPG relies on a single Q-network to estimate action values, which can lead to overestimation and make it harder to converge, especially in multi-agent environments. In contrast, [TD3](https://spinningup.openai.com/en/latest/algorithms/td3.html) uses two Q-networks (typically taking the smaller Q-value) to minimize overestimation. It also adds clipped noise to the target actor’s outputs when calculating target Q-values, which helps smooth out the critic’s losses, thereby improving the overall stability during training.   
-
-* For each agent, **6 networks** (1 local actor, 2 local critics, 1 target actor, and 2 target critics) and **1 replay buffer** will be created. During training, an agent can access the observations and actions of other agents. During execution, however, each agent relies on its own observations and receives actions from its own local actor.  
+* DDPG relies on a single Q-network to estimate action values, which can lead to overestimation and make it harder to converge, especially in multi-agent environments. In contrast, [**TD3, or Twin Delayed DDPG**](https://spinningup.openai.com/en/latest/algorithms/td3.html) uses two Q-networks (typically taking the smaller Q-value) to minimize overestimation. It also adds clipped noise to the target actor’s outputs when calculating target Q-values, which helps smooth out the critic’s losses, thereby improving the overall stability during training. For each agent, **6 networks** (1 local actor, 2 local critics, 1 target actor, and 2 target critics) and **1 replay buffer** will be created. During training, an agent can access the observations and actions of other agents. During execution, however, each agent relies on its own observations and receives actions from its own local actor.  
 
 * **Prioritized replay buffers** are used to improve the speed of convergence, since the rewards are very sparse.
 
