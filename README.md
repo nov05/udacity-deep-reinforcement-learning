@@ -49,15 +49,6 @@ The model achieved an average score of 0.50 between episodes 4336 and 4435 (step
 
 
 
-✅ **setup Python environment**   
-
-* [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
-
-* [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583) 
-
-
-
-
 ✅ **entry points**   
 
 * working directory: `$ cd python`     
@@ -71,6 +62,11 @@ The model achieved an average score of 0.50 between episodes 4336 and 4435 (step
 
 * launch tensorboard in VSCode: `$ tensorboard --logdir=./data/tf_log` 
   
+
+✅ **setup Python environment**   
+
+* [notes for env setup](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)   
+* [notes for issues](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)  
 
 
 ✅ **Implementation**    
