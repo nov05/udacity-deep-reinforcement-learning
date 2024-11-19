@@ -44,7 +44,7 @@ Check [the training logs on W&B](https://wandb.ai/nov05/udacity-drlnd-matd3-unit
 
 * **Prioritized replay buffers** are used to improve the speed of convergence, since the rewards are very sparse.
 
-* Multi-environments, implemented using the `multiprocessing` library (check the file `..\python\baselines\baselines\common\vec_env\subproc_vec_env.py`), can be used for parallel training here, which can add diversity to the experiences. Additionally, asynchronous stepping may help speed up the training and evalation processes.  
+* Multi-environments, implemented using the `multiprocessing` library (check the file [`..\python\baselines\baselines\common\vec_env\subproc_vec_env.py`](https://github.com/Nov05/udacity-deep-reinforcement-learning/blob/master/python/baselines/baselines/common/vec_env/subproc_vec_env.py)), can be used for parallel training here, which can add diversity to the experiences. Additionally, asynchronous stepping may help speed up the training and evalation processes.  
 
 
 
