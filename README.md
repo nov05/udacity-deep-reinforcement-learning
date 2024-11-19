@@ -366,10 +366,18 @@ https://arxiv.org/pdf/1706.02275
 
 <br><br><br>  
 
+## **👉 C++ Crash Course**  
+
+* [Some of the course content](https://share.evernote.com/note/5f37d986-4288-2436-2719-09bcd9476197)  
+* [code examples](https://share.evernote.com/note/5f37d986-4288-2436-2719-09bcd9476197)  
+
+<br><br><br>  
+
 ---
 
 ## **👉 Logs**  
 
+2024-11-17 p3 Unity Tennis submission
 2024-04-10 p2 Unity Reacher v2 submission   
 2024-03-07 Python code to launch multiple Unity environments parallelly from an executable file  
 ...  
