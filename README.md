@@ -378,8 +378,8 @@ https://arxiv.org/pdf/1706.02275
 
 ## **👉 Logs**  
 
-2024-11-17 p3 Unity Tennis submission
-2024-04-10 p2 Unity Reacher v2 submission   
+2024-11-17 p3 Unity Tennis submission  
+2024-04-10 p2 Unity Reacher v2 submission    
 2024-03-07 Python code to launch multiple Unity environments parallelly from an executable file  
 ...  
 2024-02-14 Banana game project submission  
