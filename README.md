@@ -1,9 +1,10 @@
 
 ## **👉 Setup Python environment for the repo**    
 
+* [Course general Notes (Google Docs)](https://docs.google.com/document/d/1bX9EdEjIXqOW7nFz8KJvADWCXxoLlRW4_U4B8ojX2eA)  
 * [Notes for env setup (GitHub Gist)](https://gist.github.com/Nov05/36ed6fff08f16f29c364090844eb1d24)  
 * [Notes for issues (GitHub Gist)](https://gist.github.com/Nov05/1d49183a91456a63e13782e5f49436be?permalink_comment_id=4935583#gistcomment-4935583)
-* [Course general Notes (Google Docs)](https://docs.google.com/document/d/1bX9EdEjIXqOW7nFz8KJvADWCXxoLlRW4_U4B8ojX2eA)
+
 
 <br><br><br>  
 
